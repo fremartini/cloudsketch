@@ -253,6 +253,16 @@ func addBoxes() []string {
 	return append(vnetCells, subnetCells...)
 }
 
+func getResourcesInSubet(resources []*az.Resource, subnetId string) []*node.ResourceAndNode {
+	azResourcesInSubnet := list.Filter(resources, func(resource *az.Resource) bool {
+		return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == subnetId })
+	})
+	resourcesInSubnet := list.Map(azResourcesInSubnet, func(resource *az.Resource) *node.ResourceAndNode {
+		return resource_map[resource.Id]
+	})
+	return resourcesInSubnet
+}
+
 func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, padding int) []*node.Node {
 	minSizeX := 50
 	minSizeY := 50
@@ -263,17 +273,12 @@ func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, p
 
 	// ensure some deterministic order
 	sort.Slice(subnetsToProcess, func(i, j int) bool {
-		return len(subnetsToProcess[i].Name) < len(subnetsToProcess[j].Name)
+		return subnetsToProcess[i].Name < subnetsToProcess[j].Name
 	})
 
 	for _, subnet := range subnetsToProcess {
 		// 1.1 determine what resources belongs in a subnet
-		azResourcesInSubnet := list.Filter(resources, func(resource *az.Resource) bool {
-			return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == subnet.Id })
-		})
-		resourcesInSubnet := list.Map(azResourcesInSubnet, func(resource *az.Resource) *node.ResourceAndNode {
-			return resource_map[resource.Id]
-		})
+		resourcesInSubnet := getResourcesInSubet(resources, subnet.Id)
 
 		// 1.2 determine the width of the subnet box
 		subnetNode := resource_map[subnet.Id].Node
