@@ -88,7 +88,6 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	dependencyArrows := addDependencyArrows()
 
 	// some resources like vnets and subnets needs boxes draw around them, and their resources moved into them
-	// this function might move some icons around
 	boxes := addBoxes()
 
 	// combine everything and render them in the final diagram
@@ -226,14 +225,7 @@ func addBoxes() []string {
 	for id, resourceAndNode := range resource_map {
 		resources = append(resources, resourceAndNode.Resource)
 
-		n := resource_map[id].Node
-
-		// TODO: some resources don't have nodes? Ensure has precondition?
-		if n == nil {
-			continue
-		}
-
-		n.SetPosition(-200, -200)
+		resource_map[id].Node.SetPosition(-200, -200)
 	}
 
 	padding := 45
@@ -263,6 +255,7 @@ func getResourcesInSubet(resources []*az.Resource, subnetId string) []*node.Reso
 	return resourcesInSubnet
 }
 
+// TODO: move to handler?
 func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, padding int) []*node.Node {
 	nodes := []*node.Node{}
 
@@ -330,6 +323,7 @@ func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, p
 	return nodes
 }
 
+// TODO: move to handler?
 func processVnets(resources []*az.Resource, padding, boxOriginX, maxHeightSoFar int) []*node.Node {
 	nodes := []*node.Node{}
 
