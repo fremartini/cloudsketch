@@ -236,7 +236,7 @@ func addBoxes() []string {
 		n.SetPosition(-200, -200)
 	}
 
-	padding := 10
+	padding := 45
 	boxOriginX := 0
 	maxHeightSoFar := 0
 
@@ -264,9 +264,6 @@ func getResourcesInSubet(resources []*az.Resource, subnetId string) []*node.Reso
 }
 
 func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, padding int) []*node.Node {
-	minSizeX := 50
-	minSizeY := 50
-
 	nodes := []*node.Node{}
 
 	subnetsToProcess := list.Filter(resources, func(resource *az.Resource) bool { return resource.Type == az.SUBNET })
@@ -280,7 +277,12 @@ func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, p
 		// 1.1 determine what resources belongs in a subnet
 		resourcesInSubnet := getResourcesInSubet(resources, subnet.Id)
 
-		// 1.2 determine the width of the subnet box
+		// ensure some deterministic order
+		sort.Slice(resourcesInSubnet, func(i, j int) bool {
+			return resourcesInSubnet[i].Resource.Name < resourcesInSubnet[j].Resource.Name
+		})
+
+		// 1.2 determine the width and height of the subnet box
 		subnetNode := resource_map[subnet.Id].Node
 		subnetNodePosition := subnetNode.GetProperties()
 
@@ -289,14 +291,8 @@ func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, p
 			return int(math.Max(float64(acc), float64(r.Node.GetProperties().Height)))
 		})
 
-		// ensure minimum size
-		if width < minSizeX {
-			width = minSizeX
-		}
-
-		if height < minSizeY {
-			height = minSizeY
-		}
+		height += padding
+		width += (padding * len(resourcesInSubnet))
 
 		*maxHeightSoFar = int(math.Max(float64(*maxHeightSoFar), float64(height)))
 
@@ -313,13 +309,15 @@ func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, p
 		subnetNode.SetPosition(offsetX, offsetY)
 
 		// 1.4 move all resources in the subnet, inside the box
-		acc := boxProperties.X // start of box
+		acc := boxProperties.X + padding // start of box
 		for _, resource := range resourcesInSubnet {
 			offsetX := acc
 			offsetY := boxProperties.Height/2 - resource.Node.GetProperties().Height/2
 			resource.Node.SetPosition(offsetX, offsetY)
-			acc += resource.Node.GetProperties().Width
+			acc += resource.Node.GetProperties().Width + padding
 		}
+
+		boxProperties.Width += padding
 
 		// 1.5 adjust padding between the current box and the next subnets box on the X axis
 		*boxOriginX += boxProperties.Width + (subnetNodePosition.Width/2 + padding)
@@ -350,12 +348,12 @@ func processVnets(resources []*az.Resource, padding, boxOriginX, maxHeightSoFar 
 			X:      0 - padding,
 			Y:      0 - padding,
 			Width:  boxOriginX + padding,
-			Height: maxHeightSoFar + (padding * 2),
+			Height: maxHeightSoFar + (2 * padding),
 		}
 
 		// 2.2 move the vnet icon to the bottom-left of the box
 		offsetX := boxProperties.X - vnetNode.GetProperties().Width/2
-		offsetY := boxProperties.Height - boxProperties.Y - vnetNode.GetProperties().Height
+		offsetY := boxProperties.Y + boxProperties.Height - vnetNode.GetProperties().Height/2
 		vnetNode.SetPosition(offsetX, offsetY)
 
 		vnetBox := node.NewBox(boxProperties)
