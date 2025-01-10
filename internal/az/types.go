@@ -2,6 +2,7 @@ package az
 
 const (
 	APP_SERVICE_PLAN                      = "Microsoft.Web/serverFarms"
+	APPLICATION_GATEWAY                   = "Microsoft.Network/applicationGateways"
 	APPLICATION_INSIGHTS                  = "Microsoft.Insights/components"
 	APPLICATION_SECURITY_GROUP            = "Microsoft.Network/applicationSecurityGroups"
 	DATA_FACTORY                          = "Microsoft.DataFactory/factories"
@@ -16,6 +17,7 @@ const (
 	NAT_GATEWAY                           = "Microsoft.Network/natGateways"
 	NETWORK_INTERFACE                     = "Microsoft.Network/networkInterfaces"
 	NETWORK_SECURITY_GROUP                = "Microsoft.Network/networkSecurityGroups"
+	POSTGRES_SQL_SERVER                   = "Microsoft.DBforPostgreSQL/servers"
 	PRIVATE_DNS_ZONE                      = "Microsoft.Network/privateDnsZones"
 	PRIVATE_ENDPOINT                      = "Microsoft.Network/privateEndpoints"
 	PRIVATE_LINK_SERVICE                  = "Microsoft.Network/privateLinkServices"

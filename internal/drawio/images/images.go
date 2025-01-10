@@ -2,6 +2,7 @@ package images
 
 const (
 	APP_SERVICE_PLAN                      = "img/lib/azure2/app_services/App_Service_Plans.svg"
+	APPLICATION_GATEWAY                   = "img/lib/azure2/networking/Application_Gateways.svg"
 	APPLICATION_INSIGHTS                  = "img/lib/azure2/devops/Application_Insights.svg"
 	APPLICATION_SECURITY_GROUP            = "img/lib/azure2/security/Application_Security_Groups.svg"
 	DATA_FACTORY                          = "img/lib/azure2/databases/Data_Factory.svg"
@@ -14,6 +15,7 @@ const (
 	NAT_GATEWAY                           = "img/lib/azure2/networking/NAT.svg"
 	NETWORK_INTERFACE                     = "img/lib/azure2/networking/Network_Interfaces.svg"
 	NETWORK_SECURITY_GROUP                = "img/lib/azure2/networking/Network_Security_Groups.svg"
+	POSTGRES_SQL_SERVER                   = "img/lib/azure2/databases/Azure_Database_PostgreSQL_Server.svg"
 	PRIVATE_DNS_ZONE                      = "img/lib/azure2/networking/DNS_Zones.svg"
 	PRIVATE_ENDPOINT                      = "img/lib/azure2/other/Private_Endpoints.svg"
 	PRIVATE_LINK_SERVICE                  = "img/lib/azure2/networking/Private_Link_Service.svg"

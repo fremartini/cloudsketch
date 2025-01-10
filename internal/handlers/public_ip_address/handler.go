@@ -28,14 +28,19 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
-	pip_target := pip.Properties.NatGateway.ID
+	dependsOn := []string{}
+
+	if pip.Properties.NatGateway != nil {
+		pip_target := pip.Properties.NatGateway.ID
+		dependsOn = append(dependsOn, *pip_target)
+	}
 
 	resource := &az.Resource{
 		Id:            *pip.ID,
 		Name:          *pip.Name,
 		Type:          *pip.Type,
 		ResourceGroup: ctx.ResourceGroup,
-		DependsOn:     []string{*pip_target},
+		DependsOn:     dependsOn,
 	}
 
 	return []*az.Resource{resource}, nil

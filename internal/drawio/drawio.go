@@ -3,6 +3,7 @@ package drawio
 import (
 	"azsample/internal/az"
 	"azsample/internal/drawio/handlers/app_service_plan"
+	"azsample/internal/drawio/handlers/application_gateway"
 	"azsample/internal/drawio/handlers/data_factory"
 	"azsample/internal/drawio/handlers/data_factory_integration_runtime"
 	"azsample/internal/drawio/handlers/data_factory_managed_private_endpoint"
@@ -14,6 +15,7 @@ import (
 	"azsample/internal/drawio/handlers/nat_gateway"
 	"azsample/internal/drawio/handlers/network_interface"
 	"azsample/internal/drawio/handlers/node"
+	"azsample/internal/drawio/handlers/postgres_sql_server"
 	"azsample/internal/drawio/handlers/private_dns_zone"
 	"azsample/internal/drawio/handlers/private_endpoint"
 	"azsample/internal/drawio/handlers/private_link_service"
@@ -44,7 +46,8 @@ type handler interface {
 
 var (
 	commands handleFuncMap = handleFuncMap{
-		app_service_plan.TYPE: app_service_plan.New(),
+		app_service_plan.TYPE:    app_service_plan.New(),
+		application_gateway.TYPE: application_gateway.New(),
 		//application_insights.TYPE: application_insights.New(),
 		//application_security_group.TYPE:            application_security_group.New(),
 		data_factory.TYPE:                          data_factory.New(),
@@ -59,6 +62,7 @@ var (
 		nat_gateway.TYPE:       nat_gateway.New(),
 		network_interface.TYPE: network_interface.New(),
 		//network_security_group.TYPE:                network_security_group.New(),
+		postgres_sql_server.TYPE:       postgres_sql_server.New(),
 		private_dns_zone.TYPE:          private_dns_zone.New(),
 		private_endpoint.TYPE:          private_endpoint.New(),
 		private_link_service.TYPE:      private_link_service.New(),
@@ -236,7 +240,14 @@ func addBoxes() []string {
 	subnetNodes := processSubnets(resources, &maxHeightSoFar, &boxOriginX, padding)
 
 	// 2. handle vnets
-	vnetNodes := processVnets(resources, padding, boxOriginX, maxHeightSoFar)
+	vnetGroup := &node.Properties{
+		X:      0,
+		Y:      0,
+		Width:  boxOriginX,
+		Height: maxHeightSoFar,
+	}
+
+	vnetNodes := processVnets(resources, vnetGroup, padding)
 
 	subnetCells := list.Map(subnetNodes, node.ToMXCell)
 	vnetCells := list.Map(vnetNodes, node.ToMXCell)
@@ -324,34 +335,33 @@ func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, p
 }
 
 // TODO: move to handler?
-func processVnets(resources []*az.Resource, padding, boxOriginX, maxHeightSoFar int) []*node.Node {
+func processVnets(resources []*az.Resource, properties *node.Properties, padding int) []*node.Node {
 	nodes := []*node.Node{}
 
 	vnetsToProcess := list.Filter(resources, func(resource *az.Resource) bool { return resource.Type == az.VIRTUAL_NETWORK })
 
 	for _, vnet := range vnetsToProcess {
 		vnetNode := resource_map[vnet.Id].Node
+		vnetNodeProperties := vnetNode.GetProperties()
 
 		// assuming there exists only one vnet
 		// TODO: handle multiple vnets?
 
 		// 2.1 determine the width of the box
-		// first subnet is located at (0,0) so the vnet box should be created a bit to the left and above
-		// TODO: don't rely on (0,0)
-		boxProperties := &node.Properties{
-			X:      0 - padding,
-			Y:      0 - padding,
-			Width:  boxOriginX + padding,
-			Height: maxHeightSoFar + (2 * padding),
+		// move the box a bit to the left and above to fit its children
+		properties = &node.Properties{
+			X:      properties.X - padding,
+			Y:      properties.Y - padding,
+			Width:  properties.Width + padding,
+			Height: properties.Height + (2 * padding),
 		}
 
 		// 2.2 move the vnet icon to the bottom-left of the box
-		offsetX := boxProperties.X - vnetNode.GetProperties().Width/2
-		offsetY := boxProperties.Y + boxProperties.Height - vnetNode.GetProperties().Height/2
+		offsetX := properties.X - vnetNodeProperties.Width/2
+		offsetY := properties.Y + properties.Height - vnetNodeProperties.Height/2
 		vnetNode.SetPosition(offsetX, offsetY)
 
-		vnetBox := node.NewBox(boxProperties)
-
+		vnetBox := node.NewBox(properties)
 		nodes = append(nodes, vnetBox)
 	}
 

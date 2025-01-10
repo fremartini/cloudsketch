@@ -3,6 +3,7 @@ package main
 import (
 	"azsample/internal/az"
 	"azsample/internal/drawio"
+	"azsample/internal/handlers/application_gateway"
 	"azsample/internal/handlers/data_factory"
 	"azsample/internal/handlers/function_app"
 	"azsample/internal/handlers/load_balancer"
@@ -30,6 +31,7 @@ type handleFunc = func(*az.Context) ([]*az.Resource, error)
 var (
 	appContext *az.Context           = nil
 	handlers   map[string]handleFunc = map[string]handleFunc{
+		az.APPLICATION_GATEWAY:       application_gateway.New().Handle,
 		az.DATA_FACTORY:              data_factory.New().Handle,
 		az.FUNCTION_APP:              function_app.New().Handle,
 		az.LOAD_BALANCER:             load_balancer.New().Handle,
@@ -41,7 +43,7 @@ var (
 		az.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New().Handle,
 		az.VIRTUAL_NETWORK:           virtual_network.New().Handle,
 	}
-	useFile = true
+	useFile = false
 )
 
 func main() {
