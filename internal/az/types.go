@@ -8,6 +8,7 @@ const (
 	DATA_FACTORY                          = "Microsoft.DataFactory/factories"
 	DATA_FACTORY_INTEGRATION_RUNTIME      = "Microsoft.DataFactory/factories/integrationruntimes"
 	DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT = "Microsoft.DataFactory/factories/managedvirtualnetworks/managedprivateendpoints"
+	DATABRICKS_WORKSPACE                  = "Microsoft.Databricks/workspaces"
 	DNS_RECORD                            = "custom/privateDnsZones/record"
 	FUNCTION_APP                          = "Microsoft.Web/sites"
 	KEY_VAULT                             = "Microsoft.KeyVault/vaults"

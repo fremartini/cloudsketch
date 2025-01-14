@@ -43,7 +43,7 @@ var (
 		az.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New().Handle,
 		az.VIRTUAL_NETWORK:           virtual_network.New().Handle,
 	}
-	useFile = false
+	useFile = true
 )
 
 func main() {

@@ -7,6 +7,8 @@ import (
 	"azsample/internal/drawio/handlers/data_factory"
 	"azsample/internal/drawio/handlers/data_factory_integration_runtime"
 	"azsample/internal/drawio/handlers/data_factory_managed_private_endpoint"
+	"azsample/internal/drawio/handlers/databricks_workspace"
+	"azsample/internal/drawio/handlers/diagram"
 	"azsample/internal/drawio/handlers/dns_record"
 	"azsample/internal/drawio/handlers/function_app"
 	"azsample/internal/drawio/handlers/key_vault"
@@ -26,15 +28,8 @@ import (
 	"azsample/internal/drawio/handlers/virtual_machine"
 	"azsample/internal/drawio/handlers/virtual_machine_scale_set"
 	"azsample/internal/drawio/handlers/virtual_network"
-	"azsample/internal/guid"
 	"azsample/internal/list"
-	"bufio"
-	"bytes"
-	"fmt"
 	"log"
-	"math"
-	"os"
-	"sort"
 )
 
 type handleFuncMap = map[string]handler
@@ -42,6 +37,7 @@ type handleFuncMap = map[string]handler
 type handler interface {
 	DrawIcon(*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
 	DrawDependency(*az.Resource, *az.Resource, *map[string]*node.Node) *node.Arrow
+	DrawBox(resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node
 }
 
 var (
@@ -53,6 +49,7 @@ var (
 		data_factory.TYPE:                          data_factory.New(),
 		data_factory_integration_runtime.TYPE:      data_factory_integration_runtime.New(),
 		data_factory_managed_private_endpoint.TYPE: data_factory_managed_private_endpoint.New(),
+		databricks_workspace.TYPE:                  databricks_workspace.New(),
 		dns_record.TYPE:                            dns_record.New(),
 		function_app.TYPE:                          function_app.New(),
 		key_vault.TYPE:                             key_vault.New(),
@@ -74,7 +71,8 @@ var (
 		virtual_machine_scale_set.TYPE: virtual_machine_scale_set.New(),
 		virtual_network.TYPE:           virtual_network.New(),
 	}
-	resource_map = map[string]*node.ResourceAndNode{}
+	resource_map             = map[string]*node.ResourceAndNode{}
+	seen_unhandled_resources = map[string]bool{}
 )
 
 type drawio struct {
@@ -101,7 +99,9 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	cellsToRender = append(cellsToRender, dependencyArrows...)
 	cellsToRender = append(cellsToRender, list.Map(cells, node.ToMXCell)...)
 
-	if err := writeDiagram(filename, cellsToRender); err != nil {
+	dgrm := diagram.New(cellsToRender)
+
+	if err := dgrm.Write(filename); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -153,7 +153,14 @@ func drawResource(resource *az.Resource) []*node.Node {
 	f, ok := commands[resource.Type]
 
 	if !ok {
-		log.Printf("unhandled type %s", resource.Type)
+		_, seenResource := seen_unhandled_resources[resource.Type]
+
+		// mechanism to prevent spamming the output with the same type
+		if !seenResource {
+			log.Printf("unhandled type %s", resource.Type)
+			seen_unhandled_resources[resource.Type] = true
+		}
+
 		return []*node.Node{}
 	}
 
@@ -232,176 +239,13 @@ func addBoxes() []string {
 		resource_map[id].Node.SetPosition(-200, -200)
 	}
 
-	padding := 45
-	boxOriginX := 0
-	maxHeightSoFar := 0
-
-	// 1. handle subnets
-	subnetNodes := processSubnets(resources, &maxHeightSoFar, &boxOriginX, padding)
-
-	// 2. handle vnets
-	vnetGroup := &node.Properties{
-		X:      0,
-		Y:      0,
-		Width:  boxOriginX,
-		Height: maxHeightSoFar,
-	}
-
-	vnetNodes := processVnets(resources, vnetGroup, padding)
+	// TODO: implement a cleaner solution
+	subnetNodes := commands[az.SUBNET].DrawBox(resources, &resource_map)
+	vnetNodes := commands[az.VIRTUAL_NETWORK].DrawBox(resources, &resource_map)
 
 	subnetCells := list.Map(subnetNodes, node.ToMXCell)
 	vnetCells := list.Map(vnetNodes, node.ToMXCell)
 
 	// return vnets first so they are rendered in the background
 	return append(vnetCells, subnetCells...)
-}
-
-func getResourcesInSubet(resources []*az.Resource, subnetId string) []*node.ResourceAndNode {
-	azResourcesInSubnet := list.Filter(resources, func(resource *az.Resource) bool {
-		return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == subnetId })
-	})
-	resourcesInSubnet := list.Map(azResourcesInSubnet, func(resource *az.Resource) *node.ResourceAndNode {
-		return resource_map[resource.Id]
-	})
-	return resourcesInSubnet
-}
-
-// TODO: move to handler?
-func processSubnets(resources []*az.Resource, maxHeightSoFar, boxOriginX *int, padding int) []*node.Node {
-	nodes := []*node.Node{}
-
-	subnetsToProcess := list.Filter(resources, func(resource *az.Resource) bool { return resource.Type == az.SUBNET })
-
-	// ensure some deterministic order
-	sort.Slice(subnetsToProcess, func(i, j int) bool {
-		return subnetsToProcess[i].Name < subnetsToProcess[j].Name
-	})
-
-	for _, subnet := range subnetsToProcess {
-		// 1.1 determine what resources belongs in a subnet
-		resourcesInSubnet := getResourcesInSubet(resources, subnet.Id)
-
-		// ensure some deterministic order
-		sort.Slice(resourcesInSubnet, func(i, j int) bool {
-			return resourcesInSubnet[i].Resource.Name < resourcesInSubnet[j].Resource.Name
-		})
-
-		// 1.2 determine the width and height of the subnet box
-		subnetNode := resource_map[subnet.Id].Node
-		subnetNodePosition := subnetNode.GetProperties()
-
-		width := list.Fold(resourcesInSubnet, 0, func(r *node.ResourceAndNode, acc int) int { return acc + r.Node.GetProperties().Width })
-		height := list.Fold(resourcesInSubnet, 0, func(r *node.ResourceAndNode, acc int) int {
-			return int(math.Max(float64(acc), float64(r.Node.GetProperties().Height)))
-		})
-
-		height += padding
-		width += (padding * len(resourcesInSubnet))
-
-		*maxHeightSoFar = int(math.Max(float64(*maxHeightSoFar), float64(height)))
-
-		boxProperties := &node.Properties{
-			X:      *boxOriginX,
-			Y:      0,
-			Width:  width,
-			Height: height,
-		}
-
-		// 1.3 move the subnet icon to the edge of the box
-		offsetX := boxProperties.X - subnetNodePosition.Width/2
-		offsetY := boxProperties.Y - subnetNodePosition.Height/2
-		subnetNode.SetPosition(offsetX, offsetY)
-
-		// 1.4 move all resources in the subnet, inside the box
-		acc := boxProperties.X + padding // start of box
-		for _, resource := range resourcesInSubnet {
-			offsetX := acc
-			offsetY := boxProperties.Height/2 - resource.Node.GetProperties().Height/2
-			resource.Node.SetPosition(offsetX, offsetY)
-			acc += resource.Node.GetProperties().Width + padding
-		}
-
-		boxProperties.Width += padding
-
-		// 1.5 adjust padding between the current box and the next subnets box on the X axis
-		*boxOriginX += boxProperties.Width + (subnetNodePosition.Width/2 + padding)
-
-		subnetBox := node.NewBox(boxProperties)
-
-		nodes = append(nodes, subnetBox)
-	}
-
-	return nodes
-}
-
-// TODO: move to handler?
-func processVnets(resources []*az.Resource, properties *node.Properties, padding int) []*node.Node {
-	nodes := []*node.Node{}
-
-	vnetsToProcess := list.Filter(resources, func(resource *az.Resource) bool { return resource.Type == az.VIRTUAL_NETWORK })
-
-	for _, vnet := range vnetsToProcess {
-		vnetNode := resource_map[vnet.Id].Node
-		vnetNodeProperties := vnetNode.GetProperties()
-
-		// assuming there exists only one vnet
-		// TODO: handle multiple vnets?
-
-		// 2.1 determine the width of the box
-		// move the box a bit to the left and above to fit its children
-		properties = &node.Properties{
-			X:      properties.X - padding,
-			Y:      properties.Y - padding,
-			Width:  properties.Width + padding,
-			Height: properties.Height + (2 * padding),
-		}
-
-		// 2.2 move the vnet icon to the bottom-left of the box
-		offsetX := properties.X - vnetNodeProperties.Width/2
-		offsetY := properties.Y + properties.Height - vnetNodeProperties.Height/2
-		vnetNode.SetPosition(offsetX, offsetY)
-
-		vnetBox := node.NewBox(properties)
-		nodes = append(nodes, vnetBox)
-	}
-
-	return nodes
-}
-
-func writeDiagram(filename string, cells []string) error {
-	f, err := os.Create(filename)
-
-	if err != nil {
-		return err
-	}
-
-	defer f.Close()
-
-	var buffer bytes.Buffer
-
-	for _, cell := range cells {
-		buffer.WriteString(cell)
-	}
-
-	diagramId := guid.NewGuidAlphanumeric()
-
-	w := bufio.NewWriter(f)
-	_, err = w.WriteString(fmt.Sprintf(`<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/25.0.1 Chrome/128.0.6613.186 Electron/32.2.6 Safari/537.36" version="25.0.1">
-	<diagram name="Page-1" id="%s">
-		<mxGraphModel dx="2074" dy="1196" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
-			<root>
-			<mxCell id="0" />
-			<mxCell id="1" parent="0" />
-			%s
-			</root>
-		</mxGraphModel>
-	</diagram>
-</mxfile>
-`, diagramId, buffer.String()))
-
-	if err != nil {
-		return err
-	}
-
-	return w.Flush()
 }

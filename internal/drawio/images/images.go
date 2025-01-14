@@ -8,6 +8,7 @@ const (
 	DATA_FACTORY                          = "img/lib/azure2/databases/Data_Factory.svg"
 	DATA_FACTORY_INTEGRATION_RUNTIME      = VIRTUAL_MACHINE
 	DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT = PRIVATE_ENDPOINT
+	DATABRICKS_WORKSPACE                  = "img/lib/azure2/analytics/Azure_Databricks.svg"
 	FUNCTION_APP                          = "img/lib/azure2/compute/Function_Apps.svg"
 	KEY_VAULT                             = "img/lib/azure2/security/Key_Vaults.svg"
 	LOAD_BALANCER                         = "img/lib/azure2/networking/Load_Balancers.svg"

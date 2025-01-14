@@ -1,4 +1,4 @@
-package private_link_service
+package databricks_workspace
 
 import (
 	"azsample/internal/az"
@@ -9,10 +9,10 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = az.PRIVATE_LINK_SERVICE
-	IMAGE  = images.PRIVATE_LINK_SERVICE
-	WIDTH  = 69
-	HEIGHT = 40
+	TYPE   = az.DATABRICKS_WORKSPACE
+	IMAGE  = images.DATABRICKS_WORKSPACE
+	WIDTH  = 68
+	HEIGHT = 68
 )
 
 func New() *handler {
