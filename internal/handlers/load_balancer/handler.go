@@ -4,6 +4,7 @@ import (
 	"azsample/internal/az"
 	"azsample/internal/list"
 	"context"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v6"
 )
@@ -35,12 +36,16 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
+	dependsOn := []string{}
+
+	dependsOn = append(dependsOn, targets...)
+
 	resource := &az.Resource{
 		Id:            *lb.ID,
 		Name:          *lb.Name,
 		Type:          *lb.Type,
 		ResourceGroup: ctx.ResourceGroup,
-		DependsOn:     targets,
+		DependsOn:     dependsOn,
 	}
 
 	resources := []*az.Resource{resource}
@@ -74,12 +79,18 @@ func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *az.Context) ([]*
 	}
 
 	return list.Map(nics, func(nic *armnetwork.FrontendIPConfiguration) *az.Resource {
+		dependsOn := []string{ctx.ResourceId}
+
+		subnet := strings.ToLower(*nic.Properties.Subnet.ID)
+
+		dependsOn = append(dependsOn, subnet)
+
 		return &az.Resource{
 			Id:            *nic.ID,
 			Name:          *nic.Name,
 			Type:          *nic.Type,
 			ResourceGroup: ctx.ResourceGroup,
-			DependsOn:     []string{ctx.ResourceId},
+			DependsOn:     dependsOn,
 		}
 	}), nil
 }

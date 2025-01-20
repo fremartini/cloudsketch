@@ -20,7 +20,19 @@ func New() *handler {
 }
 
 func (*handler) DrawIcon(resource *az.Resource, resources *map[string]*node.ResourceAndNode) []*node.Node {
+	// private endpoint is not attached
+	_, ok := resource.Properties["attachedTo"]
+
+	if !ok {
+		return []*node.Node{}
+	}
+
 	linkedResource := (*resources)[resource.Properties["attachedTo"]]
+
+	// the linked resource has not been drawn
+	if linkedResource.Node == nil {
+		return []*node.Node{}
+	}
 
 	// storage accounts might have multiple private endpoints attached to it
 	if shouldExit := isOtherPrivateEndpointPointingToTheSameResource(resource, resources, linkedResource.Resource); shouldExit {
@@ -37,7 +49,6 @@ func isOtherPrivateEndpointPointingToTheSameResource(resource *az.Resource, reso
 
 	// figure out if there are other private endpoints pointed to the storage account
 	for _, v := range *resources {
-
 		// filter out the private endpoints
 		if v.Resource.Type != az.PRIVATE_ENDPOINT {
 			continue

@@ -24,8 +24,8 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 	properties := node.Properties{
 		X:      0,
 		Y:      0,
-		Width:  WIDTH,
-		Height: HEIGHT,
+		Width:  WIDTH / 2,
+		Height: HEIGHT / 2,
 	}
 
 	n := node.NewIcon(IMAGE, resource.Name, &properties)

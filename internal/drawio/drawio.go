@@ -4,6 +4,7 @@ import (
 	"azsample/internal/az"
 	"azsample/internal/drawio/handlers/app_service_plan"
 	"azsample/internal/drawio/handlers/application_gateway"
+	"azsample/internal/drawio/handlers/container_registry"
 	"azsample/internal/drawio/handlers/data_factory"
 	"azsample/internal/drawio/handlers/data_factory_integration_runtime"
 	"azsample/internal/drawio/handlers/data_factory_managed_private_endpoint"
@@ -22,6 +23,7 @@ import (
 	"azsample/internal/drawio/handlers/private_endpoint"
 	"azsample/internal/drawio/handlers/private_link_service"
 	"azsample/internal/drawio/handlers/public_ip_address"
+	"azsample/internal/drawio/handlers/sql_database"
 	"azsample/internal/drawio/handlers/sql_server"
 	"azsample/internal/drawio/handlers/storage_account"
 	"azsample/internal/drawio/handlers/subnet"
@@ -46,6 +48,7 @@ var (
 		application_gateway.TYPE: application_gateway.New(),
 		//application_insights.TYPE: application_insights.New(),
 		//application_security_group.TYPE:            application_security_group.New(),
+		container_registry.TYPE:                    container_registry.New(),
 		data_factory.TYPE:                          data_factory.New(),
 		data_factory_integration_runtime.TYPE:      data_factory_integration_runtime.New(),
 		data_factory_managed_private_endpoint.TYPE: data_factory_managed_private_endpoint.New(),
@@ -64,6 +67,7 @@ var (
 		private_endpoint.TYPE:          private_endpoint.New(),
 		private_link_service.TYPE:      private_link_service.New(),
 		public_ip_address.TYPE:         public_ip_address.New(),
+		sql_database.TYPE:              sql_database.New(),
 		sql_server.TYPE:                sql_server.New(),
 		storage_account.TYPE:           storage_account.New(),
 		subnet.TYPE:                    subnet.New(),
@@ -232,20 +236,24 @@ func addDependencyArrows() []string {
 func addBoxes() []string {
 	resources := []*az.Resource{}
 
-	// move all resources to a starting point
-	for id, resourceAndNode := range resource_map {
+	for _, resourceAndNode := range resource_map {
 		resources = append(resources, resourceAndNode.Resource)
 
-		resource_map[id].Node.SetPosition(-200, -200)
+		resource_map[resourceAndNode.Resource.Id].Node.SetPosition(-200, -200)
 	}
 
 	// TODO: implement a cleaner solution
+	aspNodes := commands[az.APP_SERVICE_PLAN].DrawBox(resources, &resource_map)
 	subnetNodes := commands[az.SUBNET].DrawBox(resources, &resource_map)
 	vnetNodes := commands[az.VIRTUAL_NETWORK].DrawBox(resources, &resource_map)
 
 	subnetCells := list.Map(subnetNodes, node.ToMXCell)
 	vnetCells := list.Map(vnetNodes, node.ToMXCell)
+	aspCells := list.Map(aspNodes, node.ToMXCell)
 
 	// return vnets first so they are rendered in the background
-	return append(vnetCells, subnetCells...)
+	nodes := append(vnetCells, subnetCells...)
+	nodes = append(nodes, aspCells...)
+
+	return nodes
 }

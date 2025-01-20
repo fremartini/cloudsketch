@@ -29,17 +29,20 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
-	pe_target := pe.Properties.PrivateLinkServiceConnections[0].Properties.PrivateLinkServiceID
-	pe_subnet := pe.Properties.Subnet.ID
-
 	properties := map[string]string{}
 	dependsOn := []string{}
 
-	if pe_target != nil {
-		t := strings.ToLower(*pe_target)
-		properties["attachedTo"] = t
-		dependsOn = append(dependsOn, t)
+	if len(pe.Properties.PrivateLinkServiceConnections) > 0 {
+		pe_target := pe.Properties.PrivateLinkServiceConnections[0].Properties.PrivateLinkServiceID
+
+		if pe_target != nil {
+			t := strings.ToLower(*pe_target)
+			properties["attachedTo"] = t
+			dependsOn = append(dependsOn, t)
+		}
 	}
+
+	pe_subnet := pe.Properties.Subnet.ID
 
 	if pe_subnet != nil {
 		t := strings.ToLower(*pe_subnet)

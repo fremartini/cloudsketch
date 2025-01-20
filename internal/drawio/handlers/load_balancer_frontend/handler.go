@@ -2,17 +2,17 @@ package load_balancer_frontend
 
 import (
 	"azsample/internal/az"
-	"azsample/internal/drawio/handlers/network_interface"
 	"azsample/internal/drawio/handlers/node"
+	"azsample/internal/drawio/images"
 )
 
 type handler struct{}
 
 const (
 	TYPE   = az.LOAD_BALANCER_FRONTEND
-	IMAGE  = network_interface.IMAGE
-	WIDTH  = network_interface.WIDTH
-	HEIGHT = network_interface.HEIGHT
+	IMAGE  = images.LOAD_BALANCER_FRONTEND
+	WIDTH  = 65
+	HEIGHT = 52
 )
 
 func New() *handler {
@@ -33,6 +33,11 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*node.Node) *node.Arrow {
+	// don't draw arrows to subnets
+	if target.Type == az.SUBNET {
+		return nil
+	}
+
 	sourceId := (*nodes)[source.Id].Id()
 	targetId := (*nodes)[target.Id].Id()
 

@@ -1,4 +1,4 @@
-package nat_gateway
+package container_registry
 
 import (
 	"azsample/internal/az"
@@ -9,10 +9,10 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = az.NAT_GATEWAY
-	IMAGE  = images.NAT_GATEWAY
+	TYPE   = az.CONTAINER_REGISTRY
+	IMAGE  = images.CONTAINER_REGISTRY
 	WIDTH  = 68
-	HEIGHT = 68
+	HEIGHT = 61
 )
 
 func New() *handler {
@@ -33,11 +33,6 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*node.Node) *node.Arrow {
-	// don't draw arrows to subnets
-	if target.Type == az.SUBNET {
-		return nil
-	}
-
 	sourceId := (*nodes)[source.Id].Id()
 	targetId := (*nodes)[target.Id].Id()
 

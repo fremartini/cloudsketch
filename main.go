@@ -7,6 +7,7 @@ import (
 	"azsample/internal/handlers/data_factory"
 	"azsample/internal/handlers/function_app"
 	"azsample/internal/handlers/load_balancer"
+	"azsample/internal/handlers/nat_gateway"
 	"azsample/internal/handlers/network_interface"
 	"azsample/internal/handlers/private_dns_zone"
 	"azsample/internal/handlers/private_endpoint"
@@ -35,6 +36,7 @@ var (
 		az.DATA_FACTORY:              data_factory.New().Handle,
 		az.FUNCTION_APP:              function_app.New().Handle,
 		az.LOAD_BALANCER:             load_balancer.New().Handle,
+		az.NAT_GATEWAY:               nat_gateway.New().Handle,
 		az.NETWORK_INTERFACE:         network_interface.New().Handle,
 		az.PRIVATE_DNS_ZONE:          private_dns_zone.New().Handle,
 		az.PRIVATE_ENDPOINT:          private_endpoint.New().Handle,
