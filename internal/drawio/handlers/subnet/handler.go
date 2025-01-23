@@ -19,6 +19,10 @@ const (
 	HEIGHT = 41
 )
 
+var (
+	STYLE = "fillColor=#7EA6E0;strokeColor=#6c8ebf;opacity=50;"
+)
+
 func New() *handler {
 	return &handler{}
 }
@@ -105,7 +109,7 @@ func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node
 		// adjust padding between the current box and the next subnets box on the X axis
 		diagram.BoxOriginX += boxProperties.Width + (subnetNodePosition.Width/2 + diagram.Padding)
 
-		subnetBox := node.NewBox(boxProperties)
+		subnetBox := node.NewBox(boxProperties, &STYLE)
 
 		nodes = append(nodes, subnetBox)
 	}

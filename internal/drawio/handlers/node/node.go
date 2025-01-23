@@ -16,16 +16,20 @@ type Node struct {
 
 func NewIcon(image, label string, properties *Properties) *Node {
 	values := map[string]interface{}{
-		"style": fmt.Sprintf("image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=%s;", image),
+		"style": fmt.Sprintf("image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=%s;labelBackgroundColor=none;", image),
 		"value": label,
 	}
 
 	return NewGeneric(values, properties)
 }
 
-func NewBox(properties *Properties) *Node {
+func NewBox(properties *Properties, style *string) *Node {
 	values := map[string]interface{}{
 		"style": "rounded=0;whiteSpace=wrap;html=1;",
+	}
+
+	if style != nil {
+		values["style"] = fmt.Sprintf("%s;%s", values["style"], *style)
 	}
 
 	return NewGeneric(values, properties)

@@ -17,6 +17,10 @@ const (
 	HEIGHT = 40
 )
 
+var (
+	STYLE = "fillColor=#dae8fc;strokeColor=#6c8ebf"
+)
+
 func New() *handler {
 	return &handler{}
 }
@@ -71,7 +75,7 @@ func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node
 		offsetY := properties.Y + properties.Height - vnetNodeProperties.Height/2
 		vnetNode.SetPosition(offsetX, offsetY)
 
-		vnetBox := node.NewBox(properties)
+		vnetBox := node.NewBox(properties, &STYLE)
 		nodes = append(nodes, vnetBox)
 	}
 
