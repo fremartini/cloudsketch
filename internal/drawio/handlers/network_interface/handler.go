@@ -40,7 +40,7 @@ func (*handler) DrawIcon(resource *az.Resource, resources *map[string]*node.Reso
 		}
 	}
 
-	properties := node.Properties{
+	properties := node.Geometry{
 		X:      0,
 		Y:      0,
 		Width:  WIDTH,

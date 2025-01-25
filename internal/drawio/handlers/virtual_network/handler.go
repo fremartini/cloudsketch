@@ -26,7 +26,7 @@ func New() *handler {
 }
 
 func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
-	vnet := node.NewIcon(IMAGE, resource.Name, &node.Properties{
+	vnet := node.NewIcon(IMAGE, resource.Name, &node.Geometry{
 		X:      0,
 		Y:      0,
 		Width:  WIDTH,
@@ -46,7 +46,7 @@ func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*n
 func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	nodes := []*node.Node{}
 
-	properties := &node.Properties{
+	geometry := &node.Geometry{
 		X:      0,
 		Y:      0,
 		Width:  diagram.BoxOriginX,
@@ -57,25 +57,25 @@ func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node
 
 	for _, vnet := range vnetsToProcess {
 		vnetNode := (*resource_map)[vnet.Id].Node
-		vnetNodeProperties := vnetNode.GetProperties()
+		vnetNodegeometry := vnetNode.GetGeometry()
 
 		// assuming there exists only one vnet
 		// TODO: handle multiple vnets?
 
 		// move the box a bit to the left and above to fit its children
-		properties = &node.Properties{
-			X:      properties.X - diagram.Padding,
-			Y:      properties.Y - diagram.Padding,
-			Width:  properties.Width + diagram.Padding,
-			Height: properties.Height + (2 * diagram.Padding),
+		geometry = &node.Geometry{
+			X:      geometry.X - diagram.Padding,
+			Y:      geometry.Y - diagram.Padding,
+			Width:  geometry.Width + diagram.Padding,
+			Height: geometry.Height + (2 * diagram.Padding),
 		}
 
 		// move the vnet icon to the bottom-left of the box
-		offsetX := properties.X - vnetNodeProperties.Width/2
-		offsetY := properties.Y + properties.Height - vnetNodeProperties.Height/2
+		offsetX := geometry.X - vnetNodegeometry.Width/2
+		offsetY := geometry.Y + geometry.Height - vnetNodegeometry.Height/2
 		vnetNode.SetPosition(offsetX, offsetY)
 
-		vnetBox := node.NewBox(properties, &STYLE)
+		vnetBox := node.NewBox(geometry, &STYLE)
 		nodes = append(nodes, vnetBox)
 	}
 

@@ -21,14 +21,14 @@ func New() *handler {
 }
 
 func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
-	properties := node.Properties{
+	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
 		Width:  WIDTH / 2,
 		Height: HEIGHT / 2,
 	}
 
-	n := node.NewIcon(IMAGE, resource.Name, &properties)
+	n := node.NewIcon(IMAGE, resource.Name, &geometry)
 
 	return []*node.Node{n}
 }

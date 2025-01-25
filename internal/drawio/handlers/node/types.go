@@ -4,7 +4,7 @@ import (
 	"azsample/internal/az"
 )
 
-type Properties struct {
+type Geometry struct {
 	X, Y, Width, Height int
 }
 

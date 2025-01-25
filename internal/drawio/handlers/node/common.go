@@ -2,14 +2,14 @@ package node
 
 func SetTopRightIcon(resource *ResourceAndNode, resources *map[string]*ResourceAndNode, icon string, height, width int) []*Node {
 	linkedNode := resource.Node
-	linkedNodeProperties := linkedNode.GetProperties()
+	linkedNodeGeometry := linkedNode.GetGeometry()
 
-	// create a group on top of the referenced node, IMPORTANT: copy the properties to avoid using the same reference
-	group := NewGroup(&Properties{
-		X:      linkedNodeProperties.X,
-		Y:      linkedNodeProperties.Y,
-		Width:  linkedNodeProperties.Width + width/4,
-		Height: linkedNodeProperties.Height,
+	// create a group on top of the referenced node, IMPORTANT: copy the geometry to avoid using the same reference
+	group := NewGroup(&Geometry{
+		X:      linkedNodeGeometry.X,
+		Y:      linkedNodeGeometry.Y,
+		Width:  linkedNodeGeometry.Width + width/4,
+		Height: linkedNodeGeometry.Height,
 	})
 	groupId := group.Id()
 
@@ -19,8 +19,8 @@ func SetTopRightIcon(resource *ResourceAndNode, resources *map[string]*ResourceA
 	// overwrite reference to the linked resource to instead point to the group
 	(*resources)[resource.Resource.Id].Node = group
 
-	topRightIcon := NewIcon(icon, "", &Properties{
-		X:      linkedNodeProperties.Width - (width / 4),
+	topRightIcon := NewIcon(icon, "", &Geometry{
+		X:      linkedNodeGeometry.Width - (width / 4),
 		Y:      -height/2 + (height / 4),
 		Width:  width / 2,
 		Height: height / 2,
