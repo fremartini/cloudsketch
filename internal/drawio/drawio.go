@@ -31,6 +31,7 @@ import (
 	"azsample/internal/drawio/handlers/virtual_machine_scale_set"
 	"azsample/internal/drawio/handlers/virtual_network"
 	"azsample/internal/list"
+	"fmt"
 	"log"
 )
 
@@ -39,14 +40,14 @@ type handleFuncMap = map[string]handler
 type handler interface {
 	DrawIcon(*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
 	DrawDependency(*az.Resource, *az.Resource, *map[string]*node.Node) *node.Arrow
-	DrawBox(resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node
+	DrawBox(*az.Resource, []*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
 }
 
 var (
 	commands handleFuncMap = handleFuncMap{
 		app_service_plan.TYPE:    app_service_plan.New(),
 		application_gateway.TYPE: application_gateway.New(),
-		//application_insights.TYPE: application_insights.New(),
+		//application_insights.TYPE:                  application_insights.New(),
 		//application_security_group.TYPE:            application_security_group.New(),
 		container_registry.TYPE:                    container_registry.New(),
 		data_factory.TYPE:                          data_factory.New(),
@@ -210,6 +211,10 @@ func addDependencyArrows() []string {
 				continue
 			}
 
+			if _, ok := resource_map[dependency]; !ok {
+				panic(fmt.Sprintf("%s not seen", dependency))
+			}
+
 			ok = resource_map[dependency].Node != nil
 
 			if !ok {
@@ -238,22 +243,40 @@ func addBoxes() []string {
 
 	for _, resourceAndNode := range resource_map {
 		resources = append(resources, resourceAndNode.Resource)
-
-		resource_map[resourceAndNode.Resource.Id].Node.SetPosition(-200, -200)
 	}
 
 	// TODO: implement a cleaner solution
-	aspNodes := commands[az.APP_SERVICE_PLAN].DrawBox(resources, &resource_map)
-	subnetNodes := commands[az.SUBNET].DrawBox(resources, &resource_map)
-	vnetNodes := commands[az.VIRTUAL_NETWORK].DrawBox(resources, &resource_map)
+	aspNodes := drawBoxForResourceType(resources, az.APP_SERVICE_PLAN)
+	adfNodes := drawBoxForResourceType(resources, az.DATA_FACTORY)
+	privateDNSZoneNodes := drawBoxForResourceType(resources, az.PRIVATE_DNS_ZONE)
+	subnetNodes := drawBoxForResourceType(resources, az.SUBNET)
+	vnetNodes := drawBoxForResourceType(resources, az.VIRTUAL_NETWORK)
 
 	subnetCells := list.Map(subnetNodes, node.ToMXCell)
 	vnetCells := list.Map(vnetNodes, node.ToMXCell)
 	aspCells := list.Map(aspNodes, node.ToMXCell)
+	adfCells := list.Map(adfNodes, node.ToMXCell)
+	privateDNSZoneCells := list.Map(privateDNSZoneNodes, node.ToMXCell)
 
 	// return vnets first so they are rendered in the background
 	nodes := append(vnetCells, subnetCells...)
 	nodes = append(nodes, aspCells...)
+	nodes = append(nodes, adfCells...)
+	nodes = append(nodes, privateDNSZoneCells...)
+
+	return nodes
+}
+
+func drawBoxForResourceType(resources []*az.Resource, typ string) []*node.Node {
+	nodes := []*node.Node{}
+
+	resourcesWithType := list.Filter(resources, func(r *az.Resource) bool {
+		return r.Type == typ
+	})
+
+	for _, resource := range resourcesWithType {
+		nodes = append(nodes, commands[typ].DrawBox(resource, resources, &resource_map)...)
+	}
 
 	return nodes
 }

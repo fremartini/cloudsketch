@@ -5,7 +5,6 @@ import (
 	"azsample/internal/drawio/handlers/node"
 	"azsample/internal/drawio/images"
 	"azsample/internal/list"
-	"sort"
 )
 
 type handler struct{}
@@ -41,38 +40,54 @@ func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*n
 	return node.NewArrow(sourceId, targetId)
 }
 
-func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	nodes := []*node.Node{}
+func (*handler) DrawBox(appService *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+	resourcesInAppServicePlan := getResourcesInAppServicePlan(resources, appService.Id, resource_map)
 
-	appServicesToProcess := list.Filter(resources, func(resource *az.Resource) bool { return resource.Type == az.APP_SERVICE_PLAN })
+	if len(resourcesInAppServicePlan) == 0 {
+		return []*node.Node{}
+	}
 
-	// ensure some deterministic order
-	sort.Slice(appServicesToProcess, func(i, j int) bool {
-		return appServicesToProcess[i].Name < appServicesToProcess[j].Name
+	firstAppServiceSubnet := getAppServiceSubnet(resourcesInAppServicePlan[0].Resource, resources)
+
+	// if all app services in the plan belong to the same subnet a box can be draw
+	allAppServicesInSameSubnet := list.Fold(resourcesInAppServicePlan[1:], true, func(resource *node.ResourceAndNode, matches bool) bool {
+		appServiceSubnet := getAppServiceSubnet(resource.Resource, resources)
+
+		return matches && appServiceSubnet == firstAppServiceSubnet
 	})
 
-	for _, appService := range appServicesToProcess {
-		resourcesInAppServicePlan := getResourcesInAppServicePlan(resources, appService.Id, resource_map)
-
-		if len(resourcesInAppServicePlan) == 0 {
-			continue
-		}
-
-		firstAppServiceSubnet := getAppServiceSubnet(resourcesInAppServicePlan[0].Resource, resources)
-
-		// if all app services in the plan belong to the same subnet a box can be draw
-		allAppServicesInSameSubnet := list.Fold(resourcesInAppServicePlan[1:], true, func(resource *node.ResourceAndNode, matches bool) bool {
-			appServiceSubnet := getAppServiceSubnet(resource.Resource, resources)
-
-			return matches && appServiceSubnet == firstAppServiceSubnet
-		})
-
-		if !allAppServicesInSameSubnet {
-			continue
-		}
-
-		// TODO: draw the box
+	if !allAppServicesInSameSubnet {
+		return []*node.Node{}
 	}
+
+	// draw the box
+	appServiceNode := (*resource_map)[appService.Id].Node
+	appServiceNodeGeometry := appServiceNode.GetGeometry()
+
+	box := node.NewBox(&node.Geometry{
+		X:      appServiceNodeGeometry.X,
+		Y:      appServiceNodeGeometry.Y,
+		Width:  200,
+		Height: 200,
+	}, nil)
+
+	appServiceNode.SetProperty("parent", box.Id())
+	appServiceNode.ContainedIn = box
+	appServiceNode.SetPosition(0, 0)
+
+	// move all resources in the app service plan into the box
+	for _, resourceInAsp := range resourcesInAppServicePlan {
+		resourceInAsp.Node.SetProperty("parent", box.Id())
+		resourceInAsp.Node.ContainedIn = box
+		resourceInAsp.Node.SetPosition(0, 0)
+	}
+
+	// add an implicit dependency to the subnet
+	appService.DependsOn = append(appService.DependsOn, *firstAppServiceSubnet)
+
+	nodes := []*node.Node{}
+
+	nodes = append(nodes, box)
 
 	return nodes
 }

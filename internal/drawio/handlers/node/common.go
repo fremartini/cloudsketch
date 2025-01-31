@@ -1,6 +1,13 @@
 package node
 
-func SetTopRightIcon(resource *ResourceAndNode, resources *map[string]*ResourceAndNode, icon string, height, width int) []*Node {
+const (
+	TOP_LEFT     = 0
+	TOP_RIGHT    = 1
+	BOTTOM_LEFT  = 2
+	BOTTOM_RIGHT = 3
+)
+
+func SetIcon(resource *ResourceAndNode, resources *map[string]*ResourceAndNode, icon string, height, width, position int) []*Node {
 	linkedNode := resource.Node
 	linkedNodeGeometry := linkedNode.GetGeometry()
 
@@ -19,14 +26,56 @@ func SetTopRightIcon(resource *ResourceAndNode, resources *map[string]*ResourceA
 	// overwrite reference to the linked resource to instead point to the group
 	(*resources)[resource.Resource.Id].Node = group
 
-	topRightIcon := NewIcon(icon, "", &Geometry{
-		X:      linkedNodeGeometry.Width - (width / 4),
-		Y:      -height/2 + (height / 4),
-		Width:  width / 2,
-		Height: height / 2,
-	})
+	// TODO: handle
+	var nodeIcon *Node = nil
 
-	topRightIcon.SetProperty("parent", groupId)
+	w := width / 2
+	y := -height/2 + (height / 4)
 
-	return []*Node{topRightIcon, group}
+	switch position {
+	case TOP_LEFT:
+		{
+			nodeIcon = NewIcon(icon, "", &Geometry{
+				X:      linkedNodeGeometry.X - (width / 4),
+				Y:      y,
+				Width:  w,
+				Height: height / 2,
+			})
+			break
+		}
+	case TOP_RIGHT:
+		{
+			nodeIcon = NewIcon(icon, "", &Geometry{
+				X:      linkedNodeGeometry.Width - (width / 4),
+				Y:      y,
+				Width:  w,
+				Height: height / 2,
+			})
+			break
+		}
+	case BOTTOM_LEFT:
+		{
+			nodeIcon = NewIcon(icon, "", &Geometry{
+				X:      linkedNodeGeometry.X - (width / 4),
+				Y:      y,
+				Width:  w,
+				Height: linkedNodeGeometry.Height + height + (height / 2),
+			})
+			break
+		}
+	case BOTTOM_RIGHT:
+		{
+			nodeIcon = NewIcon(icon, "", &Geometry{
+				X:      linkedNodeGeometry.Width - (width / 4),
+				Y:      y,
+				Width:  w,
+				Height: linkedNodeGeometry.Height + height + (height / 2),
+			})
+			break
+		}
+	}
+
+	nodeIcon.SetProperty("parent", groupId)
+
+	return []*Node{nodeIcon, group}
 }

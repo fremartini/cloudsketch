@@ -4,6 +4,7 @@ import (
 	"azsample/internal/az"
 	"azsample/internal/drawio/handlers/node"
 	"azsample/internal/drawio/images"
+	"azsample/internal/list"
 )
 
 type handler struct{}
@@ -39,6 +40,43 @@ func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*n
 	return node.NewArrow(sourceId, targetId)
 }
 
-func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	return []*node.Node{}
+func (*handler) DrawBox(dataFactory *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+	nodes := []*node.Node{}
+
+	resourcesInDataFactory := getResourcesInDataFactory(resources, dataFactory.Id, resource_map)
+
+	dataFactoryNode := (*resource_map)[dataFactory.Id].Node
+	dataFactoryNodeGeometry := dataFactoryNode.GetGeometry()
+
+	box := node.NewBox(&node.Geometry{
+		X:      dataFactoryNodeGeometry.X,
+		Y:      dataFactoryNodeGeometry.Y,
+		Width:  200,
+		Height: 200,
+	}, nil)
+
+	dataFactoryNode.SetProperty("parent", box.Id())
+	dataFactoryNode.ContainedIn = box
+	dataFactoryNode.SetPosition(0, 0)
+
+	// move all resources in the adf into the box
+	for _, resourceInAdf := range resourcesInDataFactory {
+		resourceInAdf.Node.SetProperty("parent", box.Id())
+		resourceInAdf.Node.ContainedIn = box
+		resourceInAdf.Node.SetPosition(0, 0)
+	}
+
+	nodes = append(nodes, box)
+
+	return nodes
+}
+
+func getResourcesInDataFactory(resources []*az.Resource, adfId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
+	azResourcesInAsp := list.Filter(resources, func(resource *az.Resource) bool {
+		return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == adfId })
+	})
+	resourcesInAsp := list.Map(azResourcesInAsp, func(resource *az.Resource) *node.ResourceAndNode {
+		return (*resource_map)[resource.Id]
+	})
+	return resourcesInAsp
 }

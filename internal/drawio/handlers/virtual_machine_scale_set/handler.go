@@ -44,6 +44,6 @@ func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*n
 	return node.NewArrow(sourceId, targetId)
 }
 
-func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) DrawBox(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	return []*node.Node{}
 }

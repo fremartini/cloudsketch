@@ -9,9 +9,10 @@ import (
 )
 
 type Node struct {
-	id       string
-	values   map[string]interface{}
-	geometry *Geometry
+	id          string
+	values      map[string]interface{}
+	geometry    *Geometry
+	ContainedIn *Node
 }
 
 func NewIcon(image, label string, geometry *Geometry) *Node {

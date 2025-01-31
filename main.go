@@ -19,6 +19,8 @@ import (
 	"azsample/internal/handlers/virtual_network"
 	"azsample/internal/list"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -45,24 +47,24 @@ var (
 		az.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New().Handle,
 		az.VIRTUAL_NETWORK:           virtual_network.New().Handle,
 	}
-	useFile = true
 )
 
 func main() {
-	if useFile {
-		log.Println("using existing file")
-
-		resources := unmarshallResources()
-
-		drawio.New().WriteDiagram("./out.drawio", resources)
-
-		return
-	}
-
 	args := os.Args
 
 	if len(args) < 2 {
 		log.Fatalf("missing subscriptionId")
+		return
+	}
+
+	filename := fmt.Sprintf("%s.txt", args[1])
+	if fileExists(filename) {
+		log.Println("using existing file")
+
+		resources := unmarshallResources(filename)
+
+		drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), resources)
+
 		return
 	}
 
@@ -132,31 +134,37 @@ func main() {
 		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)
 	}
 
-	marshallResources(resources)
+	marshallResources(filename, resources)
 
-	drawio.New().WriteDiagram("./out.drawio", resources)
+	drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), resources)
 }
 
-func marshallResources(resources []*az.Resource) {
-	bytes, err := json.Marshal(resources)
+func fileExists(file string) bool {
+	_, err := os.Stat(file)
+
+	return !errors.Is(err, os.ErrNotExist)
+}
+
+func marshallResources(file string, resources []*az.Resource) {
+	bytes, err := json.MarshalIndent(resources, "", "\t")
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	file, err := os.Create("./example.txt")
+	f, err := os.Create(file)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer file.Close()
+	defer f.Close()
 
-	file.Write(bytes)
+	f.Write(bytes)
 }
 
-func unmarshallResources() []*az.Resource {
-	bytes, err := os.ReadFile("./example.txt")
+func unmarshallResources(file string) []*az.Resource {
+	bytes, err := os.ReadFile(file)
 
 	if err != nil {
 		log.Fatal(err)

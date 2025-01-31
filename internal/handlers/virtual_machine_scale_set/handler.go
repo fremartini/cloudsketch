@@ -29,7 +29,11 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
+	dependsOn := []string{}
+
 	subnet := strings.ToLower(*vmss.Properties.VirtualMachineProfile.NetworkProfile.NetworkInterfaceConfigurations[0].Properties.IPConfigurations[0].Properties.Subnet.ID)
+
+	dependsOn = append(dependsOn, subnet)
 
 	resources := []*az.Resource{
 		{
@@ -37,7 +41,7 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 			Name:          *vmss.Name,
 			Type:          *vmss.Type,
 			ResourceGroup: ctx.ResourceGroup,
-			DependsOn:     []string{subnet},
+			DependsOn:     dependsOn,
 		},
 	}
 

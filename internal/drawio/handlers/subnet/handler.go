@@ -50,69 +50,92 @@ func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*n
 	return node.NewArrow(sourceId, targetId)
 }
 
-func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) DrawBox(subnet *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	nodes := []*node.Node{}
 
-	subnetsToProcess := list.Filter(resources, func(resource *az.Resource) bool { return resource.Type == az.SUBNET })
+	// determine what resources belongs in a subnet
+	resourcesInSubnet := getResourcesInSubet(resources, subnet.Id, resource_map)
 
 	// ensure some deterministic order
-	sort.Slice(subnetsToProcess, func(i, j int) bool {
-		return subnetsToProcess[i].Name < subnetsToProcess[j].Name
+	sort.Slice(resourcesInSubnet, func(i, j int) bool {
+		return resourcesInSubnet[i].Resource.Name < resourcesInSubnet[j].Resource.Name
 	})
 
-	for _, subnet := range subnetsToProcess {
-		// determine what resources belongs in a subnet
-		resourcesInSubnet := getResourcesInSubet(resources, subnet.Id, resource_map)
+	// determine the width and height of the subnet box
+	subnetNode := (*resource_map)[subnet.Id].Node
+	subnetNodePosition := subnetNode.GetGeometry()
 
-		// ensure some deterministic order
-		sort.Slice(resourcesInSubnet, func(i, j int) bool {
-			return resourcesInSubnet[i].Resource.Name < resourcesInSubnet[j].Resource.Name
-		})
-
-		// determine the width and height of the subnet box
-		subnetNode := (*resource_map)[subnet.Id].Node
-		subnetNodePosition := subnetNode.GetGeometry()
-
-		width := list.Fold(resourcesInSubnet, 0, func(r *node.ResourceAndNode, acc int) int { return acc + r.Node.GetGeometry().Width })
-		height := list.Fold(resourcesInSubnet, 0, func(r *node.ResourceAndNode, acc int) int {
-			return int(math.Max(float64(acc), float64(r.Node.GetGeometry().Height)))
-		})
-
-		height += diagram.Padding
-		width += (diagram.Padding * len(resourcesInSubnet))
-
-		diagram.MaxHeightSoFar = int(math.Max(float64(diagram.MaxHeightSoFar), float64(height)))
-
-		boxgeometry := &node.Geometry{
-			X:      diagram.BoxOriginX,
-			Y:      0,
-			Width:  width,
-			Height: height,
+	width := list.Fold(resourcesInSubnet, 0, func(r *node.ResourceAndNode, acc int) int {
+		if r.Node.ContainedIn != nil {
+			return acc
 		}
 
-		// move the subnet icon to the edge of the box
-		offsetX := boxgeometry.X - subnetNodePosition.Width/2
-		offsetY := boxgeometry.Y - subnetNodePosition.Height/2
-		subnetNode.SetPosition(offsetX, offsetY)
-
-		// move all resources in the subnet, inside the box
-		acc := boxgeometry.X + diagram.Padding // start of box
-		for _, resource := range resourcesInSubnet {
-			offsetX := acc
-			offsetY := boxgeometry.Height/2 - resource.Node.GetGeometry().Height/2
-			resource.Node.SetPosition(offsetX, offsetY)
-			acc += resource.Node.GetGeometry().Width + diagram.Padding
+		return acc + r.Node.GetGeometry().Width
+	})
+	height := list.Fold(resourcesInSubnet, 0, func(r *node.ResourceAndNode, acc int) int {
+		if r.Node.ContainedIn != nil {
+			return int(math.Max(float64(acc), float64(r.Node.ContainedIn.GetGeometry().Height)))
 		}
 
-		boxgeometry.Width += diagram.Padding
+		return int(math.Max(float64(acc), float64(r.Node.GetGeometry().Height)))
+	})
 
-		// adjust padding between the current box and the next subnets box on the X axis
-		diagram.BoxOriginX += boxgeometry.Width + (subnetNodePosition.Width/2 + diagram.Padding)
+	height += diagram.Padding
+	width += (diagram.Padding * len(resourcesInSubnet))
 
-		subnetBox := node.NewBox(boxgeometry, &STYLE)
+	diagram.MaxHeightSoFar = int(math.Max(float64(diagram.MaxHeightSoFar), float64(height)))
 
-		nodes = append(nodes, subnetBox)
+	boxgeometry := &node.Geometry{
+		X:      diagram.BoxOriginX,
+		Y:      0,
+		Width:  width,
+		Height: height,
 	}
+
+	// move the subnet icon to the edge of the box
+	offsetX := boxgeometry.X - subnetNodePosition.Width/2
+	offsetY := boxgeometry.Y - subnetNodePosition.Height/2
+	subnetNode.SetPosition(offsetX, offsetY)
+
+	// move all resources in the subnet, inside the box
+	acc := boxgeometry.X + diagram.Padding // start of box
+	movedBoxes := map[string]bool{}
+
+	for _, resource := range resourcesInSubnet {
+
+		// If the resource is contained inside a box, the box should be moved instead of this resource
+		if resource.Node.ContainedIn != nil {
+			_, ok := movedBoxes[resource.Node.ContainedIn.Id()]
+
+			// box has already been moved, skip
+			if ok {
+				continue
+			}
+
+			offsetX := acc
+			offsetY := boxgeometry.Height/2 - resource.Node.ContainedIn.GetGeometry().Height/2
+			resource.Node.ContainedIn.SetPosition(offsetX, offsetY)
+			acc += resource.Node.ContainedIn.GetGeometry().Width + diagram.Padding
+
+			movedBoxes[resource.Node.ContainedIn.Id()] = true
+
+			continue
+		}
+
+		offsetX := acc
+		offsetY := boxgeometry.Height/2 - resource.Node.GetGeometry().Height/2
+		resource.Node.SetPosition(offsetX, offsetY)
+		acc += resource.Node.GetGeometry().Width + diagram.Padding
+	}
+
+	boxgeometry.Width += diagram.Padding
+
+	// adjust padding between the current box and the next subnets box on the X axis
+	diagram.BoxOriginX += boxgeometry.Width + (subnetNodePosition.Width/2 + diagram.Padding)
+
+	subnetBox := node.NewBox(boxgeometry, &STYLE)
+
+	nodes = append(nodes, subnetBox)
 
 	return nodes
 }

@@ -5,7 +5,6 @@ import (
 	"azsample/internal/drawio/handlers/diagram"
 	"azsample/internal/drawio/handlers/node"
 	"azsample/internal/drawio/images"
-	"azsample/internal/list"
 )
 
 type handler struct{}
@@ -43,7 +42,7 @@ func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*n
 	return node.NewArrow(sourceId, targetId)
 }
 
-func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) DrawBox(vnet *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	nodes := []*node.Node{}
 
 	geometry := &node.Geometry{
@@ -53,31 +52,27 @@ func (*handler) DrawBox(resources []*az.Resource, resource_map *map[string]*node
 		Height: diagram.MaxHeightSoFar,
 	}
 
-	vnetsToProcess := list.Filter(resources, func(resource *az.Resource) bool { return resource.Type == az.VIRTUAL_NETWORK })
+	vnetNode := (*resource_map)[vnet.Id].Node
+	vnetNodegeometry := vnetNode.GetGeometry()
 
-	for _, vnet := range vnetsToProcess {
-		vnetNode := (*resource_map)[vnet.Id].Node
-		vnetNodegeometry := vnetNode.GetGeometry()
+	// assuming there exists only one vnet
+	// TODO: handle multiple vnets?
 
-		// assuming there exists only one vnet
-		// TODO: handle multiple vnets?
-
-		// move the box a bit to the left and above to fit its children
-		geometry = &node.Geometry{
-			X:      geometry.X - diagram.Padding,
-			Y:      geometry.Y - diagram.Padding,
-			Width:  geometry.Width + diagram.Padding,
-			Height: geometry.Height + (2 * diagram.Padding),
-		}
-
-		// move the vnet icon to the bottom-left of the box
-		offsetX := geometry.X - vnetNodegeometry.Width/2
-		offsetY := geometry.Y + geometry.Height - vnetNodegeometry.Height/2
-		vnetNode.SetPosition(offsetX, offsetY)
-
-		vnetBox := node.NewBox(geometry, &STYLE)
-		nodes = append(nodes, vnetBox)
+	// move the box a bit to the left and above to fit its children
+	geometry = &node.Geometry{
+		X:      geometry.X - diagram.Padding,
+		Y:      geometry.Y - diagram.Padding,
+		Width:  geometry.Width + diagram.Padding,
+		Height: geometry.Height + (2 * diagram.Padding),
 	}
+
+	// move the vnet icon to the bottom-left of the box
+	offsetX := geometry.X - vnetNodegeometry.Width/2
+	offsetY := geometry.Y + geometry.Height - vnetNodegeometry.Height/2
+	vnetNode.SetPosition(offsetX, offsetY)
+
+	vnetBox := node.NewBox(geometry, &STYLE)
+	nodes = append(nodes, vnetBox)
 
 	return nodes
 }
