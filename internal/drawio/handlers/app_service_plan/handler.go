@@ -17,6 +17,10 @@ const (
 	HEIGHT = 64
 )
 
+var (
+	STYLE = "rounded=0;whiteSpace=wrap;html=1;dashed=1;opacity=50;"
+)
+
 func New() *handler {
 	return &handler{}
 }
@@ -75,7 +79,7 @@ func (*handler) DrawBox(appService *az.Resource, resources []*az.Resource, resou
 		Y:      appServiceNodeGeometry.Y,
 		Width:  0,
 		Height: 0,
-	}, nil)
+	}, &STYLE)
 
 	appServiceNode.SetProperty("parent", box.Id())
 	appServiceNode.ContainedIn = box

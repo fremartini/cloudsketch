@@ -17,6 +17,10 @@ const (
 	HEIGHT = 64
 )
 
+var (
+	STYLE = "rounded=0;whiteSpace=wrap;html=1;dashed=1;opacity=50;"
+)
+
 func New() *handler {
 	return &handler{}
 }
@@ -54,7 +58,7 @@ func (*handler) DrawBox(privateDNSZone *az.Resource, resources []*az.Resource, r
 		Y:      privateDNSZoneNodeGeometry.Y,
 		Width:  0,
 		Height: 0,
-	}, nil)
+	}, &STYLE)
 
 	privateDNSZoneNode.SetProperty("parent", box.Id())
 	privateDNSZoneNode.ContainedIn = box
