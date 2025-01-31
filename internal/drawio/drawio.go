@@ -91,11 +91,11 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
 	cells := addDrawIOCells(resources)
 
-	// with every DrawIO icon present, add the dependency arrows
-	dependencyArrows := addDependencyArrows()
-
 	// some resources like vnets and subnets needs boxes draw around them, and their resources moved into them
 	boxes := addBoxes()
+
+	// with every DrawIO icon present, add the dependency arrows
+	dependencyArrows := addDependencyArrows()
 
 	// combine everything and render them in the final diagram
 	// items appended first are rendered first (in the background)

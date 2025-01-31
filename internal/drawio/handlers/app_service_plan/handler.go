@@ -2,6 +2,7 @@ package app_service_plan
 
 import (
 	"azsample/internal/az"
+	"azsample/internal/drawio/handlers/diagram"
 	"azsample/internal/drawio/handlers/node"
 	"azsample/internal/drawio/images"
 	"azsample/internal/list"
@@ -34,6 +35,11 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
+	// app service plans have an implicit dependency to a subnet. Don't draw these
+	if target.Type == az.SUBNET {
+		return nil
+	}
+
 	sourceId := (*resource_map)[source.Id].Node.Id()
 	targetId := (*resource_map)[target.Id].Node.Id()
 
@@ -67,8 +73,8 @@ func (*handler) DrawBox(appService *az.Resource, resources []*az.Resource, resou
 	box := node.NewBox(&node.Geometry{
 		X:      appServiceNodeGeometry.X,
 		Y:      appServiceNodeGeometry.Y,
-		Width:  200,
-		Height: 200,
+		Width:  0,
+		Height: 0,
 	}, nil)
 
 	appServiceNode.SetProperty("parent", box.Id())
@@ -76,11 +82,9 @@ func (*handler) DrawBox(appService *az.Resource, resources []*az.Resource, resou
 	appServiceNode.SetPosition(0, 0)
 
 	// move all resources in the app service plan into the box
-	for _, resourceInAsp := range resourcesInAppServicePlan {
-		resourceInAsp.Node.SetProperty("parent", box.Id())
-		resourceInAsp.Node.ContainedIn = box
-		resourceInAsp.Node.SetPosition(0, 0)
-	}
+	node.FillResourcesInBoxLinear(box, resourcesInAppServicePlan, diagram.Padding)
+
+	node.ScaleDownAndSetIconBottomLeft(appServiceNode, box)
 
 	// add an implicit dependency to the subnet
 	appService.DependsOn = append(appService.DependsOn, *firstAppServiceSubnet)
