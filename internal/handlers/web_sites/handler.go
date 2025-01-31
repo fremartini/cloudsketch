@@ -9,6 +9,27 @@ import (
 
 type handler struct{}
 
+const (
+	APP_SERVICE_SUBTYPE  = "appservice"
+	FUNCTION_APP_SUBTYPE = "functionapp"
+)
+
+var (
+	WEBSITES_KIND_MAP = map[string]string{
+		"app":                                    APP_SERVICE_SUBTYPE,
+		"app,linux":                              APP_SERVICE_SUBTYPE,
+		"app,linux,container":                    APP_SERVICE_SUBTYPE,
+		"hyperV":                                 APP_SERVICE_SUBTYPE,
+		"app,container,windows":                  APP_SERVICE_SUBTYPE,
+		"app,linux,kubernete":                    APP_SERVICE_SUBTYPE,
+		"app,linux,container,kubernetes":         APP_SERVICE_SUBTYPE,
+		"functionapp":                            FUNCTION_APP_SUBTYPE,
+		"functionapp,linux":                      FUNCTION_APP_SUBTYPE,
+		"functionapp,linux,container,kubernetes": FUNCTION_APP_SUBTYPE,
+		"functionapp,linux,kubernetes":           FUNCTION_APP_SUBTYPE,
+	}
+)
+
 func New() *handler {
 	return &handler{}
 }

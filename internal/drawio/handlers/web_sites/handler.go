@@ -29,10 +29,10 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 	var image = ""
 
 	switch resource.Properties["SubType"] {
+	case "functionapp":
+		image = imageTypes["FunctionApp"]
 	case "app":
 		image = imageTypes["AppService"]
-	case "linuxapp":
-		image = imageTypes["FunctionApp"]
 	}
 
 	geometry := node.Geometry{
