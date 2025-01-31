@@ -14,13 +14,6 @@ const (
 	HEIGHT = 60
 )
 
-var (
-	imageTypes map[string]string = map[string]string{
-		"AppService":  images.APP_SERVICE,
-		"FunctionApp": images.FUNCTION_APP,
-	}
-)
-
 func New() *handler {
 	return &handler{}
 }
@@ -29,10 +22,10 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 	var image = ""
 
 	switch resource.Properties["SubType"] {
-	case "functionapp":
-		image = imageTypes["FunctionApp"]
-	case "app":
-		image = imageTypes["AppService"]
+	case az.APP_SERVICE_SUBTYPE:
+		image = images.APP_SERVICE
+	case az.FUNCTION_APP_SUBTYPE:
+		image = images.FUNCTION_APP
 	}
 
 	geometry := node.Geometry{
