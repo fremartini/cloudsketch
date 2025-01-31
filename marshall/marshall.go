@@ -8,14 +8,18 @@ import (
 	"os"
 )
 
-func UnmarshalIfExists(file string) (bool, []*az.Resource) {
+func UnmarshalIfExists(file string) ([]*az.Resource, bool) {
 	if !FileExists(file) {
-		return false, nil
+		return nil, false
 	}
 
-	resources := UnmarshallResources(file)
+	resources, err := UnmarshallResources(file)
 
-	return true, resources
+	if err != nil {
+		panic(err)
+	}
+
+	return resources, true
 }
 
 func FileExists(file string) bool {
@@ -44,7 +48,7 @@ func MarshallResources(file string, resources []*az.Resource) error {
 	return err
 }
 
-func UnmarshallResources(file string) []*az.Resource {
+func UnmarshallResources(file string) ([]*az.Resource, error) {
 	bytes, err := os.ReadFile(file)
 
 	if err != nil {
@@ -53,7 +57,7 @@ func UnmarshallResources(file string) []*az.Resource {
 
 	var resources []*az.Resource
 
-	json.Unmarshal(bytes, &resources)
+	err = json.Unmarshal(bytes, &resources)
 
-	return resources
+	return resources, err
 }

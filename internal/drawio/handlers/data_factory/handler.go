@@ -17,6 +17,10 @@ const (
 	HEIGHT = 68
 )
 
+var (
+	STYLE = "rounded=0;whiteSpace=wrap;html=1;dashed=1;opacity=50;"
+)
+
 func New() *handler {
 	return &handler{}
 }
@@ -54,14 +58,14 @@ func (*handler) DrawBox(dataFactory *az.Resource, resources []*az.Resource, reso
 		Y:      dataFactoryNodeGeometry.Y,
 		Width:  0,
 		Height: 0,
-	}, nil)
+	}, &STYLE)
 
 	dataFactoryNode.SetProperty("parent", box.Id())
 	dataFactoryNode.ContainedIn = box
 	dataFactoryNode.SetPosition(0, 0)
 
 	// move all resources in the adf into the box
-	node.FillResourcesInBoxLinear(box, resourcesInDataFactory, diagram.Padding)
+	node.FillResourcesInBox(box, resourcesInDataFactory, diagram.Padding)
 
 	node.ScaleDownAndSetIconBottomLeft(dataFactoryNode, box)
 

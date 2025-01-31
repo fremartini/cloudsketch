@@ -59,7 +59,6 @@ func main() {
 
 	subscriptionId := args[1]
 
-	// Fetch SubscriptionContext
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("authentication failure: %+v", err)
@@ -73,7 +72,7 @@ func main() {
 
 	filename := fmt.Sprintf("%s_%s.txt", subscription.Name, subscription.Id)
 
-	canUseFile, allResources := marshall.UnmarshalIfExists(filename)
+	allResources, canUseFile := marshall.UnmarshalIfExists(filename)
 
 	if canUseFile {
 		log.Println("using existing file")
