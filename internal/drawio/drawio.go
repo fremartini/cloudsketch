@@ -26,6 +26,7 @@ import (
 	"azsample/internal/drawio/handlers/sql_server"
 	"azsample/internal/drawio/handlers/storage_account"
 	"azsample/internal/drawio/handlers/subnet"
+	"azsample/internal/drawio/handlers/subscription"
 	"azsample/internal/drawio/handlers/virtual_machine"
 	"azsample/internal/drawio/handlers/virtual_machine_scale_set"
 	"azsample/internal/drawio/handlers/virtual_network"
@@ -71,6 +72,7 @@ var (
 		sql_server.TYPE:                sql_server.New(),
 		storage_account.TYPE:           storage_account.New(),
 		subnet.TYPE:                    subnet.New(),
+		subscription.TYPE:              subscription.New(),
 		virtual_machine.TYPE:           virtual_machine.New(),
 		virtual_machine_scale_set.TYPE: virtual_machine_scale_set.New(),
 		virtual_network.TYPE:           virtual_network.New(),
