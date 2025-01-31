@@ -13,6 +13,7 @@ import (
 	"azsample/internal/handlers/private_link_service"
 	"azsample/internal/handlers/public_ip_address"
 	"azsample/internal/handlers/resource_group"
+	"azsample/internal/handlers/resources"
 	"azsample/internal/handlers/subscription"
 	"azsample/internal/handlers/virtual_machine_scale_set"
 	"azsample/internal/handlers/virtual_network"
@@ -72,23 +73,23 @@ func main() {
 
 	filename := fmt.Sprintf("%s_%s.txt", subscription.Name, subscription.Id)
 
-	canUseFile, resources := marshall.UnmarshalIfExists(filename)
+	canUseFile, allResources := marshall.UnmarshalIfExists(filename)
 
 	if canUseFile {
 		log.Println("using existing file")
 
-		drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), resources)
+		drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), allResources)
 
 		return
 	}
 
+	resourceGroups, _ := resource_group.New().Handle(appContext.SubscriptionId, appContext.Credentials)
 	if err != nil {
 		log.Fatalf("listing of resource groups failed: %+v", err)
 	}
 
-	// Fetch Resource groups
-	resources = list.FlatMap(resourceGroups, func(resourceGroup *armresources.ResourceGroup) []*az.Resource {
-		resource, err := resource_group.New().Handle(&az.Context{
+	allResources = list.FlatMap(resourceGroups, func(resourceGroup *armresources.ResourceGroup) []*az.Resource {
+		resource, err := resources.New().Handle(&az.Context{
 			SubscriptionId: appContext.SubscriptionId,
 			Credentials:    appContext.Credentials,
 			ResourceName:   *resourceGroup.Name,
@@ -103,7 +104,7 @@ func main() {
 		return resource
 	})
 
-	resources = list.FlatMap(resources, func(resource *az.Resource) []*az.Resource {
+	allResources = list.FlatMap(allResources, func(resource *az.Resource) []*az.Resource {
 		log.Print(resource.Name)
 
 		f, ok := handlers[resource.Type]
@@ -132,12 +133,12 @@ func main() {
 		return resources
 	})
 
-	for _, r := range resources {
+	for _, r := range allResources {
 		r.Id = strings.ToLower(r.Id)
 		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)
 	}
 
-	marshall.MarshallResources(filename, resources)
+	marshall.MarshallResources(filename, allResources)
 
-	drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), resources)
+	drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), allResources)
 }
