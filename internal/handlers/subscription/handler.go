@@ -1,14 +1,12 @@
 package subscription
 
 import (
+	"azsample/internal/az"
 	"context"
+	"log"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-)
-
-var (
-	ctx = context.Background()
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 )
 
 type handler struct{}
@@ -17,20 +15,16 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) Handle(subscriptionId string, credentials *azidentity.DefaultAzureCredential) ([]*armresources.ResourceGroup, error) {
-	client, _ := armresources.NewResourceGroupsClient(subscriptionId, credentials, nil)
-	pager := client.NewListPager(nil)
+func (*handler) Handle(subscriptionId string, credentials *azidentity.DefaultAzureCredential) az.SubscriptionContext {
+	clientFactory, err := armsubscriptions.NewClientFactory(credentials, nil)
+	client, err := clientFactory.NewClient().Get(context.Background(), subscriptionId, nil)
 
-	var resourceGroups []*armresources.ResourceGroup
-	for pager.More() {
-		resp, err := pager.NextPage(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if resp.ResourceGroupListResult.Value != nil {
-			resourceGroups = append(resourceGroups, resp.ResourceGroupListResult.Value...)
-		}
+	if err != nil {
+		log.Fatalf("Failed to create Subscription client: %v", err)
 	}
 
-	return resourceGroups, nil
+	return az.SubscriptionContext{
+		Id:   *client.Subscription.SubscriptionID,
+		Name: *client.Subscription.DisplayName,
+	}
 }

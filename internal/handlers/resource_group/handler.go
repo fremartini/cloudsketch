@@ -1,45 +1,36 @@
 package resource_group
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/list"
 	"context"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
 type handler struct{}
 
+var (
+	ctx = context.Background()
+)
+
 func New() *handler {
 	return &handler{}
 }
 
-func (*handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
-	clientFactory, _ := armresources.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
-	client := clientFactory.NewClient()
+func (*handler) Handle(subscriptionId string, credentials *azidentity.DefaultAzureCredential) ([]*armresources.ResourceGroup, error) {
+	client, _ := armresources.NewResourceGroupsClient(subscriptionId, credentials, nil)
+	pager := client.NewListPager(nil)
 
-	pager := client.NewListByResourceGroupPager(ctx.ResourceName, nil)
-
-	var resources []*armresources.GenericResourceExpanded
+	var resourceGroups []*armresources.ResourceGroup
 	for pager.More() {
-		resp, err := pager.NextPage(context.Background())
+		resp, err := pager.NextPage(ctx)
 		if err != nil {
 			return nil, err
 		}
-
-		if resp.ResourceListResult.Value != nil {
-			resources = append(resources, resp.ResourceListResult.Value...)
+		if resp.ResourceGroupListResult.Value != nil {
+			resourceGroups = append(resourceGroups, resp.ResourceGroupListResult.Value...)
 		}
 	}
 
-	azResources := list.Map(resources, func(resource *armresources.GenericResourceExpanded) *az.Resource {
-		return &az.Resource{
-			Id:            *resource.ID,
-			Name:          *resource.Name,
-			Type:          *resource.Type,
-			ResourceGroup: ctx.ResourceGroup,
-		}
-	})
-
-	return azResources, nil
+	return resourceGroups, nil
 }
