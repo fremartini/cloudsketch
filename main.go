@@ -52,11 +52,25 @@ func main() {
 	args := os.Args
 
 	if len(args) < 2 {
-		log.Fatalf("missing subscriptionId")
+		log.Fatalf("Missing Azure SubscriptionId")
 		return
 	}
 
-	filename := fmt.Sprintf("%s.txt", args[1])
+	subscriptionId := args[1]
+
+	// Fetch SubscriptionContext
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("authentication failure: %+v", err)
+	}
+
+	subscription := subscription.New().Handle(subscriptionId, cred)
+	appContext = &az.Context{
+		SubscriptionId: subscription.Id,
+		Credentials:    cred,
+	}
+
+	filename := fmt.Sprintf("%s_%s.txt", subscription.Name, subscription.Id)
 
 	canUseFile, resources := marshall.UnmarshalIfExists(filename)
 
@@ -68,22 +82,11 @@ func main() {
 		return
 	}
 
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("authentication failure: %+v", err)
-	}
-
-	appContext = &az.Context{
-		SubscriptionId: args[1],
-		Credentials:    cred,
-	}
-
-	resourceGroups, err := subscription.New().Handle(appContext.SubscriptionId, appContext.Credentials)
-
 	if err != nil {
 		log.Fatalf("listing of resource groups failed: %+v", err)
 	}
 
+	// Fetch Resource groups
 	resources = list.FlatMap(resourceGroups, func(resourceGroup *armresources.ResourceGroup) []*az.Resource {
 		resource, err := resource_group.New().Handle(&az.Context{
 			SubscriptionId: appContext.SubscriptionId,
