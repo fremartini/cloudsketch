@@ -97,6 +97,10 @@ func (*handler) DrawBox(subnet *az.Resource, resources []*az.Resource, resource_
 	offsetY := boxgeometry.Y - subnetNodePosition.Height/2
 	subnetNode.SetPosition(offsetX, offsetY)
 
+	box := node.NewBox(boxgeometry, &STYLE)
+
+	// TODO: can this be refacted to use FillResourcesInBoxLinear?
+
 	// move all resources in the subnet, inside the box
 	acc := boxgeometry.X + diagram.Padding // start of box
 	movedBoxes := map[string]bool{}
@@ -133,9 +137,7 @@ func (*handler) DrawBox(subnet *az.Resource, resources []*az.Resource, resource_
 	// adjust padding between the current box and the next subnets box on the X axis
 	diagram.BoxOriginX += boxgeometry.Width + (subnetNodePosition.Width/2 + diagram.Padding)
 
-	subnetBox := node.NewBox(boxgeometry, &STYLE)
-
-	nodes = append(nodes, subnetBox)
+	nodes = append(nodes, box)
 
 	return nodes
 }

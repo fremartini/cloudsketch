@@ -1,5 +1,11 @@
 package node
 
+import (
+	"azsample/internal/list"
+	"log"
+	"math"
+)
+
 const (
 	TOP_LEFT     = 0
 	TOP_RIGHT    = 1
@@ -26,7 +32,6 @@ func SetIcon(resource *ResourceAndNode, resources *map[string]*ResourceAndNode, 
 	// overwrite reference to the linked resource to instead point to the group
 	(*resources)[resource.Resource.Id].Node = group
 
-	// TODO: handle
 	var nodeIcon *Node = nil
 
 	w := width / 2
@@ -73,9 +78,49 @@ func SetIcon(resource *ResourceAndNode, resources *map[string]*ResourceAndNode, 
 			})
 			break
 		}
+	default:
+		log.Fatalf("Undefined position %v", position)
 	}
 
 	nodeIcon.SetProperty("parent", groupId)
 
 	return []*Node{nodeIcon, group}
+}
+
+func ScaleDownAndSetIconBottomLeft(iconToMove *Node, relativeTo *Node) {
+	relativeToGeometry := relativeTo.GetGeometry()
+	iconToMoveGeometry := iconToMove.GetGeometry()
+
+	iconToMove.SetDimensions(iconToMoveGeometry.Width/2, iconToMoveGeometry.Height/2)
+	iconToMove.SetPosition(relativeToGeometry.X-(iconToMoveGeometry.Width/2), relativeToGeometry.Height-(iconToMoveGeometry.Height/2))
+}
+
+func FillResourcesInBoxLinear(box *Node, resourcesInGrouping []*ResourceAndNode, padding int) {
+	// find the tallest icon among the resources
+	heightValues := list.Map(resourcesInGrouping, func(r *ResourceAndNode) int {
+		return r.Node.GetGeometry().Height
+	})
+
+	greatestY := list.Fold(heightValues, 0, func(acc, height int) int {
+		return int(math.Max(float64(acc), float64(height)))
+	})
+
+	nextX := padding
+	boxGeometry := box.GetGeometry()
+
+	for _, resourceToPlace := range resourcesInGrouping {
+		nodeToPlace := resourceToPlace.Node
+		nodeToPlaceGeometry := nodeToPlace.GetGeometry()
+
+		nodeToPlace.SetProperty("parent", box.Id())
+		nodeToPlace.ContainedIn = box
+		nodeToPlace.SetPosition(nextX, greatestY/2)
+
+		nextX += nodeToPlaceGeometry.Width + padding
+
+		boxGeometry.Width += nodeToPlaceGeometry.Width + padding
+	}
+
+	boxGeometry.Width += padding
+	boxGeometry.Height = padding + greatestY
 }

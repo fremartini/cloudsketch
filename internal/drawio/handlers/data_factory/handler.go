@@ -2,6 +2,7 @@ package data_factory
 
 import (
 	"azsample/internal/az"
+	"azsample/internal/drawio/handlers/diagram"
 	"azsample/internal/drawio/handlers/node"
 	"azsample/internal/drawio/images"
 	"azsample/internal/list"
@@ -51,8 +52,8 @@ func (*handler) DrawBox(dataFactory *az.Resource, resources []*az.Resource, reso
 	box := node.NewBox(&node.Geometry{
 		X:      dataFactoryNodeGeometry.X,
 		Y:      dataFactoryNodeGeometry.Y,
-		Width:  200,
-		Height: 200,
+		Width:  0,
+		Height: 0,
 	}, nil)
 
 	dataFactoryNode.SetProperty("parent", box.Id())
@@ -60,11 +61,9 @@ func (*handler) DrawBox(dataFactory *az.Resource, resources []*az.Resource, reso
 	dataFactoryNode.SetPosition(0, 0)
 
 	// move all resources in the adf into the box
-	for _, resourceInAdf := range resourcesInDataFactory {
-		resourceInAdf.Node.SetProperty("parent", box.Id())
-		resourceInAdf.Node.ContainedIn = box
-		resourceInAdf.Node.SetPosition(0, 0)
-	}
+	node.FillResourcesInBoxLinear(box, resourcesInDataFactory, diagram.Padding)
+
+	node.ScaleDownAndSetIconBottomLeft(dataFactoryNode, box)
 
 	nodes = append(nodes, box)
 

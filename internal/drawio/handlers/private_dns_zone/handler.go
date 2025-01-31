@@ -2,6 +2,7 @@ package private_dns_zone
 
 import (
 	"azsample/internal/az"
+	"azsample/internal/drawio/handlers/diagram"
 	"azsample/internal/drawio/handlers/node"
 	"azsample/internal/drawio/images"
 	"azsample/internal/list"
@@ -43,7 +44,7 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 func (*handler) DrawBox(privateDNSZone *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	nodes := []*node.Node{}
 
-	resourcesInDataFactory := getResourcesInPrivateDNSZone(resources, privateDNSZone.Id, resource_map)
+	resourcesInPrivateDNSZone := getResourcesInPrivateDNSZone(resources, privateDNSZone.Id, resource_map)
 
 	privateDNSZoneNode := (*resource_map)[privateDNSZone.Id].Node
 	privateDNSZoneNodeGeometry := privateDNSZoneNode.GetGeometry()
@@ -51,8 +52,8 @@ func (*handler) DrawBox(privateDNSZone *az.Resource, resources []*az.Resource, r
 	box := node.NewBox(&node.Geometry{
 		X:      privateDNSZoneNodeGeometry.X,
 		Y:      privateDNSZoneNodeGeometry.Y,
-		Width:  200,
-		Height: 200,
+		Width:  0,
+		Height: 0,
 	}, nil)
 
 	privateDNSZoneNode.SetProperty("parent", box.Id())
@@ -60,11 +61,9 @@ func (*handler) DrawBox(privateDNSZone *az.Resource, resources []*az.Resource, r
 	privateDNSZoneNode.SetPosition(0, 0)
 
 	// move all resources in the private dns zone into the box
-	for _, resourceInAdf := range resourcesInDataFactory {
-		resourceInAdf.Node.SetProperty("parent", box.Id())
-		resourceInAdf.Node.ContainedIn = box
-		resourceInAdf.Node.SetPosition(0, 0)
-	}
+	node.FillResourcesInBoxLinear(box, resourcesInPrivateDNSZone, diagram.Padding)
+
+	node.ScaleDownAndSetIconBottomLeft(privateDNSZoneNode, box)
 
 	nodes = append(nodes, box)
 
