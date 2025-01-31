@@ -11,7 +11,6 @@ import (
 	"azsample/internal/drawio/handlers/databricks_workspace"
 	"azsample/internal/drawio/handlers/diagram"
 	"azsample/internal/drawio/handlers/dns_record"
-	"azsample/internal/drawio/handlers/function_app"
 	"azsample/internal/drawio/handlers/key_vault"
 	"azsample/internal/drawio/handlers/load_balancer"
 	"azsample/internal/drawio/handlers/load_balancer_frontend"
@@ -30,6 +29,7 @@ import (
 	"azsample/internal/drawio/handlers/virtual_machine"
 	"azsample/internal/drawio/handlers/virtual_machine_scale_set"
 	"azsample/internal/drawio/handlers/virtual_network"
+	"azsample/internal/drawio/handlers/web_sites"
 	"azsample/internal/list"
 	"fmt"
 	"log"
@@ -55,7 +55,6 @@ var (
 		data_factory_managed_private_endpoint.TYPE: data_factory_managed_private_endpoint.New(),
 		databricks_workspace.TYPE:                  databricks_workspace.New(),
 		dns_record.TYPE:                            dns_record.New(),
-		function_app.TYPE:                          function_app.New(),
 		key_vault.TYPE:                             key_vault.New(),
 		load_balancer.TYPE:                         load_balancer.New(),
 		load_balancer_frontend.TYPE:                load_balancer_frontend.New(),
@@ -75,6 +74,7 @@ var (
 		virtual_machine.TYPE:           virtual_machine.New(),
 		virtual_machine_scale_set.TYPE: virtual_machine_scale_set.New(),
 		virtual_network.TYPE:           virtual_network.New(),
+		web_sites.TYPE:                 web_sites.New(),
 	}
 	resource_map             = map[string]*node.ResourceAndNode{}
 	seen_unhandled_resources = map[string]bool{}

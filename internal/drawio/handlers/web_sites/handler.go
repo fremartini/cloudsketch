@@ -1,4 +1,4 @@
-package function_app
+package web_sites
 
 import (
 	"azsample/internal/az"
@@ -9,8 +9,7 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = az.FUNCTION_APP
-	IMAGE  = images.FUNCTION_APP
+	TYPE   = az.WEB_SITES
 	WIDTH  = 68
 	HEIGHT = 60
 )
@@ -20,6 +19,15 @@ func New() *handler {
 }
 
 func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
+	var image = ""
+
+	switch resource.Properties["subType"] {
+	case az.APP_SERVICE_SUBTYPE:
+		image = images.APP_SERVICE
+	case az.FUNCTION_APP_SUBTYPE:
+		image = images.FUNCTION_APP
+	}
+
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -27,7 +35,7 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 		Height: HEIGHT,
 	}
 
-	n := node.NewIcon(IMAGE, resource.Name, &geometry)
+	n := node.NewIcon(image, resource.Name, &geometry)
 
 	return []*node.Node{n}
 }

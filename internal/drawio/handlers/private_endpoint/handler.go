@@ -64,7 +64,7 @@ func addImplicitDependencyToFunctionApp(private_endpoint *az.Resource, resources
 			continue
 		}
 
-		if attachedResource.Type != az.FUNCTION_APP {
+		if attachedResource.Type != az.WEB_SITES {
 			continue
 		}
 
