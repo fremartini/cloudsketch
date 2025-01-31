@@ -21,7 +21,7 @@ func New() *handler {
 func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
 	var image = ""
 
-	switch resource.Properties["SubType"] {
+	switch resource.Properties["subType"] {
 	case az.APP_SERVICE_SUBTYPE:
 		image = images.APP_SERVICE
 	case az.FUNCTION_APP_SUBTYPE:

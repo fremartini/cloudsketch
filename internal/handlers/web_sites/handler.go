@@ -53,7 +53,7 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 		Type:          *app.Type,
 		ResourceGroup: ctx.ResourceGroup,
 		DependsOn:     []string{*plan},
-		Properties:    map[string]string{"SubType": subType},
+		Properties:    map[string]string{"subType": subType},
 	}
 
 	return []*az.Resource{resource}, nil
