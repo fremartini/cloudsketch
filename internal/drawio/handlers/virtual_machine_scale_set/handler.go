@@ -32,14 +32,14 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 	return []*node.Node{n}
 }
 
-func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*node.Node) *node.Arrow {
+func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
 	// don't draw arrows to subnets
 	if target.Type == az.SUBNET {
 		return nil
 	}
 
-	sourceId := (*nodes)[source.Id].Id()
-	targetId := (*nodes)[target.Id].Id()
+	sourceId := (*resource_map)[source.Id].Node.Id()
+	targetId := (*resource_map)[target.Id].Node.Id()
 
 	return node.NewArrow(sourceId, targetId)
 }

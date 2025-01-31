@@ -39,7 +39,7 @@ type handleFuncMap = map[string]handler
 
 type handler interface {
 	DrawIcon(*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
-	DrawDependency(*az.Resource, *az.Resource, *map[string]*node.Node) *node.Arrow
+	DrawDependency(*az.Resource, *az.Resource, *map[string]*node.ResourceAndNode) *node.Arrow
 	DrawBox(*az.Resource, []*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
 }
 
@@ -189,11 +189,6 @@ func drawResource(resource *az.Resource) []*node.Node {
 func addDependencyArrows() []string {
 	var cells []string
 
-	processed_nodes := map[string]*node.Node{}
-	for k, v := range resource_map {
-		processed_nodes[k] = v.Node
-	}
-
 	for _, resourceAndNode := range resource_map {
 		resource := resourceAndNode.Resource
 
@@ -224,7 +219,7 @@ func addDependencyArrows() []string {
 
 			target := resource_map[dependency].Resource
 
-			dependency := f.DrawDependency(resource, target, &processed_nodes)
+			dependency := f.DrawDependency(resource, target, &resource_map)
 
 			// dependency arrow may be omitted
 			if dependency == nil {

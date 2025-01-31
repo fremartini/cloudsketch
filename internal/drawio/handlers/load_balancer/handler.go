@@ -32,9 +32,9 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 	return []*node.Node{n}
 }
 
-func (*handler) DrawDependency(source, target *az.Resource, nodes *map[string]*node.Node) *node.Arrow {
-	sourceId := (*nodes)[source.Id].Id()
-	targetId := (*nodes)[target.Id].Id()
+func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
+	sourceId := (*resource_map)[source.Id].Node.Id()
+	targetId := (*resource_map)[target.Id].Node.Id()
 
 	return node.NewArrow(sourceId, targetId)
 }
