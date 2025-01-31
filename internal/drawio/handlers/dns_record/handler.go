@@ -34,10 +34,15 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
-	sourceId := (*resource_map)[source.Id].Node.Id()
-	targetId := (*resource_map)[target.Id].Node.Id()
+	sourceNode := (*resource_map)[source.Id].Node
+	targetNode := (*resource_map)[target.Id].Node
 
-	return node.NewArrow(sourceId, targetId)
+	// dns records can be contained inside aprivate DNS Zone. Don't draw these
+	if sourceNode.ContainedIn == targetNode.ContainedIn {
+		return nil
+	}
+
+	return node.NewArrow(sourceNode.Id(), targetNode.Id())
 }
 
 func (*handler) DrawBox(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

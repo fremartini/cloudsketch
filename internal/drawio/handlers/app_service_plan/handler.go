@@ -35,6 +35,11 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
+	// app service plans have an implicit dependency to a subnet. Don't draw these
+	if target.Type == az.SUBNET {
+		return nil
+	}
+
 	sourceId := (*resource_map)[source.Id].Node.Id()
 	targetId := (*resource_map)[target.Id].Node.Id()
 

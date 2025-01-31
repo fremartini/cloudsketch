@@ -37,11 +37,15 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 	if target.Type == az.SUBNET {
 		return nil
 	}
+	sourceNode := (*resource_map)[source.Id].Node
+	targetNode := (*resource_map)[target.Id].Node
 
-	sourceId := (*resource_map)[source.Id].Node.Id()
-	targetId := (*resource_map)[target.Id].Node.Id()
+	// function apps can be contained inside an app service plan. Don't draw these
+	if sourceNode.ContainedIn == targetNode.ContainedIn {
+		return nil
+	}
 
-	return node.NewArrow(sourceId, targetId)
+	return node.NewArrow(sourceNode.Id(), targetNode.Id())
 }
 
 func (*handler) DrawBox(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
