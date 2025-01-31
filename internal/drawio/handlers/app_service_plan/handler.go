@@ -82,7 +82,7 @@ func (*handler) DrawBox(appService *az.Resource, resources []*az.Resource, resou
 	appServiceNode.SetPosition(0, 0)
 
 	// move all resources in the app service plan into the box
-	node.FillResourcesInBoxLinear(box, resourcesInAppServicePlan, diagram.Padding)
+	node.FillResourcesInBox(box, resourcesInAppServicePlan, diagram.Padding)
 
 	node.ScaleDownAndSetIconBottomLeft(appServiceNode, box)
 

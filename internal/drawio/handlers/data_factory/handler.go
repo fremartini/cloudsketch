@@ -61,7 +61,7 @@ func (*handler) DrawBox(dataFactory *az.Resource, resources []*az.Resource, reso
 	dataFactoryNode.SetPosition(0, 0)
 
 	// move all resources in the adf into the box
-	node.FillResourcesInBoxLinear(box, resourcesInDataFactory, diagram.Padding)
+	node.FillResourcesInBox(box, resourcesInDataFactory, diagram.Padding)
 
 	node.ScaleDownAndSetIconBottomLeft(dataFactoryNode, box)
 

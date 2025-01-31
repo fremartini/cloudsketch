@@ -1,7 +1,6 @@
 package az
 
 const (
-	WEB_SITES                             = "Microsoft.Web/sites"
 	APP_SERVICE_PLAN                      = "Microsoft.Web/serverFarms"
 	APPLICATION_GATEWAY                   = "Microsoft.Network/applicationGateways"
 	APPLICATION_INSIGHTS                  = "Microsoft.Insights/components"
@@ -31,4 +30,5 @@ const (
 	VIRTUAL_MACHINE                       = "Microsoft.Compute/virtualMachines"
 	VIRTUAL_MACHINE_SCALE_SET             = "Microsoft.Compute/virtualMachineScaleSets"
 	VIRTUAL_NETWORK                       = "Microsoft.Network/virtualNetworks"
+	WEB_SITES                             = "Microsoft.Web/sites"
 )

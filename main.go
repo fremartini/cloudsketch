@@ -58,9 +58,9 @@ func main() {
 
 	filename := fmt.Sprintf("%s.txt", args[1])
 
-	canUseFile, resources := marshall.UnmarshalIfExists(filename)
+	resources, ok := marshall.UnmarshalIfExists(filename)
 
-	if canUseFile {
+	if ok {
 		log.Println("using existing file")
 
 		drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), resources)

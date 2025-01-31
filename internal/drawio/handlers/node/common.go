@@ -95,7 +95,17 @@ func ScaleDownAndSetIconBottomLeft(iconToMove *Node, relativeTo *Node) {
 	iconToMove.SetPosition(relativeToGeometry.X-(iconToMoveGeometry.Width/2), relativeToGeometry.Height-(iconToMoveGeometry.Height/2))
 }
 
-func FillResourcesInBoxLinear(box *Node, resourcesInGrouping []*ResourceAndNode, padding int) {
+func FillResourcesInBox(box *Node, resourcesInGrouping []*ResourceAndNode, padding int) {
+	if len(resourcesInGrouping) > 2 {
+		fillResourcesInBoxSquare(box, resourcesInGrouping, padding)
+
+		return
+	}
+
+	fillResourcesInBoxLine(box, resourcesInGrouping, padding)
+}
+
+func fillResourcesInBoxLine(box *Node, resourcesInGrouping []*ResourceAndNode, padding int) {
 	// find the tallest icon among the resources
 	heightValues := list.Map(resourcesInGrouping, func(r *ResourceAndNode) int {
 		return r.Node.GetGeometry().Height
@@ -123,4 +133,53 @@ func FillResourcesInBoxLinear(box *Node, resourcesInGrouping []*ResourceAndNode,
 
 	boxGeometry.Width += padding
 	boxGeometry.Height = padding + greatestY
+}
+
+func fillResourcesInBoxSquare(box *Node, resourcesInGrouping []*ResourceAndNode, padding int) {
+	rowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(resourcesInGrouping)))))
+
+	currIndx := 0
+
+	nextX := padding
+	nextY := padding / 2
+
+	boxGeometry := box.GetGeometry()
+
+	for row := 0; row < rowsAndColumns; row++ {
+		for column := 0; column < rowsAndColumns; column++ {
+			if currIndx > len(resourcesInGrouping)-1 {
+				// no more elements
+				break
+			}
+
+			resourceToPlace := resourcesInGrouping[currIndx]
+
+			nodeToPlace := resourceToPlace.Node
+			nodeToPlaceGeometry := nodeToPlace.GetGeometry()
+
+			nodeToPlace.SetProperty("parent", box.Id())
+			nodeToPlace.ContainedIn = box
+			nodeToPlace.SetPosition(nextX, nextY)
+
+			nextX += nodeToPlaceGeometry.Width + padding
+
+			// width is only determined during the fist iteration
+			if row == 0 {
+				boxGeometry.Width += nodeToPlaceGeometry.Width + padding
+			}
+
+			currIndx++
+
+			// last element, skip to new row
+			if column == rowsAndColumns-1 {
+				nextX = padding
+				nextY += nodeToPlaceGeometry.Height + padding/2
+				boxGeometry.Height += nodeToPlaceGeometry.Height + padding
+			}
+		}
+	}
+
+	// off by one error
+	boxGeometry.Height += resourcesInGrouping[len(resourcesInGrouping)-1].Node.GetGeometry().Height + padding/2
+	boxGeometry.Width += padding
 }
