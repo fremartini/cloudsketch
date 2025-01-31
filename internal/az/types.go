@@ -27,6 +27,7 @@ const (
 	SQL_SERVER                            = "Microsoft.Sql/servers"
 	STORAGE_ACCOUNT                       = "Microsoft.Storage/storageAccounts"
 	SUBNET                                = "Microsoft.Network/virtualNetworks/subnets"
+	SUBSCRIPTION                          = "Microsoft.Subscription"
 	VIRTUAL_MACHINE                       = "Microsoft.Compute/virtualMachines"
 	VIRTUAL_MACHINE_SCALE_SET             = "Microsoft.Compute/virtualMachineScaleSets"
 	VIRTUAL_NETWORK                       = "Microsoft.Network/virtualNetworks"

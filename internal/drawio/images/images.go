@@ -24,6 +24,7 @@ const (
 	PRIVATE_ENDPOINT                      = "img/lib/azure2/other/Private_Endpoints.svg"
 	PRIVATE_LINK_SERVICE                  = "img/lib/azure2/networking/Private_Link_Service.svg"
 	PUBLIC_IP_ADDRESS                     = "img/lib/azure2/networking/Public_IP_Addresses.svg"
+	SUBSCRIPTION                          = "img/lib/azure2/general/Subscriptions.svg"
 	SQL_DATABASE                          = "img/lib/azure2/databases/SQL_Database.svg"
 	SQL_SERVER                            = "img/lib/azure2/databases/SQL_Server.svg"
 	STORAGE_ACCOUNT                       = "img/lib/azure2/storage/Storage_Accounts.svg"

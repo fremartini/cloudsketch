@@ -102,6 +102,11 @@ func main() {
 
 		return resource
 	})
+	allResources = append(allResources, &az.Resource{
+		Id:   subscription.Id,
+		Name: subscription.Name,
+		Type: az.SUBSCRIPTION,
+	})
 
 	allResources = list.FlatMap(allResources, func(resource *az.Resource) []*az.Resource {
 		log.Print(resource.Name)
