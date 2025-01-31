@@ -5,7 +5,6 @@ import (
 	"azsample/internal/drawio"
 	"azsample/internal/handlers/application_gateway"
 	"azsample/internal/handlers/data_factory"
-	"azsample/internal/handlers/function_app"
 	"azsample/internal/handlers/load_balancer"
 	"azsample/internal/handlers/nat_gateway"
 	"azsample/internal/handlers/network_interface"
@@ -17,6 +16,7 @@ import (
 	"azsample/internal/handlers/subscription"
 	"azsample/internal/handlers/virtual_machine_scale_set"
 	"azsample/internal/handlers/virtual_network"
+	"azsample/internal/handlers/web_sites"
 	"azsample/internal/list"
 	"azsample/marshall"
 	"fmt"
@@ -35,7 +35,6 @@ var (
 	handlers   map[string]handleFunc = map[string]handleFunc{
 		az.APPLICATION_GATEWAY:       application_gateway.New().Handle,
 		az.DATA_FACTORY:              data_factory.New().Handle,
-		az.FUNCTION_APP:              function_app.New().Handle,
 		az.LOAD_BALANCER:             load_balancer.New().Handle,
 		az.NAT_GATEWAY:               nat_gateway.New().Handle,
 		az.NETWORK_INTERFACE:         network_interface.New().Handle,
@@ -45,6 +44,7 @@ var (
 		az.PUBLIC_IP_ADDRESS:         public_ip_address.New().Handle,
 		az.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New().Handle,
 		az.VIRTUAL_NETWORK:           virtual_network.New().Handle,
+		az.WEB_SITES:                 web_sites.New().Handle,
 	}
 )
 

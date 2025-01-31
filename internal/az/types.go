@@ -1,6 +1,7 @@
 package az
 
 const (
+	WEB_SITES                             = "Microsoft.Web/sites"
 	APP_SERVICE_PLAN                      = "Microsoft.Web/serverFarms"
 	APPLICATION_GATEWAY                   = "Microsoft.Network/applicationGateways"
 	APPLICATION_INSIGHTS                  = "Microsoft.Insights/components"
@@ -11,7 +12,6 @@ const (
 	DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT = "Microsoft.DataFactory/factories/managedvirtualnetworks/managedprivateendpoints"
 	DATABRICKS_WORKSPACE                  = "Microsoft.Databricks/workspaces"
 	DNS_RECORD                            = "custom/privateDnsZones/record"
-	FUNCTION_APP                          = "Microsoft.Web/sites"
 	KEY_VAULT                             = "Microsoft.KeyVault/vaults"
 	LOAD_BALANCER                         = "Microsoft.Network/loadBalancers"
 	LOAD_BALANCER_FRONTEND                = "Microsoft.Network/loadBalancers/frontendIPConfigurations"

@@ -1,6 +1,7 @@
 package images
 
 const (
+	APP_SERVICE                           = "img/lib/azure2/app_services/App_Services.svg"
 	APP_SERVICE_PLAN                      = "img/lib/azure2/app_services/App_Service_Plans.svg"
 	APPLICATION_GATEWAY                   = "img/lib/azure2/networking/Application_Gateways.svg"
 	APPLICATION_INSIGHTS                  = "img/lib/azure2/devops/Application_Insights.svg"

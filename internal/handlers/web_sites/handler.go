@@ -1,4 +1,4 @@
-package function_app
+package web_sites
 
 import (
 	"azsample/internal/az"
@@ -20,20 +20,22 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
-	fa, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
+	app, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	asp := fa.Properties.ServerFarmID
+	plan := app.Properties.ServerFarmID
+	subType := app.Kind
 
 	resource := &az.Resource{
-		Id:            *fa.ID,
-		Name:          *fa.Name,
-		Type:          *fa.Type,
+		Id:            *app.ID,
+		Name:          *app.Name,
+		Type:          *app.Type,
 		ResourceGroup: ctx.ResourceGroup,
-		DependsOn:     []string{*asp},
+		DependsOn:     []string{*plan},
+		Properties:    map[string]string{"SubType": *subType},
 	}
 
 	return []*az.Resource{resource}, nil
