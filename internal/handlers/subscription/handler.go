@@ -3,7 +3,6 @@ package subscription
 import (
 	"azsample/internal/az"
 	"context"
-	"log"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -15,16 +14,21 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) Handle(subscriptionId string, credentials *azidentity.DefaultAzureCredential) az.SubscriptionContext {
+func (*handler) Handle(subscriptionId string, credentials *azidentity.DefaultAzureCredential) (*az.SubscriptionContext, error) {
 	clientFactory, err := armsubscriptions.NewClientFactory(credentials, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := clientFactory.NewClient().Get(context.Background(), subscriptionId, nil)
 
 	if err != nil {
-		log.Fatalf("Failed to create Subscription client: %v", err)
+		return nil, err
 	}
 
-	return az.SubscriptionContext{
+	return &az.SubscriptionContext{
 		Id:   *client.Subscription.SubscriptionID,
 		Name: *client.Subscription.DisplayName,
-	}
+	}, nil
 }

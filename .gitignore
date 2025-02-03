@@ -1,4 +1,4 @@
 .vscode
 *.drawio*
-*.txt
+*.json
 *.exe

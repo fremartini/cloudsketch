@@ -18,10 +18,16 @@ func New() *handler {
 }
 
 func (*handler) Handle(subscriptionId string, credentials *azidentity.DefaultAzureCredential) ([]*armresources.ResourceGroup, error) {
-	client, _ := armresources.NewResourceGroupsClient(subscriptionId, credentials, nil)
+	client, err := armresources.NewResourceGroupsClient(subscriptionId, credentials, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
 	pager := client.NewListPager(nil)
 
 	var resourceGroups []*armresources.ResourceGroup
+
 	for pager.More() {
 		resp, err := pager.NextPage(ctx)
 		if err != nil {

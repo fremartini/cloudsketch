@@ -4,6 +4,7 @@ import (
 	"azsample/internal/az"
 	"azsample/internal/drawio/handlers/node"
 	"azsample/internal/drawio/images"
+	"log"
 )
 
 type handler struct{}
@@ -21,11 +22,15 @@ func New() *handler {
 func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
 	var image = ""
 
-	switch resource.Properties["subType"] {
+	subtype := resource.Properties["subType"]
+
+	switch subtype {
 	case az.APP_SERVICE_SUBTYPE:
 		image = images.APP_SERVICE
 	case az.FUNCTION_APP_SUBTYPE:
 		image = images.FUNCTION_APP
+	default:
+		log.Fatalf("No image registered for subtype %s", subtype)
 	}
 
 	geometry := node.Geometry{

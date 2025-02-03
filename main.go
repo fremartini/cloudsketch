@@ -64,17 +64,22 @@ func main() {
 		log.Fatalf("authentication failure: %+v", err)
 	}
 
-	subscription := subscription.New().Handle(subscriptionId, cred)
+	subscription, err := subscription.New().Handle(subscriptionId, cred)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	appContext = &az.Context{
 		SubscriptionId: subscription.Id,
 		Credentials:    cred,
 	}
 
-	filename := fmt.Sprintf("%s_%s.txt", subscription.Name, subscription.Id)
+	filename := fmt.Sprintf("%s_%s.json", subscription.Name, subscription.Id)
 
-	allResources, canUseFile := marshall.UnmarshalIfExists(filename)
+	allResources, ok := marshall.UnmarshalIfExists(filename)
 
-	if canUseFile {
+	if ok {
 		log.Println("using existing file")
 
 		drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), allResources)
@@ -102,6 +107,8 @@ func main() {
 
 		return resource
 	})
+
+	// add the subscription entry
 	allResources = append(allResources, &az.Resource{
 		Id:   subscription.Id,
 		Name: subscription.Name,
@@ -113,6 +120,7 @@ func main() {
 
 		f, ok := handlers[resource.Type]
 
+		// no handler is registered. Add the resource as-is
 		if !ok {
 			return []*az.Resource{{
 				Id:            resource.Id,
@@ -122,6 +130,7 @@ func main() {
 			}}
 		}
 
+		// handler is registered. Add whatever it returns
 		resources, err := f(&az.Context{
 			SubscriptionId: appContext.SubscriptionId,
 			Credentials:    appContext.Credentials,
@@ -137,6 +146,7 @@ func main() {
 		return resources
 	})
 
+	// ensure all id's are lowercased
 	for _, r := range allResources {
 		r.Id = strings.ToLower(r.Id)
 		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)
