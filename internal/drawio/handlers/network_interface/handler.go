@@ -20,34 +20,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(resource *az.Resource, resources *map[string]*node.ResourceAndNode) []*node.Node {
-	for _, dependencyId := range resource.DependsOn {
-		dependency := (*resources)[dependencyId]
-
-		// TODO: why can this be the case?
-		if dependency == nil {
-			return []*node.Node{}
-		}
-
-		if dependency.Resource.Type == az.VIRTUAL_MACHINE || dependency.Resource.Type == az.PRIVATE_LINK_SERVICE {
-			linkedResource := (*resources)[resource.Properties["attachedTo"]]
-			/*
-				if dependency.Resource.Type == az.VIRTUAL_MACHINE {
-					// virtual machines can have multiple NICs attached - dont move the icon
-					if hasMultipleNicsAttached(dependency.Resource.Id, resources) {
-						continue
-					}
-				} */
-
-			return node.SetIcon(linkedResource, resources, IMAGE, HEIGHT, WIDTH, node.TOP_RIGHT)
-		}
-
-		// dont render NICs if they are attached to a blacklisted resource
-		if isBlacklistedResource(dependency.Resource.Type) {
-			return []*node.Node{}
-		}
-	}
-
+func (*handler) DrawIcon(resource *az.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -55,31 +28,26 @@ func (*handler) DrawIcon(resource *az.Resource, resources *map[string]*node.Reso
 		Height: HEIGHT,
 	}
 
-	n := node.NewIcon(IMAGE, resource.Name, &geometry)
-
-	return []*node.Node{n}
+	return node.NewIcon(IMAGE, resource.Name, &geometry)
 }
 
-func hasMultipleNicsAttached(virtualMachineId string, resources *map[string]*node.ResourceAndNode) bool {
-	// TODO: does not work since "resources" are still being populated
+func (*handler) PostProcessIcon(nic *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	attachedTo := (*resource_map)[nic.Resource.Properties["attachedTo"]]
 
-	azResources := []*az.Resource{}
-
-	for _, v := range *resources {
-		azResources = append(azResources, v.Resource)
+	// dont draw NICs if they are attached to a blacklisted resource
+	if isBlacklistedResource(attachedTo.Resource.Type) {
+		delete(*resource_map, nic.Resource.Id)
 	}
 
-	nics := list.Filter(azResources, func(r *az.Resource) bool {
-		return r.Type == az.NETWORK_INTERFACE
-	})
+	existingNics := getNICsPointingToResource(resource_map, attachedTo.Resource)
 
-	nicsAttachedToTarget := list.Filter(nics, func(nic *az.Resource) bool {
-		return list.Contains(nic.DependsOn, func(d string) bool {
-			return d == virtualMachineId
-		})
-	})
+	// multiple NICs point to the same resource - skip
+	if len(existingNics) > 1 {
+		return nil
+	}
 
-	return len(nicsAttachedToTarget) > 1
+	// set icon top right
+	return node.SetIcon(attachedTo.Node, nic.Node, resource_map, node.TOP_RIGHT)
 }
 
 func isBlacklistedResource(resourceType string) bool {
@@ -90,24 +58,39 @@ func isBlacklistedResource(resourceType string) bool {
 	})
 }
 
+func getNICsPointingToResource(resource_map *map[string]*node.ResourceAndNode, attachedResource *az.Resource) []*az.Resource {
+	nics := []*az.Resource{}
+
+	// figure out how many private endpoints are pointing to the storage account
+	for _, v := range *resource_map {
+		// filter out the private endpoints
+		if v.Resource.Type != az.NETWORK_INTERFACE {
+			continue
+		}
+
+		if v.Resource.Properties["attachedTo"] != attachedResource.Id {
+			continue
+		}
+
+		// another private endpoints point to the same resource
+		if (*resource_map)[v.Resource.Id].Node != nil {
+			nics = append(nics, v.Resource)
+		}
+	}
+
+	return nics
+}
+
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
 	// don't draw arrows to subnets
 	if target.Type == az.SUBNET {
 		return nil
 	}
 
-	// expect additional information on the NIC Azure resource to determine the resource which it points to
-	nicTarget := source.Properties["attachedTo"]
+	sourceNode := (*resource_map)[source.Id].Node
+	targetNode := (*resource_map)[target.Id].Node
 
-	// don't draw dependency arrows to the attached resource
-	if target.Id == nicTarget {
-		return nil
-	}
-
-	sourceId := (*resource_map)[source.Id].Node.Id()
-	targetId := (*resource_map)[target.Id].Node.Id()
-
-	return node.NewArrow(sourceId, targetId)
+	return node.NewArrow(sourceNode.Id(), targetNode.Id())
 }
 
 func (*handler) DrawBox(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

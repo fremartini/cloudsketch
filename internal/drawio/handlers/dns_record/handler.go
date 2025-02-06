@@ -17,7 +17,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) DrawIcon(resource *az.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -25,12 +25,14 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 		Height: HEIGHT,
 	}
 
-	n := node.NewGeneric(map[string]interface{}{
+	return node.NewGeneric(map[string]interface{}{
 		"style": "shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#4495D1;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;shape=mxgraph.veeam.dns;",
 		"value": resource.Name,
 	}, &geometry)
+}
 
-	return []*node.Node{n}
+func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	return nil
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {

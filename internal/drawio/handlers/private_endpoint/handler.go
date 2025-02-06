@@ -19,48 +19,29 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(private_endpoint *az.Resource, resources *map[string]*node.ResourceAndNode) []*node.Node {
-	// private endpoint is not attached
-	attachedResourceId, ok := private_endpoint.Properties["attachedTo"]
-
-	if !ok {
-		return []*node.Node{}
+func (*handler) DrawIcon(resource *az.Resource) *node.Node {
+	geometry := node.Geometry{
+		X:      0,
+		Y:      0,
+		Width:  WIDTH,
+		Height: HEIGHT,
 	}
 
-	attachedResource := (*resources)[attachedResourceId]
-
-	// the linked resource has not been drawn
-	if attachedResource == nil || attachedResource.Node == nil {
-		return []*node.Node{}
-	}
-
-	// storage accounts might have multiple private endpoints attached to it
-	if shouldExit := isOtherPrivateEndpointPointingToTheSameResource(private_endpoint, resources, attachedResource.Resource); shouldExit {
-		geometry := node.Geometry{
-			X:      0,
-			Y:      0,
-			Width:  WIDTH,
-			Height: HEIGHT,
-		}
-
-		n := node.NewIcon(IMAGE, private_endpoint.Name, &geometry)
-
-		return []*node.Node{n}
-	}
-
-	addImplicitDependencyToFunctionApp(private_endpoint, resources, attachedResource.Resource)
-
-	return node.SetIcon(attachedResource, resources, IMAGE, HEIGHT, WIDTH, node.TOP_RIGHT)
+	return node.NewIcon(IMAGE, resource.Name, &geometry)
 }
 
-func addImplicitDependencyToFunctionApp(private_endpoint *az.Resource, resources *map[string]*node.ResourceAndNode, attachedResource *az.Resource) {
+func addImplicitDependencyToFunctionApp(private_endpoint, attachedResource *az.Resource, resource_map *map[string]*node.ResourceAndNode) {
 	// App Service Plans need a reference to the subnet it should be added to. This is fetched from the
 	// resources inside the plan. If the resource this Private Endpoint is attached to, is a function app
 	// an implicit dependency is added to the App Service Plan to reference
 	for _, dependency := range private_endpoint.DependsOn {
-		dependentResource := (*resources)[dependency].Resource
+		dependentResource := (*resource_map)[dependency]
 
-		if dependentResource.Type != az.SUBNET {
+		if dependentResource == nil {
+			continue
+		}
+
+		if dependentResource.Resource.Type != az.SUBNET {
 			continue
 		}
 
@@ -72,34 +53,44 @@ func addImplicitDependencyToFunctionApp(private_endpoint *az.Resource, resources
 	}
 }
 
-func isOtherPrivateEndpointPointingToTheSameResource(resource *az.Resource, resources *map[string]*node.ResourceAndNode, linkedResource *az.Resource) bool {
-	if linkedResource.Type != az.STORAGE_ACCOUNT {
-		return false
-	}
+func getPrivateEndpointPointingToResource(resource_map *map[string]*node.ResourceAndNode, attachedResource *az.Resource) []*az.Resource {
+	privateEndpoints := []*az.Resource{}
 
-	// figure out if there are other private endpoints pointed to the storage account
-	for _, v := range *resources {
+	// figure out how many private endpoints are pointing to the storage account
+	for _, v := range *resource_map {
 		// filter out the private endpoints
 		if v.Resource.Type != az.PRIVATE_ENDPOINT {
 			continue
 		}
 
-		// filter out this resource
-		if v.Resource.Id == resource.Id {
+		if v.Resource.Properties["attachedTo"] != attachedResource.Id {
 			continue
 		}
 
-		if v.Resource.Properties["attachedTo"] != linkedResource.Id {
-			continue
-		}
-
-		// another private endpoints point to the same resource. If it has been rendered, don't render this one
-		if (*resources)[v.Resource.Id].Node != nil {
-			return true
+		// another private endpoints point to the same resource
+		if (*resource_map)[v.Resource.Id].Node != nil {
+			privateEndpoints = append(privateEndpoints, v.Resource)
 		}
 	}
 
-	return false
+	return privateEndpoints
+}
+
+func (*handler) PostProcessIcon(private_endpoint *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	// storage accounts might have multiple private endpoints attached to it
+	attachedTo := (*resource_map)[private_endpoint.Resource.Properties["attachedTo"]]
+
+	addImplicitDependencyToFunctionApp(private_endpoint.Resource, attachedTo.Resource, resource_map)
+
+	existingPrivateEndpoints := getPrivateEndpointPointingToResource(resource_map, attachedTo.Resource)
+
+	// multiple private endpoints point to the same resource - skip
+	if len(existingPrivateEndpoints) > 1 {
+		return nil
+	}
+
+	// set icon top right
+	return node.SetIcon(attachedTo.Node, private_endpoint.Node, resource_map, node.TOP_RIGHT)
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
@@ -108,18 +99,17 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 		return nil
 	}
 
-	// expect additional information on the Private Endpoint Azure resource to determine the resource which it points to
-	peTarget := source.Properties["attachedTo"]
+	sourceNode := (*resource_map)[source.Id].Node
+	targetNode := (*resource_map)[target.Id].Node
 
-	// don't draw dependency arrows to the attached resource
-	if target.Id == peTarget {
-		return nil
+	// if they are in the same group, don't draw the arrow
+	if sourceNode.ContainedIn != nil && targetNode.ContainedIn != nil {
+		if sourceNode.ContainedIn == targetNode.ContainedIn {
+			return nil
+		}
 	}
 
-	sourceId := (*resource_map)[source.Id].Node.Id()
-	targetId := (*resource_map)[target.Id].Node.Id()
-
-	return node.NewArrow(sourceId, targetId)
+	return node.NewArrow(sourceNode.Id(), targetNode.Id())
 }
 
 func (*handler) DrawBox(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

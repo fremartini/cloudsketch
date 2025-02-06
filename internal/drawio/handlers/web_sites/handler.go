@@ -19,7 +19,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) DrawIcon(resource *az.Resource) *node.Node {
 	var image = ""
 
 	subtype := resource.Properties["subType"]
@@ -40,9 +40,11 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 		Height: HEIGHT,
 	}
 
-	n := node.NewIcon(image, resource.Name, &geometry)
+	return node.NewIcon(image, resource.Name, &geometry)
+}
 
-	return []*node.Node{n}
+func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	return nil
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {

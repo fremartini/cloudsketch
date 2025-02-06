@@ -22,24 +22,24 @@ import (
 	"azsample/internal/drawio/handlers/private_endpoint"
 	"azsample/internal/drawio/handlers/private_link_service"
 	"azsample/internal/drawio/handlers/public_ip_address"
+	"azsample/internal/drawio/handlers/route_table"
 	"azsample/internal/drawio/handlers/sql_database"
 	"azsample/internal/drawio/handlers/sql_server"
 	"azsample/internal/drawio/handlers/storage_account"
 	"azsample/internal/drawio/handlers/subnet"
-	"azsample/internal/drawio/handlers/subscription"
 	"azsample/internal/drawio/handlers/virtual_machine"
 	"azsample/internal/drawio/handlers/virtual_machine_scale_set"
 	"azsample/internal/drawio/handlers/virtual_network"
 	"azsample/internal/drawio/handlers/web_sites"
 	"azsample/internal/list"
-	"fmt"
 	"log"
 )
 
 type handleFuncMap = map[string]handler
 
 type handler interface {
-	DrawIcon(*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
+	DrawIcon(*az.Resource) *node.Node
+	PostProcessIcon(*node.ResourceAndNode, *map[string]*node.ResourceAndNode) *node.Node
 	DrawDependency(*az.Resource, *az.Resource, *map[string]*node.ResourceAndNode) *node.Arrow
 	DrawBox(*az.Resource, []*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
 }
@@ -63,16 +63,17 @@ var (
 		nat_gateway.TYPE:       nat_gateway.New(),
 		network_interface.TYPE: network_interface.New(),
 		//network_security_group.TYPE:                network_security_group.New(),
-		postgres_sql_server.TYPE:       postgres_sql_server.New(),
-		private_dns_zone.TYPE:          private_dns_zone.New(),
-		private_endpoint.TYPE:          private_endpoint.New(),
-		private_link_service.TYPE:      private_link_service.New(),
-		public_ip_address.TYPE:         public_ip_address.New(),
-		sql_database.TYPE:              sql_database.New(),
-		sql_server.TYPE:                sql_server.New(),
-		storage_account.TYPE:           storage_account.New(),
-		subnet.TYPE:                    subnet.New(),
-		subscription.TYPE:              subscription.New(),
+		postgres_sql_server.TYPE:  postgres_sql_server.New(),
+		private_dns_zone.TYPE:     private_dns_zone.New(),
+		private_endpoint.TYPE:     private_endpoint.New(),
+		private_link_service.TYPE: private_link_service.New(),
+		public_ip_address.TYPE:    public_ip_address.New(),
+		route_table.TYPE:          route_table.New(),
+		sql_database.TYPE:         sql_database.New(),
+		sql_server.TYPE:           sql_server.New(),
+		storage_account.TYPE:      storage_account.New(),
+		subnet.TYPE:               subnet.New(),
+		//subscription.TYPE:              subscription.New(),
 		virtual_machine.TYPE:           virtual_machine.New(),
 		virtual_machine_scale_set.TYPE: virtual_machine_scale_set.New(),
 		virtual_network.TYPE:           virtual_network.New(),
@@ -91,7 +92,10 @@ func New() *drawio {
 
 func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
-	cells := addDrawIOCells(resources)
+	populateResourceMap(resources)
+
+	// some resources group other resources
+	groups := processGroups()
 
 	// some resources like vnets and subnets needs boxes draw around them, and their resources moved into them
 	boxes := addBoxes()
@@ -99,10 +103,16 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	// with every DrawIO icon present, add the dependency arrows
 	dependencyArrows := addDependencyArrows()
 
+	cells := []*node.Node{}
+	for _, resource := range resource_map {
+		cells = append(cells, resource.Node)
+	}
+
 	// combine everything and render them in the final diagram
 	// items appended first are rendered first (in the background)
 	cellsToRender := []string{}
 	cellsToRender = append(cellsToRender, boxes...)
+	cellsToRender = append(cellsToRender, list.Map(groups, node.ToMXCell)...)
 	cellsToRender = append(cellsToRender, dependencyArrows...)
 	cellsToRender = append(cellsToRender, list.Map(cells, node.ToMXCell)...)
 
@@ -113,13 +123,25 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	}
 }
 
-func addDrawIOCells(resources []*az.Resource) []*node.Node {
-	var drawables []*node.Node
+func processGroups() []*node.Node {
+	groups := []*node.Node{}
+
+	for _, resource := range resource_map {
+		groupToAdd := commands[resource.Resource.Type].PostProcessIcon(resource, &resource_map)
+
+		if groupToAdd == nil {
+			continue
+		}
+
+		groups = append(groups, groupToAdd)
+	}
+	return groups
+}
+
+func populateResourceMap(resources []*az.Resource) {
 	for _, resource := range resources {
 		// draw dependencies
-		deps := drawDependenciesRecursively(resource, resources)
-
-		drawables = append(drawables, deps...)
+		drawDependenciesRecursively(resource, resources)
 
 		if resource_map[resource.Id] != nil {
 			// resource already drawn
@@ -127,16 +149,11 @@ func addDrawIOCells(resources []*az.Resource) []*node.Node {
 		}
 
 		// draw this resource
-		nodes := drawResource(resource)
-
-		drawables = append(drawables, nodes...)
+		drawResource(resource)
 	}
-
-	return drawables
 }
 
-func drawDependenciesRecursively(resource *az.Resource, resources []*az.Resource) []*node.Node {
-	var drawables []*node.Node
+func drawDependenciesRecursively(resource *az.Resource, resources []*az.Resource) {
 	for _, dependencyId := range resource.DependsOn {
 		if resource_map[dependencyId] != nil {
 			// dependency already drawn
@@ -147,16 +164,13 @@ func drawDependenciesRecursively(resource *az.Resource, resources []*az.Resource
 			return r.Id == dependencyId
 		})
 
-		dependencyNodes := drawDependenciesRecursively(dependency, resources)
-		nodes := drawResource(dependency)
+		drawDependenciesRecursively(dependency, resources)
 
-		drawables = append(drawables, dependencyNodes...)
-		drawables = append(drawables, nodes...)
+		drawResource(dependency)
 	}
-	return drawables
 }
 
-func drawResource(resource *az.Resource) []*node.Node {
+func drawResource(resource *az.Resource) {
 	f, ok := commands[resource.Type]
 
 	if !ok {
@@ -168,24 +182,15 @@ func drawResource(resource *az.Resource) []*node.Node {
 			seen_unhandled_resources[resource.Type] = true
 		}
 
-		return []*node.Node{}
+		return
 	}
 
-	nodes := f.DrawIcon(resource, &resource_map)
+	icon := f.DrawIcon(resource)
 
 	resource_map[resource.Id] = &node.ResourceAndNode{
 		Resource: resource,
+		Node:     icon,
 	}
-
-	// some icons should not be rendered (duplicate private endpoints on Storage Accounts)
-	if len(nodes) == 0 {
-		delete(resource_map, resource.Id)
-	} else {
-		// prioritize the last element
-		resource_map[resource.Id].Node = nodes[len(nodes)-1]
-	}
-
-	return nodes
 }
 
 func addDependencyArrows() []string {
@@ -209,7 +214,8 @@ func addDependencyArrows() []string {
 			}
 
 			if _, ok := resource_map[dependency]; !ok {
-				panic(fmt.Sprintf("%s not seen", dependency))
+				log.Printf("target %s was not drawn, skipping ...", dependency)
+				continue
 			}
 
 			ok = resource_map[dependency].Node != nil

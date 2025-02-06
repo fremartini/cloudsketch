@@ -25,20 +25,20 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 
 	nic, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
 
-	target := getAttachedResource(nic.Properties)
-
 	if err != nil {
 		return nil, err
 	}
 
 	properties := map[string]string{}
-	dependsOn := []string{}
+
+	target := getAttachedResource(nic.Properties)
 
 	if target != nil {
 		t := strings.ToLower(*target)
 		properties["attachedTo"] = t
-		dependsOn = append(dependsOn, t)
 	}
+
+	dependsOn := []string{}
 
 	subnet := nic.Properties.IPConfigurations[0].Properties.Subnet.ID
 

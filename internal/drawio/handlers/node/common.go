@@ -4,6 +4,7 @@ import (
 	"azsample/internal/list"
 	"log"
 	"math"
+	"sort"
 )
 
 const (
@@ -13,78 +14,65 @@ const (
 	BOTTOM_RIGHT = 3
 )
 
-func SetIcon(resource *ResourceAndNode, resources *map[string]*ResourceAndNode, icon string, height, width, position int) []*Node {
-	linkedNode := resource.Node
-	linkedNodeGeometry := linkedNode.GetGeometry()
+func SetIcon(centerIcon, attachedIcon *Node, resource_map *map[string]*ResourceAndNode, position int) *Node {
+	centerIconGeometry := centerIcon.GetGeometry()
+	attachedIconGeometry := attachedIcon.GetGeometry()
 
 	// create a group on top of the referenced node, IMPORTANT: copy the geometry to avoid using the same reference
 	group := NewGroup(&Geometry{
-		X:      linkedNodeGeometry.X,
-		Y:      linkedNodeGeometry.Y,
-		Width:  linkedNodeGeometry.Width + width/4,
-		Height: linkedNodeGeometry.Height,
+		X:      centerIconGeometry.X,
+		Y:      centerIconGeometry.Y,
+		Width:  centerIconGeometry.Width,
+		Height: centerIconGeometry.Height,
 	})
 	groupId := group.Id()
 
-	linkedNode.SetProperty("parent", groupId)
-	linkedNode.SetPosition(0, 0)
+	centerIcon.SetProperty("parent", groupId)
+	centerIcon.ContainedIn = group
 
-	// overwrite reference to the linked resource to instead point to the group
-	(*resources)[resource.Resource.Id].Node = group
+	widthScaled := attachedIconGeometry.Width / 2
+	heightScaled := attachedIconGeometry.Height / 2
 
-	var nodeIcon *Node = nil
+	attachedIcon.SetProperty("parent", groupId)
+	attachedIcon.SetProperty("value", "")
+	attachedIcon.SetDimensions(widthScaled, heightScaled)
+	attachedIcon.ContainedIn = group
 
-	w := width / 2
-	y := -height/2 + (height / 4)
+	x := 0
+	y := 0
 
 	switch position {
 	case TOP_LEFT:
 		{
-			nodeIcon = NewIcon(icon, "", &Geometry{
-				X:      linkedNodeGeometry.X - (width / 4),
-				Y:      y,
-				Width:  w,
-				Height: height / 2,
-			})
+			x = group.GetGeometry().X
+			y = group.GetGeometry().Y
 			break
 		}
 	case TOP_RIGHT:
 		{
-			nodeIcon = NewIcon(icon, "", &Geometry{
-				X:      linkedNodeGeometry.Width - (width / 4),
-				Y:      y,
-				Width:  w,
-				Height: height / 2,
-			})
+			x = group.GetGeometry().Width
+			y = group.GetGeometry().Y
 			break
 		}
 	case BOTTOM_LEFT:
 		{
-			nodeIcon = NewIcon(icon, "", &Geometry{
-				X:      linkedNodeGeometry.X - (width / 4),
-				Y:      y,
-				Width:  w,
-				Height: linkedNodeGeometry.Height + height + (height / 2),
-			})
+			x = group.GetGeometry().X
+			y = group.GetGeometry().Height
 			break
 		}
 	case BOTTOM_RIGHT:
 		{
-			nodeIcon = NewIcon(icon, "", &Geometry{
-				X:      linkedNodeGeometry.Width - (width / 4),
-				Y:      y,
-				Width:  w,
-				Height: linkedNodeGeometry.Height + height + (height / 2),
-			})
+			x = group.GetGeometry().Width
+			y = group.GetGeometry().Height
 			break
 		}
 	default:
 		log.Fatalf("Undefined position %v", position)
 	}
 
-	nodeIcon.SetProperty("parent", groupId)
+	attachedIcon.SetPosition(x-widthScaled/2, y-heightScaled/2)
 
-	return []*Node{nodeIcon, group}
+	return group
 }
 
 func ScaleDownAndSetIconBottomLeft(iconToMove *Node, relativeTo *Node) {
@@ -169,6 +157,15 @@ func fillResourcesInBoxLine(box *Node, resourcesInGrouping []*ResourceAndNode, p
 }
 
 func fillResourcesInBoxSquare(box *Node, resourcesInGrouping []*ResourceAndNode, padding int) {
+
+	// sort by volume
+	sort.Slice(resourcesInGrouping, func(i, j int) bool {
+		volumeA := resourcesInGrouping[i].Node.GetGeometry().Height + resourcesInGrouping[i].Node.GetGeometry().Width
+		volumeB := resourcesInGrouping[j].Node.GetGeometry().Height + resourcesInGrouping[j].Node.GetGeometry().Width
+
+		return volumeA < volumeB
+	})
+
 	nodes := list.Map(resourcesInGrouping, func(r *ResourceAndNode) *Node {
 		if r.Node.ContainedIn != nil {
 			return r.Node.ContainedIn
@@ -178,17 +175,17 @@ func fillResourcesInBoxSquare(box *Node, resourcesInGrouping []*ResourceAndNode,
 	})
 
 	// number of rows and columns is the square root of the elements in the group
-	rowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(nodes)))))
+	maxRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(nodes)))))
 
 	currIndx := 0
 
 	nextX := padding
-	nextY := padding / 2
+	nextY := padding
 
 	boxGeometry := box.GetGeometry()
 
-	for row := 0; row < rowsAndColumns; row++ {
-		for column := 0; column < rowsAndColumns; column++ {
+	for row := 0; row < maxRowsAndColumns; row++ {
+		for column := 0; column < maxRowsAndColumns; column++ {
 			if currIndx > len(nodes)-1 {
 				// no more elements
 				break
@@ -196,6 +193,10 @@ func fillResourcesInBoxSquare(box *Node, resourcesInGrouping []*ResourceAndNode,
 
 			nodeToPlace := nodes[currIndx]
 			nodeToPlaceGeometry := nodeToPlace.GetGeometry()
+
+			if nodeToPlace.ContainedIn != nil {
+				nodeToPlaceGeometry = nodeToPlace.ContainedIn.geometry
+			}
 
 			nodeToPlace.SetProperty("parent", box.Id())
 			nodeToPlace.ContainedIn = box
@@ -211,15 +212,15 @@ func fillResourcesInBoxSquare(box *Node, resourcesInGrouping []*ResourceAndNode,
 			currIndx++
 
 			// last element, skip to new row
-			if column == rowsAndColumns-1 {
+			if column == maxRowsAndColumns-1 {
 				nextX = padding
-				nextY += nodeToPlaceGeometry.Height + padding/2
+				nextY += nodeToPlaceGeometry.Height + padding
 				boxGeometry.Height += nodeToPlaceGeometry.Height + padding
 			}
 		}
 	}
 
 	// off by one error
-	boxGeometry.Height += nodes[len(nodes)-1].GetGeometry().Height + padding/2
+	boxGeometry.Height += nodes[len(nodes)-1].GetGeometry().Height + padding
 	boxGeometry.Width += padding
 }

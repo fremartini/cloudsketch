@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	Padding = 45
+	Padding = 50
 )
 
 var (

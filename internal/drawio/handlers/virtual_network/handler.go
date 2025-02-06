@@ -24,15 +24,19 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
-	vnet := node.NewIcon(IMAGE, resource.Name, &node.Geometry{
+func (*handler) DrawIcon(resource *az.Resource) *node.Node {
+	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
 		Width:  WIDTH,
 		Height: HEIGHT,
-	})
+	}
 
-	return []*node.Node{vnet}
+	return node.NewIcon(IMAGE, resource.Name, &geometry)
+}
+
+func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	return nil
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
@@ -54,9 +58,6 @@ func (*handler) DrawBox(vnet *az.Resource, resources []*az.Resource, resource_ma
 
 	vnetNode := (*resource_map)[vnet.Id].Node
 	vnetNodegeometry := vnetNode.GetGeometry()
-
-	// assuming there exists only one vnet
-	// TODO: handle multiple vnets?
 
 	// move the box a bit to the left and above to fit its children
 	geometry = &node.Geometry{

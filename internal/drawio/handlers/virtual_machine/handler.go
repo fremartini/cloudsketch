@@ -19,7 +19,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) DrawIcon(resource *az.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -27,16 +27,25 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 		Height: HEIGHT,
 	}
 
-	n := node.NewIcon(IMAGE, resource.Name, &geometry)
+	return node.NewIcon(IMAGE, resource.Name, &geometry)
+}
 
-	return []*node.Node{n}
+func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	return nil
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
-	sourceId := (*resource_map)[source.Id].Node.Id()
-	targetId := (*resource_map)[target.Id].Node.Id()
+	sourceNode := (*resource_map)[source.Id].Node
+	targetNode := (*resource_map)[target.Id].Node
 
-	return node.NewArrow(sourceId, targetId)
+	// if they are in the same group, don't draw the arrow
+	if sourceNode.ContainedIn != nil && targetNode.ContainedIn != nil {
+		if sourceNode.ContainedIn == targetNode.ContainedIn {
+			return nil
+		}
+	}
+
+	return node.NewArrow(sourceNode.Id(), targetNode.Id())
 }
 
 func (*handler) DrawBox(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

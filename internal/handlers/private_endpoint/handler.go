@@ -42,6 +42,11 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 		}
 	}
 
+	for _, nic := range pe.Properties.NetworkInterfaces {
+		t := strings.ToLower(*nic.ID)
+		dependsOn = append(dependsOn, t)
+	}
+
 	pe_subnet := pe.Properties.Subnet.ID
 
 	if pe_subnet != nil {

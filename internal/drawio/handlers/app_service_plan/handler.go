@@ -6,6 +6,7 @@ import (
 	"azsample/internal/drawio/handlers/node"
 	"azsample/internal/drawio/images"
 	"azsample/internal/list"
+	"log"
 )
 
 type handler struct{}
@@ -25,7 +26,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) DrawIcon(resource *az.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -33,9 +34,11 @@ func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndN
 		Height: HEIGHT,
 	}
 
-	n := node.NewIcon(IMAGE, resource.Name, &geometry)
+	return node.NewIcon(IMAGE, resource.Name, &geometry)
+}
 
-	return []*node.Node{n}
+func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	return nil
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
@@ -58,6 +61,11 @@ func (*handler) DrawBox(appService *az.Resource, resources []*az.Resource, resou
 	}
 
 	firstAppServiceSubnet := getAppServiceSubnet(resourcesInAppServicePlan[0].Resource, resources)
+
+	if firstAppServiceSubnet == nil {
+		log.Printf("Could not determine subnet of app service plan %s", appService.Name)
+		return []*node.Node{}
+	}
 
 	// if all app services in the plan belong to the same subnet a box can be draw
 	allAppServicesInSameSubnet := list.Fold(resourcesInAppServicePlan[1:], true, func(resource *node.ResourceAndNode, matches bool) bool {

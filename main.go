@@ -15,6 +15,7 @@ import (
 	"azsample/internal/handlers/resource_group"
 	"azsample/internal/handlers/resources"
 	"azsample/internal/handlers/subscription"
+	"azsample/internal/handlers/virtual_machine"
 	"azsample/internal/handlers/virtual_machine_scale_set"
 	"azsample/internal/handlers/virtual_network"
 	"azsample/internal/handlers/web_sites"
@@ -43,6 +44,7 @@ var (
 		az.PRIVATE_ENDPOINT:          private_endpoint.New().Handle,
 		az.PRIVATE_LINK_SERVICE:      private_link_service.New().Handle,
 		az.PUBLIC_IP_ADDRESS:         public_ip_address.New().Handle,
+		az.VIRTUAL_MACHINE:           virtual_machine.New().Handle,
 		az.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New().Handle,
 		az.VIRTUAL_NETWORK:           virtual_network.New().Handle,
 		az.WEB_SITES:                 web_sites.New().Handle,
@@ -146,7 +148,7 @@ func main() {
 		return resources
 	})
 
-	// ensure all id's are lowercased
+	// ensure all id's are lowercase
 	for _, r := range allResources {
 		r.Id = strings.ToLower(r.Id)
 		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)

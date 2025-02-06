@@ -26,15 +26,20 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(resource *az.Resource, _ *map[string]*node.ResourceAndNode) []*node.Node {
-	subnet := node.NewIcon(IMAGE, resource.Name, &node.Geometry{
+func (*handler) DrawIcon(resource *az.Resource) *node.Node {
+	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
 		Width:  WIDTH,
 		Height: HEIGHT,
-	})
+	}
 
-	return []*node.Node{subnet}
+	return node.NewIcon(IMAGE, resource.Name, &geometry)
+}
+
+func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	return nil
+
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
