@@ -35,8 +35,9 @@ func (*handler) PostProcessIcon(nic *node.ResourceAndNode, resource_map *map[str
 	attachedTo := (*resource_map)[nic.Resource.Properties["attachedTo"]]
 
 	// dont draw NICs if they are attached to a blacklisted resource
-	if isBlacklistedResource(attachedTo.Resource.Type) {
+	if attachedTo == nil || isBlacklistedResource(attachedTo.Resource.Type) {
 		delete(*resource_map, nic.Resource.Id)
+		return nil
 	}
 
 	existingNics := getNICsPointingToResource(resource_map, attachedTo.Resource)

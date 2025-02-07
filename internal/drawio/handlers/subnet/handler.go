@@ -38,8 +38,23 @@ func (*handler) DrawIcon(resource *az.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
-	return nil
+	routeTables := list.Filter(resource.Resource.DependsOn, func(dependency string) bool {
+		r, ok := (*resource_map)[dependency]
 
+		if !ok {
+			return false
+		}
+
+		return r.Resource.Type == az.ROUTE_TBLE
+	})
+
+	if len(routeTables) != 1 {
+		return nil
+	}
+
+	routeTable := (*resource_map)[routeTables[0]]
+
+	return node.SetIcon(resource.Node, routeTable.Node, resource_map, node.TOP_LEFT)
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
@@ -48,10 +63,17 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 		return nil
 	}
 
-	sourceId := (*resource_map)[source.Id].Node.Id()
-	targetId := (*resource_map)[target.Id].Node.Id()
+	sourceNode := (*resource_map)[source.Id].Node
+	targetNode := (*resource_map)[target.Id].Node
 
-	return node.NewArrow(sourceId, targetId)
+	// if they are in the same group, don't draw the arrow
+	if sourceNode.ContainedIn != nil && targetNode.ContainedIn != nil {
+		if sourceNode.ContainedIn == targetNode.ContainedIn {
+			return nil
+		}
+	}
+
+	return node.NewArrow(sourceNode.Id(), targetNode.Id())
 }
 
 func (*handler) DrawBox(subnet *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
@@ -83,6 +105,11 @@ func (*handler) DrawBox(subnet *az.Resource, resources []*az.Resource, resource_
 
 	// move the subnet icon to the edge of the box
 	subnetNode := (*resource_map)[subnet.Id].Node
+
+	if subnetNode.ContainedIn != nil {
+		subnetNode = subnetNode.ContainedIn
+	}
+
 	subnetNodePosition := subnetNode.GetGeometry()
 	subnetNode.SetPosition(geometry.X-subnetNodePosition.Width/2, geometry.Y-subnetNodePosition.Height/2)
 

@@ -4,6 +4,7 @@ import (
 	"azsample/internal/az"
 	"azsample/internal/list"
 	"context"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v6"
 )
@@ -43,12 +44,28 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 	}
 
 	resources := list.Map(subnets, func(subnet *armnetwork.Subnet) *az.Resource {
+		dependsOn := []string{vnet.Id}
+
+		routeTable := subnet.Properties.RouteTable
+
+		if routeTable != nil {
+			l := strings.ToLower(*routeTable.ID)
+			dependsOn = append(dependsOn, l)
+		}
+
+		nsg := subnet.Properties.NetworkSecurityGroup
+
+		if nsg != nil {
+			l := strings.ToLower(*nsg.ID)
+			dependsOn = append(dependsOn, l)
+		}
+
 		snet := &az.Resource{
 			Id:            *subnet.ID,
 			Name:          *subnet.Name,
 			Type:          *subnet.Type,
 			ResourceGroup: ctx.ResourceGroup,
-			DependsOn:     []string{vnet.Id},
+			DependsOn:     dependsOn,
 		}
 
 		return snet

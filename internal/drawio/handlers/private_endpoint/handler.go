@@ -76,21 +76,21 @@ func getPrivateEndpointPointingToResource(resource_map *map[string]*node.Resourc
 	return privateEndpoints
 }
 
-func (*handler) PostProcessIcon(private_endpoint *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
 	// storage accounts might have multiple private endpoints attached to it
-	attachedTo := (*resource_map)[private_endpoint.Resource.Properties["attachedTo"]]
+	attachedTo := (*resource_map)[privateEndpoint.Resource.Properties["attachedTo"]]
 
-	addImplicitDependencyToFunctionApp(private_endpoint.Resource, attachedTo.Resource, resource_map)
+	//addImplicitDependencyToFunctionApp(privateEndpoint.Resource, attachedTo.Resource, resource_map)
 
-	existingPrivateEndpoints := getPrivateEndpointPointingToResource(resource_map, attachedTo.Resource)
+	attachedPrivateEndpoints := getPrivateEndpointPointingToResource(resource_map, attachedTo.Resource)
 
-	// multiple private endpoints point to the same resource - skip
-	if len(existingPrivateEndpoints) > 1 {
+	// multiple private endpoints point to this resource
+	if len(attachedPrivateEndpoints) > 1 {
 		return nil
 	}
 
 	// set icon top right
-	return node.SetIcon(attachedTo.Node, private_endpoint.Node, resource_map, node.TOP_RIGHT)
+	return node.SetIcon(attachedTo.Node, privateEndpoint.Node, resource_map, node.TOP_RIGHT)
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {

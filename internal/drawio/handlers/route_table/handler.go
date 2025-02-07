@@ -35,7 +35,7 @@ func (*handler) DrawIcon(resource *az.Resource) *node.Node {
 	}, &geometry)
 }
 
-func (*handler) PostProcessIcon(nic *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
 	return nil
 }
 
