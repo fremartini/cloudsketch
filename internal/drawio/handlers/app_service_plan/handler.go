@@ -53,8 +53,8 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 	return node.NewArrow(sourceId, targetId)
 }
 
-func (*handler) DrawBox(appService *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	resourcesInAppServicePlan := getResourcesInAppServicePlan(resources, appService.Id, resource_map)
+func (*handler) DrawBox(appServicePlan *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+	resourcesInAppServicePlan := getResourcesInAppServicePlan(resources, appServicePlan.Id, resource_map)
 
 	if len(resourcesInAppServicePlan) == 0 {
 		return []*node.Node{}
@@ -63,7 +63,7 @@ func (*handler) DrawBox(appService *az.Resource, resources []*az.Resource, resou
 	firstAppServiceSubnet := getAppServiceSubnet(resourcesInAppServicePlan[0].Resource, resources)
 
 	if firstAppServiceSubnet == nil {
-		log.Printf("Could not determine subnet of app service plan %s", appService.Name)
+		log.Printf("Could not determine subnet of app service plan %s", appServicePlan.Name)
 		return []*node.Node{}
 	}
 
@@ -79,33 +79,29 @@ func (*handler) DrawBox(appService *az.Resource, resources []*az.Resource, resou
 	}
 
 	// draw the box
-	appServiceNode := (*resource_map)[appService.Id].Node
-	appServiceNodeGeometry := appServiceNode.GetGeometry()
+	appServicePlanNode := (*resource_map)[appServicePlan.Id].Node
+	appServicePlanNodeGeometry := appServicePlanNode.GetGeometry()
 
 	box := node.NewBox(&node.Geometry{
-		X:      appServiceNodeGeometry.X,
-		Y:      appServiceNodeGeometry.Y,
+		X:      appServicePlanNodeGeometry.X,
+		Y:      appServicePlanNodeGeometry.Y,
 		Width:  0,
 		Height: 0,
 	}, &STYLE)
 
-	appServiceNode.SetProperty("parent", box.Id())
-	appServiceNode.ContainedIn = box
-	appServiceNode.SetPosition(0, 0)
+	appServicePlanNode.SetProperty("parent", box.Id())
+	appServicePlanNode.ContainedIn = box
+	appServicePlanNode.SetPosition(0, 0)
 
 	// move all resources in the app service plan into the box
 	node.FillResourcesInBox(box, resourcesInAppServicePlan, diagram.Padding)
 
-	node.ScaleDownAndSetIconBottomLeft(appServiceNode, box)
+	node.ScaleDownAndSetIconBottomLeft(appServicePlanNode, box)
 
-	// add an implicit dependency to the subnet
-	appService.DependsOn = append(appService.DependsOn, *firstAppServiceSubnet)
+	// add an explicit dependency to the subnet
+	appServicePlan.DependsOn = append(appServicePlan.DependsOn, *firstAppServiceSubnet)
 
-	nodes := []*node.Node{}
-
-	nodes = append(nodes, box)
-
-	return nodes
+	return []*node.Node{box}
 }
 
 func getResourcesInAppServicePlan(resources []*az.Resource, aspId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {

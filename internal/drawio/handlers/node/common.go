@@ -14,7 +14,7 @@ const (
 	BOTTOM_RIGHT = 3
 )
 
-func SetIcon(centerIcon, attachedIcon *Node, resource_map *map[string]*ResourceAndNode, position int) *Node {
+func SetIcon(centerIcon, attachedIcon *Node, position int) *Node {
 	centerIconGeometry := centerIcon.GetGeometry()
 	attachedIconGeometry := attachedIcon.GetGeometry()
 
@@ -93,8 +93,7 @@ func FillResourcesInBox(box *Node, resourcesInGrouping []*ResourceAndNode, paddi
 	fillResourcesInBoxLine(box, resourcesInGrouping, padding)
 }
 
-func fillResourcesInBoxLine(box *Node, resourcesInGrouping []*ResourceAndNode, padding int) {
-	// find the tallest icon among the resources
+func tallestResource(resourcesInGrouping []*ResourceAndNode) int {
 	heightValues := list.Map(resourcesInGrouping, func(r *ResourceAndNode) int {
 		if r.Node.ContainedIn != nil {
 			return r.Node.ContainedIn.GetGeometry().Height
@@ -103,43 +102,37 @@ func fillResourcesInBoxLine(box *Node, resourcesInGrouping []*ResourceAndNode, p
 		return r.Node.GetGeometry().Height
 	})
 
-	greatestHeight := list.Fold(heightValues, 0, func(acc, height int) int {
+	tallest := list.Fold(heightValues, 0, func(acc, height int) int {
 		return int(math.Max(float64(acc), float64(height)))
 	})
 
+	return tallest
+}
+
+func fillResourcesInBoxLine(box *Node, resources []*ResourceAndNode, padding int) {
+
+	tallestResource := tallestResource(resources)
+
 	nextX := padding
 	boxGeometry := box.GetGeometry()
-	boxGeometry.Height += padding*2 + greatestHeight
+	boxGeometry.Height += padding*2 + tallestResource
 
 	movedGroups := map[string]bool{}
 
-	for _, resourceToPlace := range resourcesInGrouping {
+	for _, resourceToPlace := range resources {
 		nodeToPlace := resourceToPlace.Node
 		nodeToPlaceGeometry := nodeToPlace.GetGeometry()
 
 		if nodeToPlace.ContainedIn != nil {
-			nodeContainedIn := nodeToPlace.ContainedIn
-			nodeContainedInGeometry := nodeContainedIn.GetGeometry()
-
-			_, ok := movedGroups[nodeContainedIn.Id()]
+			nodeToPlace = nodeToPlace.ContainedIn
+			nodeToPlaceGeometry = nodeToPlace.GetGeometry()
 
 			// box has already been moved
-			if ok {
+			if movedGroups[nodeToPlace.Id()] {
 				continue
 			}
 
-			offsetY := boxGeometry.Height/2 - nodeContainedInGeometry.Height/2
-
-			nodeToPlace.ContainedIn.SetProperty("parent", box.Id())
-			nodeToPlace.ContainedIn.SetPosition(nextX, offsetY)
-
-			nextX += nodeContainedInGeometry.Width + padding
-
-			boxGeometry.Width += nodeContainedInGeometry.Width + padding
-
-			movedGroups[nodeContainedIn.Id()] = true
-
-			continue
+			movedGroups[nodeToPlace.Id()] = true
 		}
 
 		offsetY := boxGeometry.Height/2 - nodeToPlaceGeometry.Height/2

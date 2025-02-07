@@ -49,9 +49,9 @@ func (d *diagram) Write(filename string) error {
 	<diagram name="Page-1" id="%s">
 		<mxGraphModel dx="2074" dy="1196" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
 			<root>
-			<mxCell id="0" />
-			<mxCell id="1" parent="0" />
-			%s
+				<mxCell id="0" />
+				<mxCell id="1" parent="0" />
+				%s
 			</root>
 		</mxGraphModel>
 	</diagram>

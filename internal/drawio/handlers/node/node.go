@@ -92,8 +92,9 @@ func (n *Node) ToMXCell() string {
 	}
 
 	cell := fmt.Sprintf(`<mxCell %s>
-	<mxGeometry x="%v" y="%v" width="%v" height="%v" as="geometry" />
-</mxCell>`, strings.TrimSpace(buffer.String()), n.geometry.X, n.geometry.Y, n.geometry.Width, n.geometry.Height)
+					<mxGeometry x="%v" y="%v" width="%v" height="%v" as="geometry" />
+				</mxCell>`,
+		strings.TrimSpace(buffer.String()), n.geometry.X, n.geometry.Y, n.geometry.Width, n.geometry.Height)
 
 	return cell
 }

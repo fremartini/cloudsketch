@@ -79,14 +79,20 @@ func main() {
 
 	filename := fmt.Sprintf("%s_%s.json", subscription.Name, subscription.Id)
 
-	allResources, ok := marshall.UnmarshalIfExists(filename)
+	forceRefresh := list.Contains(args[1:], func(arg string) bool {
+		return arg == "--forceRefresh"
+	})
 
-	if ok {
-		log.Println("using existing file")
+	if !forceRefresh {
+		allResources, ok := marshall.UnmarshalIfExists(filename)
 
-		drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), allResources)
+		if ok {
+			log.Println("using existing file")
 
-		return
+			drawio.New().WriteDiagram(fmt.Sprintf("./%s.drawio", filename), allResources)
+
+			return
+		}
 	}
 
 	resourceGroups, _ := resource_group.New().Handle(appContext.SubscriptionId, appContext.Credentials)
@@ -94,7 +100,7 @@ func main() {
 		log.Fatalf("listing of resource groups failed: %+v", err)
 	}
 
-	allResources = list.FlatMap(resourceGroups, func(resourceGroup *armresources.ResourceGroup) []*az.Resource {
+	allResources := list.FlatMap(resourceGroups, func(resourceGroup *armresources.ResourceGroup) []*az.Resource {
 		resource, err := resources.New().Handle(&az.Context{
 			SubscriptionId: appContext.SubscriptionId,
 			Credentials:    appContext.Credentials,

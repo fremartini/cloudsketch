@@ -55,9 +55,11 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 	sourceNode := (*resource_map)[source.Id].Node
 	targetNode := (*resource_map)[target.Id].Node
 
-	// function apps can be contained inside an app service plan. Don't draw these
-	if sourceNode.ContainedIn == targetNode.ContainedIn {
-		return nil
+	// if they are in the same group, don't draw the arrow
+	if sourceNode.ContainedIn != nil && targetNode.ContainedIn != nil {
+		if sourceNode.ContainedIn == targetNode.ContainedIn {
+			return nil
+		}
 	}
 
 	return node.NewArrow(sourceNode.Id(), targetNode.Id())

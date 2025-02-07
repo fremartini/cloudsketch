@@ -67,13 +67,12 @@ func (*handler) DrawBox(vnet *az.Resource, resources []*az.Resource, resource_ma
 		Height: geometry.Height + (2 * diagram.Padding),
 	}
 
-	// move the vnet icon to the bottom-left of the box
-	offsetX := geometry.X - vnetNodegeometry.Width/2
-	offsetY := geometry.Y + geometry.Height - vnetNodegeometry.Height/2
-	vnetNode.SetPosition(offsetX, offsetY)
+	box := node.NewBox(geometry, &STYLE)
 
-	vnetBox := node.NewBox(geometry, &STYLE)
-	nodes = append(nodes, vnetBox)
+	vnetNode.SetProperty("parent", box.Id())
+	vnetNode.SetPosition(-vnetNodegeometry.Width/2, geometry.Height-vnetNodegeometry.Height/2)
+
+	nodes = append(nodes, box)
 
 	return nodes
 }

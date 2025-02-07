@@ -18,7 +18,7 @@ func NewArrow(source, target string) *Arrow {
 		"id":     guid.NewGuidAlphanumeric(),
 		"source": source,
 		"target": target,
-		"style":  "edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;",
+		"style":  "edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;jumpStyle=arc",
 		"edge":   "1",
 		"parent": "1",
 	}
@@ -40,8 +40,9 @@ func (n *Arrow) ToMXCell() string {
 	}
 
 	cell := fmt.Sprintf(`<mxCell %s>
-	<mxGeometry relative="1" as="geometry" />
-</mxCell>`, strings.TrimSpace(buffer.String()))
+					<mxGeometry relative="1" as="geometry" />
+				</mxCell>`,
+		strings.TrimSpace(buffer.String()))
 
 	return cell
 }

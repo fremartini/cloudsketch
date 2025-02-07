@@ -63,7 +63,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 
 	// set icon top right
 	privateEndpointToMove := (*resource_map)[privateEndpoints[0].Id]
-	return node.SetIcon(resource.Node, privateEndpointToMove.Node, resource_map, node.TOP_RIGHT)
+	return node.SetIcon(resource.Node, privateEndpointToMove.Node, node.TOP_RIGHT)
 }
 
 func getPrivateEndpointSubnet(resource *az.Resource, resources []*az.Resource) *string {

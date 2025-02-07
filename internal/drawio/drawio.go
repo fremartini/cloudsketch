@@ -206,21 +206,14 @@ func addDependencyArrows() []string {
 				log.Fatalf("type %s has not been registered for rendering", resource.Type)
 			}
 
-			ok = resource_map[resource.Id].Node != nil
-
-			if !ok {
+			sourceMissing := resource_map[resource.Id].Node == nil
+			if sourceMissing {
 				log.Printf("source %s was not drawn, skipping ...", resource.Id)
 				continue
 			}
 
-			if _, ok := resource_map[dependency]; !ok {
-				log.Printf("target %s was not drawn, skipping ...", dependency)
-				continue
-			}
-
-			ok = resource_map[dependency].Node != nil
-
-			if !ok {
+			targetMissing := resource_map[dependency] == nil || resource_map[dependency].Node == nil
+			if targetMissing {
 				log.Printf("target %s was not drawn, skipping ...", dependency)
 				continue
 			}

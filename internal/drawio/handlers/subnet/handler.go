@@ -54,7 +54,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 
 	routeTable := (*resource_map)[routeTables[0]]
 
-	return node.SetIcon(resource.Node, routeTable.Node, resource_map, node.TOP_LEFT)
+	return node.SetIcon(resource.Node, routeTable.Node, node.TOP_LEFT)
 }
 
 func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
@@ -105,20 +105,17 @@ func (*handler) DrawBox(subnet *az.Resource, resources []*az.Resource, resource_
 
 	// move the subnet icon to the edge of the box
 	subnetNode := (*resource_map)[subnet.Id].Node
-
-	if subnetNode.ContainedIn != nil {
-		subnetNode = subnetNode.ContainedIn
-	}
-
-	subnetNodePosition := subnetNode.GetGeometry()
-	subnetNode.SetPosition(geometry.X-subnetNodePosition.Width/2, geometry.Y-subnetNodePosition.Height/2)
+	subnetNodeGeometry := subnetNode.GetGeometry()
 
 	box := node.NewBox(geometry, &STYLE)
+
+	subnetNode.SetProperty("parent", box.Id())
+	subnetNode.SetPosition(-subnetNodeGeometry.Width/2, -subnetNodeGeometry.Height/2)
 
 	node.FillResourcesInBox(box, resourcesInSubnet, diagram.Padding)
 
 	// adjust padding between the current box and the next subnets box on the X axis
-	diagram.BoxOriginX = geometry.X + geometry.Width + (subnetNodePosition.Width/2 + diagram.Padding)
+	diagram.BoxOriginX = geometry.X + geometry.Width + (subnetNodeGeometry.Width/2 + diagram.Padding)
 
 	// the vnet needs to know about the tallest vnet so it can fit it
 	diagram.MaxHeightSoFar = int(math.Max(float64(diagram.MaxHeightSoFar), float64(box.GetGeometry().Height)))
