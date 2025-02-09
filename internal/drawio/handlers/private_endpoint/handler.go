@@ -4,6 +4,7 @@ import (
 	"azsample/internal/az"
 	"azsample/internal/drawio/handlers/node"
 	"azsample/internal/drawio/images"
+	"azsample/internal/list"
 )
 
 type handler struct{}
@@ -40,13 +41,59 @@ func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_
 
 	attachedPrivateEndpoints := getPrivateEndpointPointingToResource(resource_map, attachedTo.Resource)
 
-	// multiple private endpoints point to this resource
 	if len(attachedPrivateEndpoints) > 1 {
-		return nil
+		// multiple private endpoints point to this resource. If they all
+		// belong to the same subnet they can be merged
+		resources := []*az.Resource{}
+		for _, e := range *resource_map {
+			resources = append(resources, e.Resource)
+		}
+
+		firstSubnet := getPrivateEndpointSubnet(privateEndpoint.Resource, resources)
+
+		allPrivateEndpointsInSameSubnet := list.Fold(attachedPrivateEndpoints, true, func(resource *az.Resource, matches bool) bool {
+			privateEndpointSubnet := getPrivateEndpointSubnet(resource, resources)
+
+			return matches && privateEndpointSubnet == firstSubnet
+		})
+
+		if !allPrivateEndpointsInSameSubnet {
+			return nil
+		}
+
+		// delete unneeded private endpoint icons
+		for _, pe := range attachedPrivateEndpoints {
+			if pe.Id == privateEndpoint.Resource.Id {
+				continue
+			}
+
+			delete(*resource_map, pe.Id)
+		}
 	}
 
-	// set icon top right
+	// one private endpoint exists, "merge" the two icons
 	return node.SetIcon(attachedTo.Node, privateEndpoint.Node, node.TOP_RIGHT)
+}
+
+func getPrivateEndpointSubnet(resource *az.Resource, resources []*az.Resource) *string {
+	for _, dependency := range resource.DependsOn {
+		// TODO: refactor this!
+		if c := list.Contains(resources, func(resource *az.Resource) bool {
+			return resource.Id == dependency
+		}); !c {
+			continue
+		}
+
+		resource := list.First(resources, func(resource *az.Resource) bool {
+			return resource.Id == dependency
+		})
+
+		if resource.Type == az.SUBNET {
+			return &resource.Id
+		}
+	}
+
+	return nil
 }
 
 func addImplicitDependencyToFunctionApp(privateEndpoint, functionApp *az.Resource, resource_map *map[string]*node.ResourceAndNode) {

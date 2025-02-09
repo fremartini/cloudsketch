@@ -84,7 +84,7 @@ func ScaleDownAndSetIconBottomLeft(iconToMove *Node, relativeTo *Node) {
 }
 
 func FillResourcesInBox(box *Node, resourcesInGrouping []*ResourceAndNode, padding int) {
-	if len(resourcesInGrouping) > 2 {
+	if false && len(resourcesInGrouping) > 2 {
 		fillResourcesInBoxSquare(box, resourcesInGrouping, padding)
 
 		return
@@ -120,25 +120,21 @@ func fillResourcesInBoxLine(box *Node, resources []*ResourceAndNode, padding int
 	movedGroups := map[string]bool{}
 
 	for _, resourceToPlace := range resources {
-		nodeToPlace := resourceToPlace.Node
-		nodeToPlaceGeometry := nodeToPlace.GetGeometry()
+		nodeToPlace := resourceToPlace.Node.GetParentContainer()
 
-		if nodeToPlace.ContainedIn != nil {
-			nodeToPlace = nodeToPlace.ContainedIn
-			nodeToPlaceGeometry = nodeToPlace.GetGeometry()
-
-			// box has already been moved
-			if movedGroups[nodeToPlace.Id()] {
-				continue
-			}
-
-			movedGroups[nodeToPlace.Id()] = true
+		// box has already been moved
+		if movedGroups[nodeToPlace.Id()] {
+			continue
 		}
+
+		movedGroups[nodeToPlace.Id()] = true
+
+		nodeToPlaceGeometry := nodeToPlace.GetGeometry()
 
 		offsetY := boxGeometry.Height/2 - nodeToPlaceGeometry.Height/2
 
 		nodeToPlace.SetProperty("parent", box.Id())
-		nodeToPlace.ContainedIn = box
+		//nodeToPlace.ContainedIn = box
 		nodeToPlace.SetPosition(nextX, offsetY)
 
 		nextX += nodeToPlaceGeometry.Width + padding

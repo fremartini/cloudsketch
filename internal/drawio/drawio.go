@@ -241,24 +241,28 @@ func addBoxes() []string {
 		resources = append(resources, resourceAndNode.Resource)
 	}
 
-	// TODO: implement a cleaner solution
-	aspNodes := drawBoxForResourceType(resources, az.APP_SERVICE_PLAN)
-	adfNodes := drawBoxForResourceType(resources, az.DATA_FACTORY)
-	privateDNSZoneNodes := drawBoxForResourceType(resources, az.PRIVATE_DNS_ZONE)
+	resourcesWithoutVnetsAndSubnets := list.Filter(resources, func(resource *az.Resource) bool {
+		return resource.Type != az.SUBNET && resource.Type != az.VIRTUAL_NETWORK
+	})
+
+	// virtual netwoks and subnets needs to be handled last
+	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *az.Resource) []string {
+		nodes := commands[resource.Type].DrawBox(resource, resources, &resource_map)
+
+		cells := list.Map(nodes, node.ToMXCell)
+
+		return cells
+	})
+
+	// return vnets first so they are rendered in the background
 	subnetNodes := drawBoxForResourceType(resources, az.SUBNET)
 	vnetNodes := drawBoxForResourceType(resources, az.VIRTUAL_NETWORK)
 
 	subnetCells := list.Map(subnetNodes, node.ToMXCell)
 	vnetCells := list.Map(vnetNodes, node.ToMXCell)
-	aspCells := list.Map(aspNodes, node.ToMXCell)
-	adfCells := list.Map(adfNodes, node.ToMXCell)
-	privateDNSZoneCells := list.Map(privateDNSZoneNodes, node.ToMXCell)
 
-	// return vnets first so they are rendered in the background
 	nodes := append(vnetCells, subnetCells...)
-	nodes = append(nodes, aspCells...)
-	nodes = append(nodes, adfCells...)
-	nodes = append(nodes, privateDNSZoneCells...)
+	nodes = append(nodes, boxes...)
 
 	return nodes
 }

@@ -47,8 +47,6 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 }
 
 func (*handler) DrawBox(vnet *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	nodes := []*node.Node{}
-
 	geometry := &node.Geometry{
 		X:      0,
 		Y:      0,
@@ -72,7 +70,5 @@ func (*handler) DrawBox(vnet *az.Resource, resources []*az.Resource, resource_ma
 	vnetNode.SetProperty("parent", box.Id())
 	vnetNode.SetPosition(-vnetNodegeometry.Width/2, geometry.Height-vnetNodegeometry.Height/2)
 
-	nodes = append(nodes, box)
-
-	return nodes
+	return []*node.Node{box}
 }
