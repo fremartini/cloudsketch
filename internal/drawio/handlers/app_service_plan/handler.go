@@ -93,8 +93,26 @@ func (*handler) DrawBox(appServicePlan *az.Resource, resources []*az.Resource, r
 	appServicePlanNode.ContainedIn = box
 	appServicePlanNode.SetPosition(0, 0)
 
+	seenGroups := map[string]bool{}
+
+	resourcesInAppServicePlan = list.Filter(resourcesInAppServicePlan, func(r *node.ResourceAndNode) bool {
+		n := r.Node.GetParentOrThis()
+
+		if seenGroups[n.Id()] {
+			return false
+		}
+
+		seenGroups[n.Id()] = true
+
+		return true
+	})
+
+	nodesToMove := list.Map(resourcesInAppServicePlan, func(r *node.ResourceAndNode) *node.Node {
+		return r.Node.GetParentOrThis()
+	})
+
 	// move all resources in the app service plan into the box
-	node.FillResourcesInBox(box, resourcesInAppServicePlan, diagram.Padding)
+	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
 
 	node.ScaleDownAndSetIconBottomLeft(appServicePlanNode, box)
 

@@ -66,8 +66,12 @@ func (*handler) DrawBox(privateDNSZone *az.Resource, resources []*az.Resource, r
 	privateDNSZoneNode.ContainedIn = box
 	privateDNSZoneNode.SetPosition(0, 0)
 
+	nodesToMove := list.Map(resourcesInPrivateDNSZone, func(r *node.ResourceAndNode) *node.Node {
+		return r.Node.GetParentOrThis()
+	})
+
 	// move all resources in the private dns zone into the box
-	node.FillResourcesInBox(box, resourcesInPrivateDNSZone, diagram.Padding)
+	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
 
 	node.ScaleDownAndSetIconBottomLeft(privateDNSZoneNode, box)
 

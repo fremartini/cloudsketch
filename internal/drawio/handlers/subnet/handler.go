@@ -79,19 +79,18 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 func (*handler) DrawBox(subnet *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	resourcesInSubnet := getResourcesInSubnet(resources, subnet.Id, resource_map)
 
+	// a subnet can contain resources that belong to the same group, these needs to be filtered to
+	// avoid moving the same group multiple times
 	seenGroups := map[string]bool{}
 
-	// resources in the subnet can belong to the same group - only count the group once
 	resourcesInSubnet = list.Filter(resourcesInSubnet, func(r *node.ResourceAndNode) bool {
-		if r.Node.ContainedIn == nil {
-			return true
-		}
+		n := r.Node.GetParentOrThis()
 
-		if _, ok := seenGroups[r.Node.ContainedIn.Id()]; ok {
+		if seenGroups[n.Id()] {
 			return false
 		}
 
-		seenGroups[r.Node.ContainedIn.Id()] = true
+		seenGroups[n.Id()] = true
 
 		return true
 	})
@@ -103,16 +102,19 @@ func (*handler) DrawBox(subnet *az.Resource, resources []*az.Resource, resource_
 		Height: 0,
 	}
 
-	// move the subnet icon to the edge of the box
+	box := node.NewBox(geometry, &STYLE)
+
 	subnetNode := (*resource_map)[subnet.Id].Node
 	subnetNodeGeometry := subnetNode.GetGeometry()
-
-	box := node.NewBox(geometry, &STYLE)
 
 	subnetNode.SetProperty("parent", box.Id())
 	subnetNode.SetPosition(-subnetNodeGeometry.Width/2, -subnetNodeGeometry.Height/2)
 
-	node.FillResourcesInBox(box, resourcesInSubnet, diagram.Padding)
+	nodesToMove := list.Map(resourcesInSubnet, func(r *node.ResourceAndNode) *node.Node {
+		return r.Node.GetParentOrThis()
+	})
+
+	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
 
 	// adjust padding between the current box and the next subnets box on the X axis
 	diagram.BoxOriginX = geometry.X + geometry.Width + (subnetNodeGeometry.Width/2 + diagram.Padding)

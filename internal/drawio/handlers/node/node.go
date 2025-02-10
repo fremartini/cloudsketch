@@ -82,14 +82,12 @@ func (n *Node) GetGeometry() *Geometry {
 	return n.geometry
 }
 
-func (n *Node) GetParentContainer() *Node {
+func (n *Node) GetParentOrThis() *Node {
 	if n.ContainedIn == nil {
 		return n
 	}
 
-	next := n.ContainedIn
-
-	return next.GetParentContainer()
+	return n.ContainedIn.GetParentOrThis()
 }
 
 func (n *Node) ToMXCell() string {

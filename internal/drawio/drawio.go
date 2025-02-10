@@ -246,12 +246,10 @@ func addBoxes() []string {
 	})
 
 	// virtual netwoks and subnets needs to be handled last
-	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *az.Resource) []string {
+	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *az.Resource) []*node.Node {
 		nodes := commands[resource.Type].DrawBox(resource, resources, &resource_map)
 
-		cells := list.Map(nodes, node.ToMXCell)
-
-		return cells
+		return nodes
 	})
 
 	// return vnets first so they are rendered in the background
@@ -262,7 +260,7 @@ func addBoxes() []string {
 	vnetCells := list.Map(vnetNodes, node.ToMXCell)
 
 	nodes := append(vnetCells, subnetCells...)
-	nodes = append(nodes, boxes...)
+	nodes = append(nodes, list.Map(boxes, node.ToMXCell)...)
 
 	return nodes
 }
