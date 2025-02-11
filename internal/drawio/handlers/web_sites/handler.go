@@ -10,25 +10,33 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = az.WEB_SITES
-	WIDTH  = 68
-	HEIGHT = 60
+	TYPE = az.WEB_SITES
 )
 
 func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(resource *az.Resource) *node.Node {
+func (*handler) MapResource(resource *az.Resource) *node.Node {
+	width := 0
+	height := 0
 	var image = ""
 
 	subtype := resource.Properties["subType"]
 
 	switch subtype {
 	case az.APP_SERVICE_SUBTYPE:
+		width = 68
+		height = 68
 		image = images.APP_SERVICE
 	case az.FUNCTION_APP_SUBTYPE:
+		width = 68
+		height = 60
 		image = images.FUNCTION_APP
+	case az.LOGIC_APP_SUBTYPE:
+		height = 52
+		width = 67
+		image = images.LOGIC_APP
 	default:
 		log.Fatalf("No image registered for subtype %s", subtype)
 	}
@@ -36,8 +44,8 @@ func (*handler) DrawIcon(resource *az.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
-		Width:  WIDTH,
-		Height: HEIGHT,
+		Width:  width,
+		Height: height,
 	}
 
 	return node.NewIcon(image, resource.Name, &geometry)
@@ -65,6 +73,6 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 	return node.NewArrow(sourceNode.Id(), targetNode.Id())
 }
 
-func (*handler) DrawBox(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) GroupResources(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	return []*node.Node{}
 }

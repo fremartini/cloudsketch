@@ -20,7 +20,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) DrawIcon(resource *az.Resource) *node.Node {
+func (*handler) MapResource(resource *az.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -158,6 +158,6 @@ func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[st
 	return node.NewArrow(sourceNode.Id(), targetNode.Id())
 }
 
-func (*handler) DrawBox(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) GroupResources(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	return []*node.Node{}
 }

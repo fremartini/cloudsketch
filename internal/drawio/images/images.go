@@ -16,6 +16,7 @@ const (
 	LOAD_BALANCER                         = "img/lib/azure2/networking/Load_Balancers.svg"
 	LOAD_BALANCER_FRONTEND                = PUBLIC_IP_ADDRESS
 	LOG_ANALYTICS                         = "img/lib/azure2/management_governance/Log_Analytics_Workspaces.svg"
+	LOGIC_APP                             = "img/lib/azure2/integration/Logic_Apps.svg"
 	NAT_GATEWAY                           = "img/lib/azure2/networking/NAT.svg"
 	NETWORK_INTERFACE                     = "img/lib/azure2/networking/Network_Interfaces.svg"
 	NETWORK_SECURITY_GROUP                = "img/lib/azure2/networking/Network_Security_Groups.svg"

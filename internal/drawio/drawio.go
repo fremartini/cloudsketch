@@ -38,10 +38,10 @@ import (
 type handleFuncMap = map[string]handler
 
 type handler interface {
-	DrawIcon(*az.Resource) *node.Node
+	MapResource(*az.Resource) *node.Node
 	PostProcessIcon(*node.ResourceAndNode, *map[string]*node.ResourceAndNode) *node.Node
 	DrawDependency(*az.Resource, *az.Resource, *map[string]*node.ResourceAndNode) *node.Arrow
-	DrawBox(*az.Resource, []*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
+	GroupResources(*az.Resource, []*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
 }
 
 var (
@@ -185,7 +185,7 @@ func drawResource(resource *az.Resource) {
 		return
 	}
 
-	icon := f.DrawIcon(resource)
+	icon := f.MapResource(resource)
 
 	resource_map[resource.Id] = &node.ResourceAndNode{
 		Resource: resource,
@@ -247,14 +247,14 @@ func addBoxes() []string {
 
 	// virtual netwoks and subnets needs to be handled last
 	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *az.Resource) []*node.Node {
-		nodes := commands[resource.Type].DrawBox(resource, resources, &resource_map)
+		nodes := commands[resource.Type].GroupResources(resource, resources, &resource_map)
 
 		return nodes
 	})
 
 	// return vnets first so they are rendered in the background
-	subnetNodes := drawBoxForResourceType(resources, az.SUBNET)
-	vnetNodes := drawBoxForResourceType(resources, az.VIRTUAL_NETWORK)
+	subnetNodes := GroupResourcesForResourceType(resources, az.SUBNET)
+	vnetNodes := GroupResourcesForResourceType(resources, az.VIRTUAL_NETWORK)
 
 	subnetCells := list.Map(subnetNodes, node.ToMXCell)
 	vnetCells := list.Map(vnetNodes, node.ToMXCell)
@@ -265,7 +265,7 @@ func addBoxes() []string {
 	return nodes
 }
 
-func drawBoxForResourceType(resources []*az.Resource, typ string) []*node.Node {
+func GroupResourcesForResourceType(resources []*az.Resource, typ string) []*node.Node {
 	nodes := []*node.Node{}
 
 	resourcesWithType := list.Filter(resources, func(r *az.Resource) bool {
@@ -273,7 +273,7 @@ func drawBoxForResourceType(resources []*az.Resource, typ string) []*node.Node {
 	})
 
 	for _, resource := range resourcesWithType {
-		nodes = append(nodes, commands[typ].DrawBox(resource, resources, &resource_map)...)
+		nodes = append(nodes, commands[typ].GroupResources(resource, resources, &resource_map)...)
 	}
 
 	return nodes

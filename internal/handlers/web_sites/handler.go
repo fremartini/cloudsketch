@@ -22,6 +22,7 @@ var (
 		"functionapp,linux":                      az.FUNCTION_APP_SUBTYPE,
 		"functionapp,linux,container,kubernetes": az.FUNCTION_APP_SUBTYPE,
 		"functionapp,linux,kubernetes":           az.FUNCTION_APP_SUBTYPE,
+		"functionapp,workflowapp":                az.LOGIC_APP_SUBTYPE,
 	}
 )
 
@@ -43,17 +44,20 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 	}
 
 	plan := app.Properties.ServerFarmID
-	kind := app.Kind
 
-	subType := WEBSITES_KIND_MAP[*kind]
+	dependsOn := []string{*plan}
+
+	subType := WEBSITES_KIND_MAP[*app.Kind]
+
+	properties := map[string]string{"subType": subType}
 
 	resource := &az.Resource{
 		Id:            *app.ID,
 		Name:          *app.Name,
 		Type:          *app.Type,
 		ResourceGroup: ctx.ResourceGroup,
-		DependsOn:     []string{*plan},
-		Properties:    map[string]string{"subType": subType},
+		DependsOn:     dependsOn,
+		Properties:    properties,
 	}
 
 	return []*az.Resource{resource}, nil
