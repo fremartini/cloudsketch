@@ -32,6 +32,7 @@ import (
 	"azsample/internal/drawio/handlers/virtual_network"
 	"azsample/internal/drawio/handlers/web_sites"
 	"azsample/internal/list"
+	"azsample/internal/set"
 	"log"
 )
 
@@ -79,8 +80,6 @@ var (
 		virtual_network.TYPE:           virtual_network.New(),
 		web_sites.TYPE:                 web_sites.New(),
 	}
-	resource_map             = map[string]*node.ResourceAndNode{}
-	seen_unhandled_resources = map[string]bool{}
 )
 
 type drawio struct {
@@ -92,21 +91,36 @@ func New() *drawio {
 
 func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
-	populateResourceMap(resources)
+	resource_map := populateResourceMap(resources)
 
 	// some resources group other resources
-	groups := processGroups()
+	groups := processGroups(resource_map)
 
 	// some resources like vnets and subnets needs boxes draw around them, and their resources moved into them
-	boxes := addBoxes()
+	boxes := addBoxes(resource_map)
 
 	// with every DrawIO icon present, add the dependency arrows
-	dependencyArrows := addDependencyArrows()
+	dependencyArrows := addDependencyArrows(resource_map)
 
-	cells := []*node.Node{}
-	for _, resource := range resource_map {
-		cells = append(cells, resource.Node)
+	allResources := []*node.ResourceAndNode{}
+	for _, resource := range *resource_map {
+		allResources = append(allResources, resource)
 	}
+
+	// private endpoints and NICs are typically used as icons attached to other icons and should therefore be rendered in front
+	// TODO: implement a better solution?
+	allResourcesWithoutPEandNICs := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
+		return n.Resource.Type != az.PRIVATE_ENDPOINT && n.Resource.Type != az.NETWORK_INTERFACE
+	})
+
+	privateEndpointsAndNICS := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
+		return n.Resource.Type == az.PRIVATE_ENDPOINT || n.Resource.Type == az.NETWORK_INTERFACE
+	})
+
+	allResources = append(allResourcesWithoutPEandNICs, privateEndpointsAndNICS...)
+	allResourcesNodes := list.Map(allResources, func(n *node.ResourceAndNode) *node.Node {
+		return n.Node
+	})
 
 	// combine everything and render them in the final diagram
 	// items appended first are rendered first (in the background)
@@ -116,7 +130,7 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	cellsToRender = append(cellsToRender, list.Map(dependencyArrows, func(a *node.Arrow) string {
 		return a.ToMXCell()
 	})...)
-	cellsToRender = append(cellsToRender, list.Map(cells, node.ToMXCell)...)
+	cellsToRender = append(cellsToRender, list.Map(allResourcesNodes, node.ToMXCell)...)
 
 	dgrm := diagram.New(cellsToRender)
 
@@ -125,11 +139,83 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	}
 }
 
-func processGroups() []*node.Node {
+func populateResourceMap(resources []*az.Resource) *map[string]*node.ResourceAndNode {
+	resource_map := &map[string]*node.ResourceAndNode{}
+	seen_unhandled_resources := set.New[string]()
+
+	for _, resource := range resources {
+		// draw dependencies
+		drawDependenciesRecursively(resource, resources, resource_map, seen_unhandled_resources)
+
+		if (*resource_map)[resource.Id] != nil {
+			// resource already drawn
+			continue
+		}
+
+		// draw this resource
+		resourceAndNode := drawResource(resource, seen_unhandled_resources)
+
+		if resourceAndNode == nil {
+			continue
+		}
+
+		(*resource_map)[resource.Id] = resourceAndNode
+	}
+
+	return resource_map
+}
+
+func drawDependenciesRecursively(resource *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode, seen_unhandled_resources *set.Set[string]) {
+	for _, dependencyId := range resource.DependsOn {
+		if (*resource_map)[dependencyId] != nil {
+			// dependency already drawn
+			continue
+		}
+
+		dependency := list.First(resources, func(r *az.Resource) bool {
+			return r.Id == dependencyId
+		})
+
+		drawDependenciesRecursively(dependency, resources, resource_map, seen_unhandled_resources)
+
+		resourceAndNode := drawResource(dependency, seen_unhandled_resources)
+
+		if resourceAndNode == nil {
+			continue
+		}
+
+		(*resource_map)[dependency.Id] = resourceAndNode
+	}
+}
+
+func drawResource(resource *az.Resource, seen_unhandled_resources *set.Set[string]) *node.ResourceAndNode {
+	f, ok := commands[resource.Type]
+
+	if !ok {
+		seenResourceType := seen_unhandled_resources.Contains(resource.Type)
+
+		// mechanism to prevent spamming the output with the same type
+		if !seenResourceType {
+			log.Printf("unhandled type %s", resource.Type)
+			seen_unhandled_resources.Add(resource.Type)
+		}
+
+		return nil
+	}
+
+	icon := f.MapResource(resource)
+
+	return &node.ResourceAndNode{
+		Resource: resource,
+		Node:     icon,
+	}
+}
+
+func processGroups(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	groups := []*node.Node{}
 
-	for _, resource := range resource_map {
-		groupToAdd := commands[resource.Resource.Type].PostProcessIcon(resource, &resource_map)
+	for _, resource := range *resource_map {
+		groupToAdd := commands[resource.Resource.Type].PostProcessIcon(resource, resource_map)
 
 		if groupToAdd == nil {
 			continue
@@ -140,65 +226,10 @@ func processGroups() []*node.Node {
 	return groups
 }
 
-func populateResourceMap(resources []*az.Resource) {
-	for _, resource := range resources {
-		// draw dependencies
-		drawDependenciesRecursively(resource, resources)
-
-		if resource_map[resource.Id] != nil {
-			// resource already drawn
-			continue
-		}
-
-		// draw this resource
-		drawResource(resource)
-	}
-}
-
-func drawDependenciesRecursively(resource *az.Resource, resources []*az.Resource) {
-	for _, dependencyId := range resource.DependsOn {
-		if resource_map[dependencyId] != nil {
-			// dependency already drawn
-			continue
-		}
-
-		dependency := list.First(resources, func(r *az.Resource) bool {
-			return r.Id == dependencyId
-		})
-
-		drawDependenciesRecursively(dependency, resources)
-
-		drawResource(dependency)
-	}
-}
-
-func drawResource(resource *az.Resource) {
-	f, ok := commands[resource.Type]
-
-	if !ok {
-		_, seenResource := seen_unhandled_resources[resource.Type]
-
-		// mechanism to prevent spamming the output with the same type
-		if !seenResource {
-			log.Printf("unhandled type %s", resource.Type)
-			seen_unhandled_resources[resource.Type] = true
-		}
-
-		return
-	}
-
-	icon := f.MapResource(resource)
-
-	resource_map[resource.Id] = &node.ResourceAndNode{
-		Resource: resource,
-		Node:     icon,
-	}
-}
-
-func addDependencyArrows() []*node.Arrow {
+func addDependencyArrows(resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	var arrows []*node.Arrow
 
-	for _, resourceAndNode := range resource_map {
+	for _, resourceAndNode := range *resource_map {
 		resource := resourceAndNode.Resource
 
 		for _, dependency := range resource.DependsOn {
@@ -208,21 +239,21 @@ func addDependencyArrows() []*node.Arrow {
 				log.Fatalf("type %s has not been registered for rendering", resource.Type)
 			}
 
-			sourceMissing := resource_map[resource.Id].Node == nil
+			sourceMissing := (*resource_map)[resource.Id].Node == nil
 			if sourceMissing {
 				log.Printf("source %s was not drawn, skipping ...", resource.Id)
 				continue
 			}
 
-			targetMissing := resource_map[dependency] == nil || resource_map[dependency].Node == nil
+			targetMissing := (*resource_map)[dependency] == nil || (*resource_map)[dependency].Node == nil
 			if targetMissing {
 				log.Printf("target %s was not drawn, skipping ...", dependency)
 				continue
 			}
 
-			target := resource_map[dependency].Resource
+			target := (*resource_map)[dependency].Resource
 
-			arrow := f.DrawDependency(resource, target, &resource_map)
+			arrow := f.DrawDependency(resource, target, resource_map)
 
 			// dependency arrow may be omitted
 			if arrow == nil {
@@ -236,10 +267,10 @@ func addDependencyArrows() []*node.Arrow {
 	return arrows
 }
 
-func addBoxes() []*node.Node {
+func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	resources := []*az.Resource{}
 
-	for _, resourceAndNode := range resource_map {
+	for _, resourceAndNode := range *resource_map {
 		resources = append(resources, resourceAndNode.Resource)
 	}
 
@@ -248,12 +279,12 @@ func addBoxes() []*node.Node {
 	})
 
 	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *az.Resource) []*node.Node {
-		return commands[resource.Type].GroupResources(resource, resources, &resource_map)
+		return commands[resource.Type].GroupResources(resource, resources, resource_map)
 	})
 
 	// virtual netwoks and subnets needs to be handled last since they "depend" on all other resources
-	subnets := DrawGroupForResourceType(resources, az.SUBNET)
-	vnets := DrawGroupForResourceType(resources, az.VIRTUAL_NETWORK)
+	subnets := DrawGroupForResourceType(resources, az.SUBNET, resource_map)
+	vnets := DrawGroupForResourceType(resources, az.VIRTUAL_NETWORK, resource_map)
 
 	// return vnets first so they are rendered in the background
 	nodes := append(vnets, append(subnets, boxes...)...)
@@ -261,7 +292,7 @@ func addBoxes() []*node.Node {
 	return nodes
 }
 
-func DrawGroupForResourceType(resources []*az.Resource, typ string) []*node.Node {
+func DrawGroupForResourceType(resources []*az.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	nodes := []*node.Node{}
 
 	resourcesWithType := list.Filter(resources, func(r *az.Resource) bool {
@@ -269,7 +300,7 @@ func DrawGroupForResourceType(resources []*az.Resource, typ string) []*node.Node
 	})
 
 	for _, resource := range resourcesWithType {
-		nodes = append(nodes, commands[typ].GroupResources(resource, resources, &resource_map)...)
+		nodes = append(nodes, commands[typ].GroupResources(resource, resources, resource_map)...)
 	}
 
 	return nodes
