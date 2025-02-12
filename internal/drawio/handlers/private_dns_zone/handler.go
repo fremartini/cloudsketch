@@ -40,11 +40,18 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return nil
 }
 
-func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
-	sourceId := (*resource_map)[source.Id].Node.Id()
-	targetId := (*resource_map)[target.Id].Node.Id()
+func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+	arrows := []*node.Arrow{}
 
-	return node.NewArrow(sourceId, targetId)
+	sourceId := (*resource_map)[source.Id].Node.Id()
+
+	for _, target := range targets {
+		targetId := (*resource_map)[target.Id].Node.Id()
+
+		arrows = append(arrows, node.NewArrow(sourceId, targetId, nil))
+	}
+
+	return arrows
 }
 
 func (*handler) GroupResources(privateDNSZone *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

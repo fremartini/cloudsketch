@@ -35,16 +35,24 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return nil
 }
 
-func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
-	sourceNode := (*resource_map)[source.Id].Node
-	targetNode := (*resource_map)[target.Id].Node
+func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+	arrows := []*node.Arrow{}
 
-	// ADF MPE can be contained inside an ADF. Don't draw these
-	if sourceNode.ContainedIn == targetNode.ContainedIn {
-		return nil
+	sourceNode := (*resource_map)[source.Id].Node
+
+	for _, target := range targets {
+		targetNode := (*resource_map)[target.Id].Node
+
+		// ADF MPE can be contained inside an ADF. Don't draw these
+		if sourceNode.ContainedIn == targetNode.ContainedIn {
+			continue
+		}
+
+		arrows = append(arrows, node.NewArrow(sourceNode.Id(), targetNode.Id(), nil))
 	}
 
-	return node.NewArrow(sourceNode.Id(), targetNode.Id())
+	return arrows
+
 }
 
 func (*handler) GroupResources(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

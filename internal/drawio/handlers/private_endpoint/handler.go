@@ -139,23 +139,30 @@ func getPrivateEndpointPointingToResource(resource_map *map[string]*node.Resourc
 	return privateEndpoints
 }
 
-func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
-	// don't draw arrows to subnets
-	if target.Type == az.SUBNET {
-		return nil
-	}
+func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+	arrows := []*node.Arrow{}
 
 	sourceNode := (*resource_map)[source.Id].Node
-	targetNode := (*resource_map)[target.Id].Node
 
-	// if they are in the same group, don't draw the arrow
-	if sourceNode.ContainedIn != nil && targetNode.ContainedIn != nil {
-		if sourceNode.ContainedIn == targetNode.ContainedIn {
-			return nil
+	for _, target := range targets {
+		// don't draw arrows to subnets
+		if target.Type == az.SUBNET {
+			continue
 		}
+
+		targetNode := (*resource_map)[target.Id].Node
+
+		// if they are in the same group, don't draw the arrow
+		if sourceNode.ContainedIn != nil && targetNode.ContainedIn != nil {
+			if sourceNode.ContainedIn == targetNode.ContainedIn {
+				continue
+			}
+		}
+
+		arrows = append(arrows, node.NewArrow(sourceNode.Id(), targetNode.Id(), nil))
 	}
 
-	return node.NewArrow(sourceNode.Id(), targetNode.Id())
+	return arrows
 }
 
 func (*handler) GroupResources(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

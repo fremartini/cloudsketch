@@ -41,7 +41,7 @@ type handleFuncMap = map[string]handler
 type handler interface {
 	MapResource(*az.Resource) *node.Node
 	PostProcessIcon(*node.ResourceAndNode, *map[string]*node.ResourceAndNode) *node.Node
-	DrawDependency(*az.Resource, *az.Resource, *map[string]*node.ResourceAndNode) *node.Arrow
+	DrawDependency(*az.Resource, []*az.Resource, *map[string]*node.ResourceAndNode) []*node.Arrow
 	GroupResources(*az.Resource, []*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
 }
 
@@ -227,44 +227,37 @@ func processGroups(resource_map *map[string]*node.ResourceAndNode) []*node.Node 
 }
 
 func addDependencyArrows(resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	var arrows []*node.Arrow
+	var nodes []*node.Arrow
 
 	for _, resourceAndNode := range *resource_map {
 		resource := resourceAndNode.Resource
 
-		for _, dependency := range resource.DependsOn {
-			f, ok := commands[resource.Type]
+		f, ok := commands[resource.Type]
 
-			if !ok {
-				log.Fatalf("type %s has not been registered for rendering", resource.Type)
-			}
+		if !ok {
+			log.Fatalf("type %s has not been registered for rendering", resource.Type)
+		}
 
-			sourceMissing := (*resource_map)[resource.Id].Node == nil
-			if sourceMissing {
-				log.Printf("source %s was not drawn, skipping ...", resource.Id)
-				continue
-			}
-
+		dependencyIds := list.Filter(resource.DependsOn, func(dependency string) bool {
 			targetMissing := (*resource_map)[dependency] == nil || (*resource_map)[dependency].Node == nil
 			if targetMissing {
 				log.Printf("target %s was not drawn, skipping ...", dependency)
-				continue
+				return false
 			}
 
-			target := (*resource_map)[dependency].Resource
+			return true
+		})
 
-			arrow := f.DrawDependency(resource, target, resource_map)
+		dependencyResources := list.Map(dependencyIds, func(dependency string) *az.Resource {
+			return (*resource_map)[dependency].Resource
+		})
 
-			// dependency arrow may be omitted
-			if arrow == nil {
-				continue
-			}
+		arrows := f.DrawDependency(resource, dependencyResources, resource_map)
 
-			arrows = append(arrows, arrow)
-		}
+		nodes = append(nodes, arrows...)
 	}
 
-	return arrows
+	return nodes
 }
 
 func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {

@@ -57,23 +57,30 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return node.SetIcon(resource.Node, routeTable.Node, node.TOP_LEFT)
 }
 
-func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
-	// don't draw arrows to virtual networks
-	if target.Type == az.VIRTUAL_NETWORK {
-		return nil
-	}
+func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+	arrows := []*node.Arrow{}
 
 	sourceNode := (*resource_map)[source.Id].Node
-	targetNode := (*resource_map)[target.Id].Node
 
-	// if they are in the same group, don't draw the arrow
-	if sourceNode.ContainedIn != nil && targetNode.ContainedIn != nil {
-		if sourceNode.ContainedIn == targetNode.ContainedIn {
-			return nil
+	for _, target := range targets {
+		// don't draw arrows to virtual networks
+		if target.Type == az.VIRTUAL_NETWORK {
+			continue
 		}
+
+		targetNode := (*resource_map)[target.Id].Node
+
+		// if they are in the same group, don't draw the arrow
+		if sourceNode.ContainedIn != nil && targetNode.ContainedIn != nil {
+			if sourceNode.ContainedIn == targetNode.ContainedIn {
+				continue
+			}
+		}
+
+		arrows = append(arrows, node.NewArrow(sourceNode.Id(), targetNode.Id(), nil))
 	}
 
-	return node.NewArrow(sourceNode.Id(), targetNode.Id())
+	return arrows
 }
 
 func (*handler) GroupResources(subnet *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
@@ -105,6 +112,10 @@ func (*handler) GroupResources(subnet *az.Resource, resources []*az.Resource, re
 	box := node.NewBox(geometry, &STYLE)
 
 	subnetNode := (*resource_map)[subnet.Id].Node
+
+	// subnets can be in a group because of UDRs
+	subnetNode = subnetNode.GetParentOrThis()
+
 	subnetNodeGeometry := subnetNode.GetGeometry()
 
 	subnetNode.SetProperty("parent", box.Id())

@@ -34,16 +34,23 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return nil
 }
 
-func (*handler) DrawDependency(source, target *az.Resource, resource_map *map[string]*node.ResourceAndNode) *node.Arrow {
-	// don't draw arrows to subnets
-	if target.Type == az.SUBNET {
-		return nil
-	}
+func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+	arrows := []*node.Arrow{}
 
 	sourceId := (*resource_map)[source.Id].Node.Id()
-	targetId := (*resource_map)[target.Id].Node.Id()
 
-	return node.NewArrow(sourceId, targetId)
+	for _, target := range targets {
+		// don't draw arrows to subnets
+		if target.Type == az.SUBNET {
+			continue
+		}
+
+		targetId := (*resource_map)[target.Id].Node.Id()
+
+		arrows = append(arrows, node.NewArrow(sourceId, targetId, nil))
+	}
+
+	return arrows
 }
 
 func (*handler) GroupResources(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

@@ -3,6 +3,7 @@ package web_sites
 import (
 	"azsample/internal/az"
 	"context"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v4"
 )
@@ -43,13 +44,28 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
-	plan := app.Properties.ServerFarmID
+	config, err := client.GetConfiguration(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
 
-	dependsOn := []string{*plan}
+	if err != nil {
+		return nil, err
+	}
+
+	properties := map[string]string{}
+
+	configValues := config.Properties.AzureStorageAccounts[ctx.ResourceName]
+
+	if configValues != nil {
+		properties["storageAccountName"] = strings.ToLower(*configValues.AccountName)
+	}
 
 	subType := WEBSITES_KIND_MAP[*app.Kind]
+	properties["subType"] = subType
 
-	properties := map[string]string{"subType": subType}
+	outboundSubnetId := app.Properties.VirtualNetworkSubnetID
+	properties["outboundSubnet"] = strings.ToLower(*outboundSubnetId)
+
+	planId := app.Properties.ServerFarmID
+	dependsOn := []string{*planId}
 
 	resource := &az.Resource{
 		Id:            *app.ID,

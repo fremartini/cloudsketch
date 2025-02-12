@@ -84,7 +84,7 @@ func ScaleDownAndSetIconBottomLeft(iconToMove *Node, relativeTo *Node) {
 }
 
 func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int) {
-	if len(resourcesInGrouping) > 3 {
+	if false && len(resourcesInGrouping) > 3 {
 		fillResourcesInBoxSquare(box, resourcesInGrouping, padding)
 
 		return

@@ -13,7 +13,7 @@ type Arrow struct {
 	source, target string
 }
 
-func NewArrow(source, target string) *Arrow {
+func NewArrow(source, target string, style *string) *Arrow {
 	values := map[string]interface{}{
 		"id":     guid.NewGuidAlphanumeric(),
 		"source": source,
@@ -21,6 +21,10 @@ func NewArrow(source, target string) *Arrow {
 		"style":  "edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;jumpStyle=arc",
 		"edge":   "1",
 		"parent": "1",
+	}
+
+	if style != nil {
+		values["style"] = fmt.Sprintf("%s;%s", values["style"], *style)
 	}
 
 	return &Arrow{

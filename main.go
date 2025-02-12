@@ -20,7 +20,7 @@ import (
 	"azsample/internal/handlers/virtual_network"
 	"azsample/internal/handlers/web_sites"
 	"azsample/internal/list"
-	"azsample/marshall"
+	"azsample/internal/marshall"
 	"fmt"
 	"log"
 	"os"
