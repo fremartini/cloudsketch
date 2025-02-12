@@ -111,9 +111,11 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 	// combine everything and render them in the final diagram
 	// items appended first are rendered first (in the background)
 	cellsToRender := []string{}
-	cellsToRender = append(cellsToRender, boxes...)
+	cellsToRender = append(cellsToRender, list.Map(boxes, node.ToMXCell)...)
 	cellsToRender = append(cellsToRender, list.Map(groups, node.ToMXCell)...)
-	cellsToRender = append(cellsToRender, dependencyArrows...)
+	cellsToRender = append(cellsToRender, list.Map(dependencyArrows, func(a *node.Arrow) string {
+		return a.ToMXCell()
+	})...)
 	cellsToRender = append(cellsToRender, list.Map(cells, node.ToMXCell)...)
 
 	dgrm := diagram.New(cellsToRender)
@@ -193,8 +195,8 @@ func drawResource(resource *az.Resource) {
 	}
 }
 
-func addDependencyArrows() []string {
-	var cells []string
+func addDependencyArrows() []*node.Arrow {
+	var arrows []*node.Arrow
 
 	for _, resourceAndNode := range resource_map {
 		resource := resourceAndNode.Resource
@@ -220,21 +222,21 @@ func addDependencyArrows() []string {
 
 			target := resource_map[dependency].Resource
 
-			dependency := f.DrawDependency(resource, target, &resource_map)
+			arrow := f.DrawDependency(resource, target, &resource_map)
 
 			// dependency arrow may be omitted
-			if dependency == nil {
+			if arrow == nil {
 				continue
 			}
 
-			cells = append(cells, dependency.ToMXCell())
+			arrows = append(arrows, arrow)
 		}
 	}
 
-	return cells
+	return arrows
 }
 
-func addBoxes() []string {
+func addBoxes() []*node.Node {
 	resources := []*az.Resource{}
 
 	for _, resourceAndNode := range resource_map {
@@ -245,27 +247,21 @@ func addBoxes() []string {
 		return resource.Type != az.SUBNET && resource.Type != az.VIRTUAL_NETWORK
 	})
 
-	// virtual netwoks and subnets needs to be handled last
 	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *az.Resource) []*node.Node {
-		nodes := commands[resource.Type].GroupResources(resource, resources, &resource_map)
-
-		return nodes
+		return commands[resource.Type].GroupResources(resource, resources, &resource_map)
 	})
 
+	// virtual netwoks and subnets needs to be handled last since they "depend" on all other resources
+	subnets := DrawGroupForResourceType(resources, az.SUBNET)
+	vnets := DrawGroupForResourceType(resources, az.VIRTUAL_NETWORK)
+
 	// return vnets first so they are rendered in the background
-	subnetNodes := GroupResourcesForResourceType(resources, az.SUBNET)
-	vnetNodes := GroupResourcesForResourceType(resources, az.VIRTUAL_NETWORK)
-
-	subnetCells := list.Map(subnetNodes, node.ToMXCell)
-	vnetCells := list.Map(vnetNodes, node.ToMXCell)
-
-	nodes := append(vnetCells, subnetCells...)
-	nodes = append(nodes, list.Map(boxes, node.ToMXCell)...)
+	nodes := append(vnets, append(subnets, boxes...)...)
 
 	return nodes
 }
 
-func GroupResourcesForResourceType(resources []*az.Resource, typ string) []*node.Node {
+func DrawGroupForResourceType(resources []*az.Resource, typ string) []*node.Node {
 	nodes := []*node.Node{}
 
 	resourcesWithType := list.Filter(resources, func(r *az.Resource) bool {
