@@ -1,7 +1,7 @@
 package web_sites
 
 import (
-	"azsample/internal/az"
+	"cloudsketch/internal/az"
 	"context"
 	"strings"
 

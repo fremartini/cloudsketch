@@ -1,7 +1,7 @@
 package node
 
 import (
-	"azsample/internal/list"
+	"cloudsketch/internal/list"
 	"log"
 	"math"
 	"sort"

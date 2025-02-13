@@ -1,8 +1,8 @@
 package private_dns_zone
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/list"
+	"cloudsketch/internal/az"
+	"cloudsketch/internal/list"
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/privatedns/armprivatedns"

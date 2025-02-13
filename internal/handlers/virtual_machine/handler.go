@@ -1,7 +1,7 @@
 package virtual_machine
 
 import (
-	"azsample/internal/az"
+	"cloudsketch/internal/az"
 	"context"
 	"strings"
 

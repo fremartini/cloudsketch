@@ -1,9 +1,9 @@
 package network_security_group
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/drawio/handlers/node"
-	"azsample/internal/drawio/images"
+	"cloudsketch/internal/az"
+	"cloudsketch/internal/drawio/handlers/node"
+	"cloudsketch/internal/drawio/images"
 )
 
 type handler struct{}

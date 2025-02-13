@@ -1,7 +1,7 @@
 package application_gateway
 
 import (
-	"azsample/internal/az"
+	"cloudsketch/internal/az"
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v6"

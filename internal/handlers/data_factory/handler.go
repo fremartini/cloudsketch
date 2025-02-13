@@ -1,8 +1,8 @@
 package data_factory
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/list"
+	"cloudsketch/internal/az"
+	"cloudsketch/internal/list"
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/datafactory/armdatafactory/v9"

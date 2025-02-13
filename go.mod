@@ -1,4 +1,4 @@
-module azsample
+module cloudsketch
 
 go 1.23.2
 

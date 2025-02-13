@@ -1,7 +1,7 @@
 package node
 
 import (
-	"azsample/internal/az"
+	"cloudsketch/internal/az"
 )
 
 type Geometry struct {

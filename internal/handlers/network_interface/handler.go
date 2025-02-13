@@ -1,7 +1,7 @@
 package network_interface
 
 import (
-	"azsample/internal/az"
+	"cloudsketch/internal/az"
 	"context"
 	"strings"
 

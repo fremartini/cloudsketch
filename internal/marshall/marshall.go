@@ -1,7 +1,7 @@
 package marshall
 
 import (
-	"azsample/internal/az"
+	"cloudsketch/internal/az"
 	"encoding/json"
 	"errors"
 	"log"

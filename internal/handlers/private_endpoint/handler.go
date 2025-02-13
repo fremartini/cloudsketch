@@ -1,7 +1,7 @@
 package private_endpoint
 
 import (
-	"azsample/internal/az"
+	"cloudsketch/internal/az"
 	"context"
 	"strings"
 

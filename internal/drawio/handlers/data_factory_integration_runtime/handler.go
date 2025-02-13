@@ -1,10 +1,10 @@
 package data_factory_integration_runtime
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/drawio/handlers/node"
-	"azsample/internal/drawio/handlers/virtual_machine"
-	"azsample/internal/drawio/images"
+	"cloudsketch/internal/az"
+	"cloudsketch/internal/drawio/handlers/node"
+	"cloudsketch/internal/drawio/handlers/virtual_machine"
+	"cloudsketch/internal/drawio/images"
 )
 
 type handler struct{}

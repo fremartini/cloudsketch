@@ -1,8 +1,8 @@
 package virtual_network
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/list"
+	"cloudsketch/internal/az"
+	"cloudsketch/internal/list"
 	"context"
 	"strings"
 

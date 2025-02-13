@@ -1,8 +1,8 @@
 package route_table
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/drawio/handlers/node"
+	"cloudsketch/internal/az"
+	"cloudsketch/internal/drawio/handlers/node"
 )
 
 type handler struct{}

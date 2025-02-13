@@ -1,9 +1,9 @@
 package diagram
 
 import (
-	"azsample/internal/guid"
 	"bufio"
 	"bytes"
+	"cloudsketch/internal/guid"
 	"fmt"
 	"os"
 )

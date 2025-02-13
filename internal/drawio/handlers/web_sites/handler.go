@@ -1,10 +1,10 @@
 package web_sites
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/drawio/handlers/node"
-	"azsample/internal/drawio/images"
-	"azsample/internal/list"
+	"cloudsketch/internal/az"
+	"cloudsketch/internal/drawio/handlers/node"
+	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/list"
 	"log"
 	"strings"
 )

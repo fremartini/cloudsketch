@@ -1,8 +1,8 @@
 package load_balancer
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/list"
+	"cloudsketch/internal/az"
+	"cloudsketch/internal/list"
 	"context"
 	"strings"
 

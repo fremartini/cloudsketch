@@ -1,10 +1,10 @@
 package data_factory_managed_private_endpoint
 
 import (
-	"azsample/internal/az"
-	"azsample/internal/drawio/handlers/node"
-	"azsample/internal/drawio/handlers/private_endpoint"
-	"azsample/internal/drawio/images"
+	"cloudsketch/internal/az"
+	"cloudsketch/internal/drawio/handlers/node"
+	"cloudsketch/internal/drawio/handlers/private_endpoint"
+	"cloudsketch/internal/drawio/images"
 )
 
 type handler struct{}

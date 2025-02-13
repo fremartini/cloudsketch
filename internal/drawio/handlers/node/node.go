@@ -1,8 +1,8 @@
 package node
 
 import (
-	"azsample/internal/guid"
 	"bytes"
+	"cloudsketch/internal/guid"
 	"encoding/json"
 	"fmt"
 	"strings"
