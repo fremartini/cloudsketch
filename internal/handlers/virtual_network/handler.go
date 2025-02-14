@@ -22,42 +22,73 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
-	client := clientFactory.NewSubnetsClient()
+	client := clientFactory.NewVirtualNetworksClient()
 
-	pager := client.NewListPager(ctx.ResourceGroup, ctx.ResourceName, nil)
+	vnet, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
 
-	var subnets []*armnetwork.Subnet
-	for pager.More() {
-		resp, err := pager.NextPage(context.Background())
-		if err != nil {
-			return nil, err
-		}
-
-		subnets = append(subnets, resp.Value...)
+	if err != nil {
+		return nil, err
 	}
 
-	vnet := &az.Resource{
+	vnetResource, err := mapVirtualNetworkResource(&vnet, ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// subnets are a subresource of virtual networks so they must be fetched together
+	subnets, err := mapSubnetResources(vnet.Properties.Subnets, ctx, vnetResource.Id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return append(subnets, vnetResource), nil
+}
+
+func mapVirtualNetworkResource(vnet *armnetwork.VirtualNetworksClientGetResponse, ctx *az.Context) (*az.Resource, error) {
+	addressPrefixes := vnet.Properties.AddressSpace.AddressPrefixes
+
+	properties := map[string]string{}
+
+	// virtual networks can have multiple address ranges. If this is the case hide the size
+	if len(addressPrefixes) == 1 {
+		addressPrefix := strings.Split(*addressPrefixes[0], "/")[1]
+
+		properties["size"] = addressPrefix
+	}
+
+	resource := &az.Resource{
 		Id:            ctx.ResourceId,
 		Name:          ctx.ResourceName,
 		Type:          az.VIRTUAL_NETWORK,
 		ResourceGroup: ctx.ResourceGroup,
+		Properties:    properties,
 	}
 
+	return resource, nil
+}
+
+func mapSubnetResources(subnets []*armnetwork.Subnet, ctx *az.Context, vnetId string) ([]*az.Resource, error) {
 	resources := list.Map(subnets, func(subnet *armnetwork.Subnet) *az.Resource {
-		dependsOn := []string{vnet.Id}
+		dependsOn := []string{vnetId}
 
 		routeTable := subnet.Properties.RouteTable
 
 		if routeTable != nil {
-			l := strings.ToLower(*routeTable.ID)
-			dependsOn = append(dependsOn, l)
+			dependsOn = append(dependsOn, strings.ToLower(*routeTable.ID))
 		}
 
 		nsg := subnet.Properties.NetworkSecurityGroup
 
 		if nsg != nil {
-			l := strings.ToLower(*nsg.ID)
-			dependsOn = append(dependsOn, l)
+			dependsOn = append(dependsOn, strings.ToLower(*nsg.ID))
+		}
+
+		addressPrefix := strings.Split(*subnet.Properties.AddressPrefix, "/")[1]
+
+		properties := map[string]string{
+			"size": addressPrefix,
 		}
 
 		snet := &az.Resource{
@@ -66,12 +97,11 @@ func (h *handler) Handle(ctx *az.Context) ([]*az.Resource, error) {
 			Type:          *subnet.Type,
 			ResourceGroup: ctx.ResourceGroup,
 			DependsOn:     dependsOn,
+			Properties:    properties,
 		}
 
 		return snet
 	})
-
-	resources = append(resources, vnet)
 
 	return resources, nil
 }

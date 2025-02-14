@@ -5,6 +5,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"fmt"
 )
 
 type handler struct{}
@@ -32,7 +33,15 @@ func (*handler) MapResource(resource *az.Resource) *node.Node {
 		Height: HEIGHT,
 	}
 
-	return node.NewIcon(IMAGE, resource.Name, &geometry)
+	vnetSize, ok := resource.Properties["size"]
+
+	if !ok {
+		return node.NewIcon(IMAGE, resource.Name, &geometry)
+	}
+
+	name := fmt.Sprintf("%s/%s", resource.Name, vnetSize)
+
+	return node.NewIcon(IMAGE, name, &geometry)
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {

@@ -6,6 +6,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
 	"cloudsketch/internal/list"
+	"fmt"
 	"math"
 )
 
@@ -34,7 +35,11 @@ func (*handler) MapResource(resource *az.Resource) *node.Node {
 		Height: HEIGHT,
 	}
 
-	return node.NewIcon(IMAGE, resource.Name, &geometry)
+	subnetSize := resource.Properties["size"]
+
+	name := fmt.Sprintf("%s/%s", resource.Name, subnetSize)
+
+	return node.NewIcon(IMAGE, name, &geometry)
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
