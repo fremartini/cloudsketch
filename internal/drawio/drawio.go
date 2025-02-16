@@ -89,7 +89,7 @@ func New() *drawio {
 	return &drawio{}
 }
 
-func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
+func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) error {
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
 	resource_map := populateResourceMap(resources)
 
@@ -134,9 +134,7 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) {
 
 	dgrm := diagram.New(cellsToRender)
 
-	if err := dgrm.Write(filename); err != nil {
-		log.Fatal(err)
-	}
+	return dgrm.Write(filename)
 }
 
 func populateResourceMap(resources []*az.Resource) *map[string]*node.ResourceAndNode {
