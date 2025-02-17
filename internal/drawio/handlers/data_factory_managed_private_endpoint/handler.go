@@ -5,12 +5,13 @@ import (
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/handlers/private_endpoint"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT
+	TYPE   = types.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT
 	IMAGE  = images.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT
 	WIDTH  = private_endpoint.WIDTH
 	HEIGHT = private_endpoint.HEIGHT

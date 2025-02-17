@@ -4,12 +4,13 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.PUBLIC_IP_ADDRESS
+	TYPE   = types.PUBLIC_IP_ADDRESS
 	IMAGE  = images.PUBLIC_IP_ADDRESS
 	WIDTH  = 65
 	HEIGHT = 52

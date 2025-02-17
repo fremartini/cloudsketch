@@ -4,12 +4,13 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.NETWORK_SECURITY_GROUP
+	TYPE   = types.NETWORK_SECURITY_GROUP
 	IMAGE  = images.NETWORK_SECURITY_GROUP
 	WIDTH  = 56
 	HEIGHT = 68

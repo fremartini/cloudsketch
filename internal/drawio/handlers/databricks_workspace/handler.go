@@ -4,12 +4,13 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.DATABRICKS_WORKSPACE
+	TYPE   = types.DATABRICKS_WORKSPACE
 	IMAGE  = images.DATABRICKS_WORKSPACE
 	WIDTH  = 68
 	HEIGHT = 68

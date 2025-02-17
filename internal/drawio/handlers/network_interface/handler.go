@@ -4,13 +4,14 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.NETWORK_INTERFACE
+	TYPE   = types.NETWORK_INTERFACE
 	IMAGE  = images.NETWORK_INTERFACE
 	WIDTH  = 68
 	HEIGHT = 60
@@ -52,7 +53,7 @@ func (*handler) PostProcessIcon(nic *node.ResourceAndNode, resource_map *map[str
 }
 
 func isBlacklistedResource(resourceType string) bool {
-	blacklist := []string{az.PRIVATE_ENDPOINT}
+	blacklist := []string{types.PRIVATE_ENDPOINT}
 
 	return list.Contains(blacklist, func(e string) bool {
 		return resourceType == e
@@ -65,7 +66,7 @@ func getNICsPointingToResource(resource_map *map[string]*node.ResourceAndNode, a
 	// figure out how many private endpoints are pointing to the storage account
 	for _, v := range *resource_map {
 		// filter out the private endpoints
-		if v.Resource.Type != az.NETWORK_INTERFACE {
+		if v.Resource.Type != types.NETWORK_INTERFACE {
 			continue
 		}
 
@@ -89,7 +90,7 @@ func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, reso
 
 	for _, target := range targets {
 		// don't draw arrows to subnets
-		if target.Type == az.SUBNET {
+		if target.Type == types.SUBNET {
 			continue
 		}
 

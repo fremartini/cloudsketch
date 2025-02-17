@@ -5,13 +5,14 @@ import (
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.PRIVATE_DNS_ZONE
+	TYPE   = types.PRIVATE_DNS_ZONE
 	IMAGE  = images.PRIVATE_DNS_ZONE
 	WIDTH  = 64
 	HEIGHT = 64

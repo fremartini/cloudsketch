@@ -4,12 +4,13 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.SUBSCRIPTION
+	TYPE   = types.SUBSCRIPTION
 	IMAGE  = images.SUBSCRIPTION
 	WIDTH  = 68
 	HEIGHT = 68

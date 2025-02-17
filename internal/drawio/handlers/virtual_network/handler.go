@@ -5,13 +5,14 @@ import (
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 	"fmt"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.VIRTUAL_NETWORK
+	TYPE   = types.VIRTUAL_NETWORK
 	IMAGE  = images.VIRTUAL_NETWORK
 	WIDTH  = 67
 	HEIGHT = 40

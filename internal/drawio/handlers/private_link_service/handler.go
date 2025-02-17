@@ -4,12 +4,13 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.PRIVATE_LINK_SERVICE
+	TYPE   = types.PRIVATE_LINK_SERVICE
 	IMAGE  = images.PRIVATE_LINK_SERVICE
 	WIDTH  = 69
 	HEIGHT = 40

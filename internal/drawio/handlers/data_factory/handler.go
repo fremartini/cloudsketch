@@ -5,13 +5,14 @@ import (
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.DATA_FACTORY
+	TYPE   = types.DATA_FACTORY
 	IMAGE  = images.DATA_FACTORY
 	WIDTH  = 68
 	HEIGHT = 68

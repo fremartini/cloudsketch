@@ -4,12 +4,13 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.VIRTUAL_MACHINE
+	TYPE   = types.VIRTUAL_MACHINE
 	IMAGE  = images.VIRTUAL_MACHINE
 	WIDTH  = 69
 	HEIGHT = 64

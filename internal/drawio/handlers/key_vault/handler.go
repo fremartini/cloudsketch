@@ -4,12 +4,13 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.KEY_VAULT
+	TYPE   = types.KEY_VAULT
 	IMAGE  = images.KEY_VAULT
 	WIDTH  = 68
 	HEIGHT = 68

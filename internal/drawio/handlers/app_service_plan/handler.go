@@ -5,6 +5,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 	"log"
 )
@@ -12,7 +13,7 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = az.APP_SERVICE_PLAN
+	TYPE   = types.APP_SERVICE_PLAN
 	IMAGE  = images.APP_SERVICE_PLAN
 	WIDTH  = 64
 	HEIGHT = 64
@@ -48,7 +49,7 @@ func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, reso
 
 	for _, target := range targets {
 		// app service plans have an implicit dependency to a subnet. Don't draw these
-		if target.Type == az.SUBNET {
+		if target.Type == types.SUBNET {
 			continue
 		}
 
@@ -145,7 +146,7 @@ func getAppServiceSubnet(appService *az.Resource, resources []*az.Resource) *str
 			return resource.Id == dependency
 		})
 
-		if resource.Type == az.SUBNET {
+		if resource.Type == types.SUBNET {
 			return &resource.Id
 		}
 	}

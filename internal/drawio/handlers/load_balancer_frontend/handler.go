@@ -4,12 +4,13 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.LOAD_BALANCER_FRONTEND
+	TYPE   = types.LOAD_BALANCER_FRONTEND
 	IMAGE  = images.LOAD_BALANCER_FRONTEND
 	WIDTH  = 65
 	HEIGHT = 52
@@ -41,7 +42,7 @@ func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, reso
 
 	for _, target := range targets {
 		// don't draw arrows to subnets
-		if target.Type == az.SUBNET {
+		if target.Type == types.SUBNET {
 			continue
 		}
 

@@ -5,12 +5,13 @@ import (
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/handlers/virtual_machine"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.DATA_FACTORY_INTEGRATION_RUNTIME
+	TYPE   = types.DATA_FACTORY_INTEGRATION_RUNTIME
 	IMAGE  = images.DATA_FACTORY_INTEGRATION_RUNTIME
 	WIDTH  = virtual_machine.WIDTH
 	HEIGHT = virtual_machine.HEIGHT

@@ -2,8 +2,12 @@ package drawio
 
 import (
 	"cloudsketch/internal/az"
+	"cloudsketch/internal/datastructures/set"
+	"cloudsketch/internal/drawio/handlers/app_service"
 	"cloudsketch/internal/drawio/handlers/app_service_plan"
 	"cloudsketch/internal/drawio/handlers/application_gateway"
+	"cloudsketch/internal/drawio/handlers/application_insights"
+	"cloudsketch/internal/drawio/handlers/application_security_group"
 	"cloudsketch/internal/drawio/handlers/container_registry"
 	"cloudsketch/internal/drawio/handlers/data_factory"
 	"cloudsketch/internal/drawio/handlers/data_factory_integration_runtime"
@@ -11,11 +15,15 @@ import (
 	"cloudsketch/internal/drawio/handlers/databricks_workspace"
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/dns_record"
+	"cloudsketch/internal/drawio/handlers/function_app"
 	"cloudsketch/internal/drawio/handlers/key_vault"
 	"cloudsketch/internal/drawio/handlers/load_balancer"
 	"cloudsketch/internal/drawio/handlers/load_balancer_frontend"
+	"cloudsketch/internal/drawio/handlers/log_analytics"
+	"cloudsketch/internal/drawio/handlers/logic_app"
 	"cloudsketch/internal/drawio/handlers/nat_gateway"
 	"cloudsketch/internal/drawio/handlers/network_interface"
+	"cloudsketch/internal/drawio/handlers/network_security_group"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/handlers/postgres_sql_server"
 	"cloudsketch/internal/drawio/handlers/private_dns_zone"
@@ -27,12 +35,12 @@ import (
 	"cloudsketch/internal/drawio/handlers/sql_server"
 	"cloudsketch/internal/drawio/handlers/storage_account"
 	"cloudsketch/internal/drawio/handlers/subnet"
+	"cloudsketch/internal/drawio/handlers/subscription"
 	"cloudsketch/internal/drawio/handlers/virtual_machine"
 	"cloudsketch/internal/drawio/handlers/virtual_machine_scale_set"
 	"cloudsketch/internal/drawio/handlers/virtual_network"
-	"cloudsketch/internal/drawio/handlers/web_sites"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
-	"cloudsketch/internal/set"
 	"log"
 )
 
@@ -47,38 +55,40 @@ type handler interface {
 
 var (
 	commands handleFuncMap = handleFuncMap{
-		app_service_plan.TYPE:    app_service_plan.New(),
-		application_gateway.TYPE: application_gateway.New(),
-		//application_insights.TYPE:                  application_insights.New(),
-		//application_security_group.TYPE:            application_security_group.New(),
+		app_service.TYPE:                           app_service.New(),
+		app_service_plan.TYPE:                      app_service_plan.New(),
+		application_gateway.TYPE:                   application_gateway.New(),
+		application_insights.TYPE:                  application_insights.New(),
+		application_security_group.TYPE:            application_security_group.New(),
 		container_registry.TYPE:                    container_registry.New(),
 		data_factory.TYPE:                          data_factory.New(),
 		data_factory_integration_runtime.TYPE:      data_factory_integration_runtime.New(),
 		data_factory_managed_private_endpoint.TYPE: data_factory_managed_private_endpoint.New(),
 		databricks_workspace.TYPE:                  databricks_workspace.New(),
 		dns_record.TYPE:                            dns_record.New(),
+		function_app.TYPE:                          function_app.New(),
 		key_vault.TYPE:                             key_vault.New(),
 		load_balancer.TYPE:                         load_balancer.New(),
 		load_balancer_frontend.TYPE:                load_balancer_frontend.New(),
-		//log_analytics.TYPE:                         log_analytics.New(),
-		nat_gateway.TYPE:       nat_gateway.New(),
-		network_interface.TYPE: network_interface.New(),
-		//network_security_group.TYPE:                network_security_group.New(),
-		postgres_sql_server.TYPE:  postgres_sql_server.New(),
-		private_dns_zone.TYPE:     private_dns_zone.New(),
-		private_endpoint.TYPE:     private_endpoint.New(),
-		private_link_service.TYPE: private_link_service.New(),
-		public_ip_address.TYPE:    public_ip_address.New(),
-		route_table.TYPE:          route_table.New(),
-		sql_database.TYPE:         sql_database.New(),
-		sql_server.TYPE:           sql_server.New(),
-		storage_account.TYPE:      storage_account.New(),
-		subnet.TYPE:               subnet.New(),
-		//subscription.TYPE:              subscription.New(),
-		virtual_machine.TYPE:           virtual_machine.New(),
-		virtual_machine_scale_set.TYPE: virtual_machine_scale_set.New(),
-		virtual_network.TYPE:           virtual_network.New(),
-		web_sites.TYPE:                 web_sites.New(),
+		log_analytics.TYPE:                         log_analytics.New(),
+		logic_app.TYPE:                             logic_app.New(),
+		nat_gateway.TYPE:                           nat_gateway.New(),
+		network_interface.TYPE:                     network_interface.New(),
+		network_security_group.TYPE:                network_security_group.New(),
+		postgres_sql_server.TYPE:                   postgres_sql_server.New(),
+		private_dns_zone.TYPE:                      private_dns_zone.New(),
+		private_endpoint.TYPE:                      private_endpoint.New(),
+		private_link_service.TYPE:                  private_link_service.New(),
+		public_ip_address.TYPE:                     public_ip_address.New(),
+		route_table.TYPE:                           route_table.New(),
+		sql_database.TYPE:                          sql_database.New(),
+		sql_server.TYPE:                            sql_server.New(),
+		storage_account.TYPE:                       storage_account.New(),
+		subnet.TYPE:                                subnet.New(),
+		subscription.TYPE:                          subscription.New(),
+		virtual_machine.TYPE:                       virtual_machine.New(),
+		virtual_machine_scale_set.TYPE:             virtual_machine_scale_set.New(),
+		virtual_network.TYPE:                       virtual_network.New(),
 	}
 )
 
@@ -110,11 +120,11 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) error {
 	// private endpoints and NICs are typically used as icons attached to other icons and should therefore be rendered in front
 	// TODO: implement a better solution?
 	allResourcesWithoutPEandNICs := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type != az.PRIVATE_ENDPOINT && n.Resource.Type != az.NETWORK_INTERFACE
+		return n.Resource.Type != types.PRIVATE_ENDPOINT && n.Resource.Type != types.NETWORK_INTERFACE
 	})
 
 	privateEndpointsAndNICS := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type == az.PRIVATE_ENDPOINT || n.Resource.Type == az.NETWORK_INTERFACE
+		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE
 	})
 
 	allResources = append(allResourcesWithoutPEandNICs, privateEndpointsAndNICS...)
@@ -266,7 +276,7 @@ func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	}
 
 	resourcesWithoutVnetsAndSubnets := list.Filter(resources, func(resource *az.Resource) bool {
-		return resource.Type != az.SUBNET && resource.Type != az.VIRTUAL_NETWORK
+		return resource.Type != types.SUBNET && resource.Type != types.VIRTUAL_NETWORK
 	})
 
 	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *az.Resource) []*node.Node {
@@ -274,8 +284,8 @@ func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	})
 
 	// virtual netwoks and subnets needs to be handled last since they "depend" on all other resources
-	subnets := DrawGroupForResourceType(resources, az.SUBNET, resource_map)
-	vnets := DrawGroupForResourceType(resources, az.VIRTUAL_NETWORK, resource_map)
+	subnets := DrawGroupForResourceType(resources, types.SUBNET, resource_map)
+	vnets := DrawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
 
 	// return vnets first so they are rendered in the background
 	nodes := append(vnets, append(subnets, boxes...)...)

@@ -2,50 +2,54 @@ package azure
 
 import (
 	"cloudsketch/internal/az"
-	"cloudsketch/internal/handlers/application_gateway"
-	"cloudsketch/internal/handlers/data_factory"
-	"cloudsketch/internal/handlers/load_balancer"
-	"cloudsketch/internal/handlers/nat_gateway"
-	"cloudsketch/internal/handlers/network_interface"
-	"cloudsketch/internal/handlers/private_dns_zone"
-	"cloudsketch/internal/handlers/private_endpoint"
-	"cloudsketch/internal/handlers/private_link_service"
-	"cloudsketch/internal/handlers/public_ip_address"
-	"cloudsketch/internal/handlers/resource_group"
-	"cloudsketch/internal/handlers/resources"
-	"cloudsketch/internal/handlers/subscription"
-	"cloudsketch/internal/handlers/virtual_machine"
-	"cloudsketch/internal/handlers/virtual_machine_scale_set"
-	"cloudsketch/internal/handlers/virtual_network"
-	"cloudsketch/internal/handlers/web_sites"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
+	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/handlers/application_gateway"
+	"cloudsketch/internal/providers/azure/handlers/data_factory"
+	"cloudsketch/internal/providers/azure/handlers/load_balancer"
+	"cloudsketch/internal/providers/azure/handlers/nat_gateway"
+	"cloudsketch/internal/providers/azure/handlers/network_interface"
+	"cloudsketch/internal/providers/azure/handlers/private_dns_zone"
+	"cloudsketch/internal/providers/azure/handlers/private_endpoint"
+	"cloudsketch/internal/providers/azure/handlers/private_link_service"
+	"cloudsketch/internal/providers/azure/handlers/public_ip_address"
+	"cloudsketch/internal/providers/azure/handlers/resource_group"
+	"cloudsketch/internal/providers/azure/handlers/resources"
+	"cloudsketch/internal/providers/azure/handlers/subscription"
+	"cloudsketch/internal/providers/azure/handlers/virtual_machine"
+	"cloudsketch/internal/providers/azure/handlers/virtual_machine_scale_set"
+	"cloudsketch/internal/providers/azure/handlers/virtual_network"
+	"cloudsketch/internal/providers/azure/handlers/web_sites"
+	"cloudsketch/internal/providers/azure/types"
 	"fmt"
 	"log"
 	"strings"
+
+	domainTypes "cloudsketch/internal/drawio/types"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
-type handleFunc = func(*az.Context) ([]*az.Resource, error)
+type handleFunc = func(*azContext.Context) ([]*az.Resource, error)
 
 var (
-	appContext *az.Context           = nil
+	appContext *azContext.Context    = nil
 	handlers   map[string]handleFunc = map[string]handleFunc{
-		az.APPLICATION_GATEWAY:       application_gateway.New().Handle,
-		az.DATA_FACTORY:              data_factory.New().Handle,
-		az.LOAD_BALANCER:             load_balancer.New().Handle,
-		az.NAT_GATEWAY:               nat_gateway.New().Handle,
-		az.NETWORK_INTERFACE:         network_interface.New().Handle,
-		az.PRIVATE_DNS_ZONE:          private_dns_zone.New().Handle,
-		az.PRIVATE_ENDPOINT:          private_endpoint.New().Handle,
-		az.PRIVATE_LINK_SERVICE:      private_link_service.New().Handle,
-		az.PUBLIC_IP_ADDRESS:         public_ip_address.New().Handle,
-		az.VIRTUAL_MACHINE:           virtual_machine.New().Handle,
-		az.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New().Handle,
-		az.VIRTUAL_NETWORK:           virtual_network.New().Handle,
-		az.WEB_SITES:                 web_sites.New().Handle,
+		types.APPLICATION_GATEWAY:       application_gateway.New().Handle,
+		types.DATA_FACTORY:              data_factory.New().Handle,
+		types.LOAD_BALANCER:             load_balancer.New().Handle,
+		types.NAT_GATEWAY:               nat_gateway.New().Handle,
+		types.NETWORK_INTERFACE:         network_interface.New().Handle,
+		types.PRIVATE_DNS_ZONE:          private_dns_zone.New().Handle,
+		types.PRIVATE_ENDPOINT:          private_endpoint.New().Handle,
+		types.PRIVATE_LINK_SERVICE:      private_link_service.New().Handle,
+		types.PUBLIC_IP_ADDRESS:         public_ip_address.New().Handle,
+		types.VIRTUAL_MACHINE:           virtual_machine.New().Handle,
+		types.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New().Handle,
+		types.VIRTUAL_NETWORK:           virtual_network.New().Handle,
+		types.WEB_SITES:                 web_sites.New().Handle,
 	}
 )
 
@@ -67,7 +71,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 		return nil, "", err
 	}
 
-	appContext = &az.Context{
+	appContext = &azContext.Context{
 		SubscriptionId: subscription.Id,
 		Credentials:    credentials,
 	}
@@ -90,7 +94,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 	}
 
 	allResources = list.FlatMap(resourceGroups, func(resourceGroup *armresources.ResourceGroup) []*az.Resource {
-		resource, err := resources.New().Handle(&az.Context{
+		resource, err := resources.New().Handle(&azContext.Context{
 			SubscriptionId: appContext.SubscriptionId,
 			Credentials:    appContext.Credentials,
 			ResourceName:   *resourceGroup.Name,
@@ -109,7 +113,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 	allResources = append(allResources, &az.Resource{
 		Id:   subscription.Id,
 		Name: subscription.Name,
-		Type: az.SUBSCRIPTION,
+		Type: types.SUBSCRIPTION,
 	})
 
 	allResources = list.FlatMap(allResources, func(resource *az.Resource) []*az.Resource {
@@ -128,7 +132,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 		}
 
 		// handler is registered. Add whatever it returns
-		resourcesToAdd, err := f(&az.Context{
+		resourcesToAdd, err := f(&azContext.Context{
 			SubscriptionId: appContext.SubscriptionId,
 			Credentials:    appContext.Credentials,
 			ResourceName:   resource.Name,
@@ -143,12 +147,14 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 		return resourcesToAdd
 	})
 
-	// ensure all id's are lowercase
+	// ensure all id's are lowercase and map Azure types to domain types
 	for _, r := range allResources {
 		r.Id = strings.ToLower(r.Id)
 		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)
+		r.Type = mapTypeToDomainType(r.Type)
 	}
 
+	// cache resources for next run
 	err = marshall.MarshallResources(filenameWithSuffix, allResources)
 
 	if err != nil {
@@ -156,4 +162,53 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 	}
 
 	return allResources, filename, nil
+}
+
+// TODO: move to handler?
+func mapTypeToDomainType(azType string) string {
+	domainTypes := map[string]string{
+		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE,
+		types.APPLICATION_GATEWAY:                   domainTypes.APPLICATION_GATEWAY,
+		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
+		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
+		types.CONTAINER_REGISTRY:                    domainTypes.CONTAINER_REGISTRY,
+		types.DATA_FACTORY:                          domainTypes.DATA_FACTORY,
+		types.DATA_FACTORY_INTEGRATION_RUNTIME:      domainTypes.DATA_FACTORY_INTEGRATION_RUNTIME,
+		types.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT: domainTypes.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT,
+		types.DATABRICKS_WORKSPACE:                  domainTypes.DATABRICKS_WORKSPACE,
+		types.DNS_RECORD:                            domainTypes.DNS_RECORD,
+		types.KEY_VAULT:                             domainTypes.KEY_VAULT,
+		types.LOAD_BALANCER:                         domainTypes.LOAD_BALANCER,
+		types.LOAD_BALANCER_FRONTEND:                domainTypes.LOAD_BALANCER_FRONTEND,
+		types.LOG_ANALYTICS:                         domainTypes.LOG_ANALYTICS,
+		types.NAT_GATEWAY:                           domainTypes.NAT_GATEWAY,
+		types.NETWORK_INTERFACE:                     domainTypes.NETWORK_INTERFACE,
+		types.NETWORK_SECURITY_GROUP:                domainTypes.NETWORK_SECURITY_GROUP,
+		types.POSTGRES_SQL_SERVER:                   domainTypes.POSTGRES_SQL_SERVER,
+		types.PRIVATE_DNS_ZONE:                      domainTypes.PRIVATE_DNS_ZONE,
+		types.PRIVATE_ENDPOINT:                      domainTypes.PRIVATE_ENDPOINT,
+		types.PRIVATE_LINK_SERVICE:                  domainTypes.PRIVATE_LINK_SERVICE,
+		types.PUBLIC_IP_ADDRESS:                     domainTypes.PUBLIC_IP_ADDRESS,
+		types.ROUTE_TABLE:                           domainTypes.ROUTE_TABLE,
+		types.SQL_DATABASE:                          domainTypes.SQL_DATABASE,
+		types.SQL_SERVER:                            domainTypes.SQL_SERVER,
+		types.STORAGE_ACCOUNT:                       domainTypes.STORAGE_ACCOUNT,
+		types.SUBNET:                                domainTypes.SUBNET,
+		types.SUBSCRIPTION:                          domainTypes.SUBSCRIPTION,
+		types.VIRTUAL_MACHINE:                       domainTypes.VIRTUAL_MACHINE,
+		types.VIRTUAL_MACHINE_SCALE_SET:             domainTypes.VIRTUAL_MACHINE_SCALE_SET,
+		types.VIRTUAL_NETWORK:                       domainTypes.VIRTUAL_NETWORK,
+		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
+		types.FUNCTION_APP:                          domainTypes.FUNCTION_APP,
+		types.LOGIC_APP:                             domainTypes.LOGIC_APP,
+	}
+
+	domainType, ok := domainTypes[azType]
+
+	if !ok {
+		log.Printf("undefined mapping from Azure types %s to domain type", azType)
+		return azType
+	}
+
+	return domainType
 }

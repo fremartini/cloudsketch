@@ -5,6 +5,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 	"fmt"
 	"math"
@@ -13,7 +14,7 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = az.SUBNET
+	TYPE   = types.SUBNET
 	IMAGE  = images.SUBNET
 	WIDTH  = 68
 	HEIGHT = 41
@@ -50,7 +51,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 			return false
 		}
 
-		return r.Resource.Type == az.ROUTE_TBLE
+		return r.Resource.Type == types.ROUTE_TABLE
 	})
 
 	if len(routeTables) != 1 {
@@ -69,7 +70,7 @@ func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, reso
 
 	for _, target := range targets {
 		// don't draw arrows to virtual networks
-		if target.Type == az.VIRTUAL_NETWORK {
+		if target.Type == types.VIRTUAL_NETWORK {
 			continue
 		}
 

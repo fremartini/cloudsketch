@@ -3,12 +3,13 @@ package dns_record
 import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.DNS_RECORD
+	TYPE   = types.DNS_RECORD
 	WIDTH  = 45
 	HEIGHT = 45
 )

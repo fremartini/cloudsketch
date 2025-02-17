@@ -4,12 +4,13 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.SQL_SERVER
+	TYPE   = types.SQL_SERVER
 	IMAGE  = images.SQL_SERVER
 	WIDTH  = 68
 	HEIGHT = 68

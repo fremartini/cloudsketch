@@ -5,12 +5,13 @@ import (
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/handlers/sql_server"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.POSTGRES_SQL_SERVER
+	TYPE   = types.POSTGRES_SQL_SERVER
 	IMAGE  = images.POSTGRES_SQL_SERVER
 	WIDTH  = sql_server.WIDTH
 	HEIGHT = sql_server.HEIGHT

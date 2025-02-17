@@ -3,12 +3,13 @@ package route_table
 import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
+	"cloudsketch/internal/drawio/types"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.ROUTE_TBLE
+	TYPE   = types.ROUTE_TABLE
 	WIDTH  = 40
 	HEIGHT = 38
 )

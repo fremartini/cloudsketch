@@ -4,13 +4,14 @@ import (
 	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.PRIVATE_ENDPOINT
+	TYPE   = types.PRIVATE_ENDPOINT
 	IMAGE  = images.PRIVATE_ENDPOINT
 	WIDTH  = 68
 	HEIGHT = 65
@@ -35,7 +36,9 @@ func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_
 	// storage accounts might have multiple private endpoints attached to it
 	attachedTo := (*resource_map)[privateEndpoint.Resource.Properties["attachedTo"]]
 
-	if attachedTo.Resource.Type == az.WEB_SITES {
+	if attachedTo.Resource.Type == types.APP_SERVICE ||
+		attachedTo.Resource.Type == types.FUNCTION_APP ||
+		attachedTo.Resource.Type == types.LOGIC_APP {
 		addImplicitDependencyToFunctionApp(privateEndpoint.Resource, attachedTo.Resource, resource_map)
 	}
 
@@ -88,7 +91,7 @@ func getPrivateEndpointSubnet(resource *az.Resource, resources []*az.Resource) *
 			return resource.Id == dependency
 		})
 
-		if resource.Type == az.SUBNET {
+		if resource.Type == types.SUBNET {
 			return &resource.Id
 		}
 	}
@@ -107,7 +110,7 @@ func addImplicitDependencyToFunctionApp(privateEndpoint, functionApp *az.Resourc
 			continue
 		}
 
-		if dependentResource.Resource.Type != az.SUBNET {
+		if dependentResource.Resource.Type != types.SUBNET {
 			continue
 		}
 
@@ -122,7 +125,7 @@ func getPrivateEndpointPointingToResource(resource_map *map[string]*node.Resourc
 	// figure out how many private endpoints are pointing to the storage account
 	for _, v := range *resource_map {
 		// filter out the private endpoints
-		if v.Resource.Type != az.PRIVATE_ENDPOINT {
+		if v.Resource.Type != types.PRIVATE_ENDPOINT {
 			continue
 		}
 
@@ -146,7 +149,7 @@ func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, reso
 
 	for _, target := range targets {
 		// don't draw arrows to subnets
-		if target.Type == az.SUBNET {
+		if target.Type == types.SUBNET {
 			continue
 		}
 
