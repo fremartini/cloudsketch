@@ -1,9 +1,9 @@
 package private_dns_zone
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/list"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
 	"context"
 
@@ -16,7 +16,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armprivatedns.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -31,14 +31,14 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
-	resource := &az.Resource{
+	resource := &models.Resource{
 		Id:        *dns_zone.ID,
 		Name:      *dns_zone.Name,
 		Type:      *dns_zone.Type,
 		DependsOn: []string{},
 	}
 
-	resources := []*az.Resource{resource}
+	resources := []*models.Resource{resource}
 
 	records, err := getRecordSet(clientFactory, ctx, dns_zone.ID)
 
@@ -51,7 +51,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	return resources, nil
 }
 
-func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Context, dnsZoneId *string) ([]*az.Resource, error) {
+func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Context, dnsZoneId *string) ([]*models.Resource, error) {
 	client := clientFactory.NewRecordSetsClient()
 
 	pager := client.NewListPager(ctx.ResourceGroup, ctx.ResourceName, nil)
@@ -68,8 +68,8 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 		}
 	}
 
-	resources := list.Map(records, func(record *armprivatedns.RecordSet) *az.Resource {
-		return &az.Resource{
+	resources := list.Map(records, func(record *armprivatedns.RecordSet) *models.Resource {
+		return &models.Resource{
 			Id:        *record.ID,
 			Name:      *record.Name,
 			Type:      types.DNS_RECORD,
@@ -78,7 +78,7 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 	})
 
 	// dont show @ records
-	resources = list.Filter(resources, func(record *az.Resource) bool {
+	resources = list.Filter(resources, func(record *models.Resource) bool {
 		return record.Name != "@"
 	})
 

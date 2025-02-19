@@ -1,8 +1,8 @@
 package virtual_machine_scale_set
 
 import (
-	"cloudsketch/internal/az"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"context"
 	"strings"
 
@@ -15,7 +15,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armcompute.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -36,7 +36,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 
 	dependsOn = append(dependsOn, subnet)
 
-	resources := []*az.Resource{
+	resources := []*models.Resource{
 		{
 			Id:        *vmss.ID,
 			Name:      *vmss.Name,

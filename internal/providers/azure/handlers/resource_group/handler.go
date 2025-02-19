@@ -3,9 +3,9 @@ package resource_group
 import (
 	"context"
 
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/list"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
@@ -16,7 +16,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (*handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	client, err := armresources.NewResourceGroupsClient(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -43,7 +43,7 @@ func (*handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
-	resources := []*az.Resource{}
+	resources := []*models.Resource{}
 
 	for _, resourceGroup := range resourceGroups {
 		r, err := GetResourcesInResourceGroup(resourceClient, *resourceGroup.Name)
@@ -58,7 +58,7 @@ func (*handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	return resources, nil
 }
 
-func GetResourcesInResourceGroup(client *armresources.Client, resourceGroup string) ([]*az.Resource, error) {
+func GetResourcesInResourceGroup(client *armresources.Client, resourceGroup string) ([]*models.Resource, error) {
 	pager := client.NewListByResourceGroupPager(resourceGroup, nil)
 
 	var resources []*armresources.GenericResourceExpanded
@@ -73,8 +73,8 @@ func GetResourcesInResourceGroup(client *armresources.Client, resourceGroup stri
 		}
 	}
 
-	azResources := list.Map(resources, func(resource *armresources.GenericResourceExpanded) *az.Resource {
-		return &az.Resource{
+	azResources := list.Map(resources, func(resource *armresources.GenericResourceExpanded) *models.Resource {
+		return &models.Resource{
 			Id:            *resource.ID,
 			Name:          *resource.Name,
 			Type:          *resource.Type,

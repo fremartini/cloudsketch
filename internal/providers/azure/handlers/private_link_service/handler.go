@@ -1,8 +1,8 @@
 package private_link_service
 
 import (
-	"cloudsketch/internal/az"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v6"
@@ -14,7 +14,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armnetwork.NewPrivateLinkServicesClient(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -29,12 +29,12 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 
 	pls_target := pls.Properties.LoadBalancerFrontendIPConfigurations[0].ID
 
-	resource := &az.Resource{
+	resource := &models.Resource{
 		Id:        *pls.ID,
 		Name:      *pls.Name,
 		Type:      *pls.Type,
 		DependsOn: []string{*pls_target},
 	}
 
-	return []*az.Resource{resource}, nil
+	return []*models.Resource{resource}, nil
 }

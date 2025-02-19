@@ -1,7 +1,6 @@
 package drawio
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/drawio/handlers/app_service"
 	"cloudsketch/internal/drawio/handlers/app_service_plan"
@@ -39,6 +38,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/virtual_machine"
 	"cloudsketch/internal/drawio/handlers/virtual_machine_scale_set"
 	"cloudsketch/internal/drawio/handlers/virtual_network"
+	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 	"log"
@@ -47,10 +47,10 @@ import (
 type handleFuncMap = map[string]handler
 
 type handler interface {
-	MapResource(*az.Resource) *node.Node
+	MapResource(*models.Resource) *node.Node
 	PostProcessIcon(*node.ResourceAndNode, *map[string]*node.ResourceAndNode) *node.Node
-	DrawDependency(*az.Resource, []*az.Resource, *map[string]*node.ResourceAndNode) []*node.Arrow
-	GroupResources(*az.Resource, []*az.Resource, *map[string]*node.ResourceAndNode) []*node.Node
+	DrawDependency(*models.Resource, []*models.Resource, *map[string]*node.ResourceAndNode) []*node.Arrow
+	GroupResources(*models.Resource, []*models.Resource, *map[string]*node.ResourceAndNode) []*node.Node
 }
 
 var (
@@ -99,8 +99,8 @@ func New() *drawio {
 	return &drawio{}
 }
 
-func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) error {
-	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
+func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) error {
+	// at this point only the modelsure resources are known - this function adds the corresponding DrawIO icons
 	resource_map := populateResourceMap(resources)
 
 	// some resources group other resources
@@ -147,7 +147,7 @@ func (d *drawio) WriteDiagram(filename string, resources []*az.Resource) error {
 	return dgrm.Write(filename)
 }
 
-func populateResourceMap(resources []*az.Resource) *map[string]*node.ResourceAndNode {
+func populateResourceMap(resources []*models.Resource) *map[string]*node.ResourceAndNode {
 	resource_map := &map[string]*node.ResourceAndNode{}
 	seen_unhandled_resources := set.New[string]()
 
@@ -173,14 +173,14 @@ func populateResourceMap(resources []*az.Resource) *map[string]*node.ResourceAnd
 	return resource_map
 }
 
-func drawDependenciesRecursively(resource *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode, seen_unhandled_resources *set.Set[string]) {
+func drawDependenciesRecursively(resource *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode, seen_unhandled_resources *set.Set[string]) {
 	for _, dependencyId := range resource.DependsOn {
 		if (*resource_map)[dependencyId] != nil {
 			// dependency already drawn
 			continue
 		}
 
-		dependency := list.First(resources, func(r *az.Resource) bool {
+		dependency := list.First(resources, func(r *models.Resource) bool {
 			return r.Id == dependencyId
 		})
 
@@ -196,7 +196,7 @@ func drawDependenciesRecursively(resource *az.Resource, resources []*az.Resource
 	}
 }
 
-func drawResource(resource *az.Resource, seen_unhandled_resources *set.Set[string]) *node.ResourceAndNode {
+func drawResource(resource *models.Resource, seen_unhandled_resources *set.Set[string]) *node.ResourceAndNode {
 	f, ok := commands[resource.Type]
 
 	if !ok {
@@ -256,7 +256,7 @@ func addDependencyArrows(resource_map *map[string]*node.ResourceAndNode) []*node
 			return true
 		})
 
-		dependencyResources := list.Map(dependencyIds, func(dependency string) *az.Resource {
+		dependencyResources := list.Map(dependencyIds, func(dependency string) *models.Resource {
 			return (*resource_map)[dependency].Resource
 		})
 
@@ -269,17 +269,17 @@ func addDependencyArrows(resource_map *map[string]*node.ResourceAndNode) []*node
 }
 
 func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	resources := []*az.Resource{}
+	resources := []*models.Resource{}
 
 	for _, resourceAndNode := range *resource_map {
 		resources = append(resources, resourceAndNode.Resource)
 	}
 
-	resourcesWithoutVnetsAndSubnets := list.Filter(resources, func(resource *az.Resource) bool {
+	resourcesWithoutVnetsAndSubnets := list.Filter(resources, func(resource *models.Resource) bool {
 		return resource.Type != types.SUBNET && resource.Type != types.VIRTUAL_NETWORK
 	})
 
-	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *az.Resource) []*node.Node {
+	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *models.Resource) []*node.Node {
 		return commands[resource.Type].GroupResources(resource, resources, resource_map)
 	})
 
@@ -293,10 +293,10 @@ func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	return nodes
 }
 
-func DrawGroupForResourceType(resources []*az.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func DrawGroupForResourceType(resources []*models.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	nodes := []*node.Node{}
 
-	resourcesWithType := list.Filter(resources, func(r *az.Resource) bool {
+	resourcesWithType := list.Filter(resources, func(r *models.Resource) bool {
 		return r.Type == typ
 	})
 

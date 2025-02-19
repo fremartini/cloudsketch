@@ -1,9 +1,9 @@
 package virtual_network
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/list"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
 	"context"
 	"strings"
@@ -17,7 +17,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -48,7 +48,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	return append(subnets, vnetResource), nil
 }
 
-func mapVirtualNetworkResource(vnet *armnetwork.VirtualNetworksClientGetResponse, ctx *azContext.Context) (*az.Resource, error) {
+func mapVirtualNetworkResource(vnet *armnetwork.VirtualNetworksClientGetResponse, ctx *azContext.Context) (*models.Resource, error) {
 	addressPrefixes := vnet.Properties.AddressSpace.AddressPrefixes
 
 	properties := map[string]string{}
@@ -60,7 +60,7 @@ func mapVirtualNetworkResource(vnet *armnetwork.VirtualNetworksClientGetResponse
 		properties["size"] = addressPrefix
 	}
 
-	resource := &az.Resource{
+	resource := &models.Resource{
 		Id:         ctx.ResourceId,
 		Name:       ctx.ResourceName,
 		Type:       types.VIRTUAL_NETWORK,
@@ -70,8 +70,8 @@ func mapVirtualNetworkResource(vnet *armnetwork.VirtualNetworksClientGetResponse
 	return resource, nil
 }
 
-func mapSubnetResources(subnets []*armnetwork.Subnet, vnetId string) ([]*az.Resource, error) {
-	resources := list.Map(subnets, func(subnet *armnetwork.Subnet) *az.Resource {
+func mapSubnetResources(subnets []*armnetwork.Subnet, vnetId string) ([]*models.Resource, error) {
+	resources := list.Map(subnets, func(subnet *armnetwork.Subnet) *models.Resource {
 		dependsOn := []string{vnetId}
 
 		routeTable := subnet.Properties.RouteTable
@@ -92,7 +92,7 @@ func mapSubnetResources(subnets []*armnetwork.Subnet, vnetId string) ([]*az.Reso
 			"size": addressPrefix,
 		}
 
-		snet := &az.Resource{
+		snet := &models.Resource{
 			Id:         *subnet.ID,
 			Name:       *subnet.Name,
 			Type:       *subnet.Type,

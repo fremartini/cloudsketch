@@ -1,8 +1,8 @@
 package virtual_machine
 
 import (
-	"cloudsketch/internal/az"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"context"
 	"strings"
 
@@ -15,7 +15,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armcompute.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -37,7 +37,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 		dependsOn = append(dependsOn, t)
 	}
 
-	resources := []*az.Resource{
+	resources := []*models.Resource{
 		{
 			Id:        *vm.ID,
 			Name:      *vm.Name,

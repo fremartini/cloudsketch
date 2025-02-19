@@ -1,8 +1,8 @@
 package private_endpoint
 
 import (
-	"cloudsketch/internal/az"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"context"
 	"strings"
 
@@ -15,7 +15,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -55,7 +55,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 		dependsOn = append(dependsOn, t)
 	}
 
-	resource := &az.Resource{
+	resource := &models.Resource{
 		Id:         *pe.ID,
 		Name:       *pe.Name,
 		Type:       *pe.Type,
@@ -63,5 +63,5 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 		Properties: properties,
 	}
 
-	return []*az.Resource{resource}, nil
+	return []*models.Resource{resource}, nil
 }

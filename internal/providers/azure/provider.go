@@ -1,7 +1,6 @@
 package azure
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
 	azContext "cloudsketch/internal/providers/azure/context"
@@ -20,17 +19,19 @@ import (
 	"cloudsketch/internal/providers/azure/handlers/virtual_machine_scale_set"
 	"cloudsketch/internal/providers/azure/handlers/virtual_network"
 	"cloudsketch/internal/providers/azure/handlers/web_sites"
+	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
 	"fmt"
 	"log"
 	"strings"
 
+	domainModels "cloudsketch/internal/drawio/models"
 	domainTypes "cloudsketch/internal/drawio/types"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 )
 
-type handleFunc = func(*azContext.Context) ([]*az.Resource, error)
+type handleFunc = func(*azContext.Context) ([]*models.Resource, error)
 
 var (
 	handlers map[string]handleFunc = map[string]handleFunc{
@@ -56,7 +57,7 @@ func NewProvider() *azureProvider {
 	return &azureProvider{}
 }
 
-func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, string, error) {
+func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.Resource, string, error) {
 	credentials, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("authentication failure: %+v", err)
@@ -76,35 +77,35 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 	filename := fmt.Sprintf("%s_%s", subscription.Name, subscription.Id)
 	filenameWithSuffix := fmt.Sprintf("%s.json", filename)
 
-	allResources, ok := marshall.UnmarshalIfExists(filenameWithSuffix)
+	cachedResources, ok := marshall.UnmarshalIfExists(filenameWithSuffix)
 
 	if ok {
 		log.Printf("using existing file %s\n", filenameWithSuffix)
 
-		return allResources, filename, nil
+		return cachedResources, filename, nil
 	}
 
-	allResources, err = resource_group.New().Handle(ctx)
+	allResources, err := resource_group.New().Handle(ctx)
 
 	if err != nil {
 		return nil, "", err
 	}
 
 	// add the subscription entry
-	allResources = append(allResources, &az.Resource{
+	allResources = append(allResources, &models.Resource{
 		Id:   subscription.Id,
 		Name: subscription.Name,
 		Type: types.SUBSCRIPTION,
 	})
 
-	allResources = list.FlatMap(allResources, func(resource *az.Resource) []*az.Resource {
+	allResources = list.FlatMap(allResources, func(resource *models.Resource) []*models.Resource {
 		log.Print(resource.Name)
 
 		f, ok := handlers[resource.Type]
 
 		// no handler is registered. Add the resource as-is
 		if !ok {
-			return []*az.Resource{resource}
+			return []*models.Resource{resource}
 		}
 
 		// handler is registered. Add whatever it returns
@@ -127,17 +128,28 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 	for _, r := range allResources {
 		r.Id = strings.ToLower(r.Id)
 		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)
-		r.Type = mapTypeToDomainType(r.Type)
 	}
 
+	domainModels := list.Map(allResources, mapToDomainResource)
+
 	// cache resources for next run
-	err = marshall.MarshallResources(filenameWithSuffix, allResources)
+	err = marshall.MarshallResources(filenameWithSuffix, domainModels)
 
 	if err != nil {
 		return nil, "", err
 	}
 
-	return allResources, filename, nil
+	return domainModels, filename, nil
+}
+
+func mapToDomainResource(resource *models.Resource) *domainModels.Resource {
+	return &domainModels.Resource{
+		Id:         resource.Id,
+		Type:       mapTypeToDomainType(resource.Type),
+		Name:       resource.Name,
+		DependsOn:  resource.DependsOn,
+		Properties: resource.Properties,
+	}
 }
 
 func mapTypeToDomainType(azType string) string {

@@ -1,8 +1,8 @@
 package web_sites
 
 import (
-	"cloudsketch/internal/az"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
 	"context"
 	"strings"
@@ -33,7 +33,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	client, err := armappservice.NewWebAppsClient(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -69,7 +69,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	planId := app.Properties.ServerFarmID
 	dependsOn := []string{*planId}
 
-	resource := &az.Resource{
+	resource := &models.Resource{
 		Id:         *app.ID,
 		Name:       *app.Name,
 		Type:       subType,
@@ -77,5 +77,5 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 		Properties: properties,
 	}
 
-	return []*az.Resource{resource}, nil
+	return []*models.Resource{resource}, nil
 }

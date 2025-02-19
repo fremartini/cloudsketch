@@ -1,9 +1,9 @@
 package load_balancer
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/list"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"context"
 	"strings"
 
@@ -16,7 +16,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -41,14 +41,14 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 
 	dependsOn = append(dependsOn, targets...)
 
-	resource := &az.Resource{
+	resource := &models.Resource{
 		Id:        *lb.ID,
 		Name:      *lb.Name,
 		Type:      *lb.Type,
 		DependsOn: dependsOn,
 	}
 
-	resources := []*az.Resource{resource}
+	resources := []*models.Resource{resource}
 
 	frontends, err := getFrontends(clientFactory, ctx)
 
@@ -61,7 +61,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	return resources, nil
 }
 
-func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Context) ([]*az.Resource, error) {
+func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Context) ([]*models.Resource, error) {
 	client := clientFactory.NewLoadBalancerFrontendIPConfigurationsClient()
 
 	pager := client.NewListPager(ctx.ResourceGroup, ctx.ResourceName, nil)
@@ -78,14 +78,14 @@ func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Contex
 		}
 	}
 
-	return list.Map(nics, func(nic *armnetwork.FrontendIPConfiguration) *az.Resource {
+	return list.Map(nics, func(nic *armnetwork.FrontendIPConfiguration) *models.Resource {
 		dependsOn := []string{ctx.ResourceId}
 
 		subnet := strings.ToLower(*nic.Properties.Subnet.ID)
 
 		dependsOn = append(dependsOn, subnet)
 
-		return &az.Resource{
+		return &models.Resource{
 			Id:        *nic.ID,
 			Name:      *nic.Name,
 			Type:      *nic.Type,

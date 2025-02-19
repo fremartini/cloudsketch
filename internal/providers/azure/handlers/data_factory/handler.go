@@ -1,9 +1,9 @@
 package data_factory
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/list"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/datafactory/armdatafactory/v9"
@@ -15,7 +15,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armdatafactory.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -30,13 +30,13 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 		return nil, err
 	}
 
-	resource := &az.Resource{
+	resource := &models.Resource{
 		Id:   *adf.ID,
 		Name: *adf.Name,
 		Type: *adf.Type,
 	}
 
-	resources := []*az.Resource{resource}
+	resources := []*models.Resource{resource}
 
 	integration_runtimes, err := getIntegrationRuntimes(clientFactory, ctx, adf.ID)
 
@@ -83,7 +83,7 @@ func getManagedVirtualNetworks(clientFactory *armdatafactory.ClientFactory, ctx 
 	return networks, nil
 }
 
-func getManagedPrivateEndpoints(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfId, managedVirtualNetworkName *string) ([]*az.Resource, error) {
+func getManagedPrivateEndpoints(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfId, managedVirtualNetworkName *string) ([]*models.Resource, error) {
 	client := clientFactory.NewManagedPrivateEndpointsClient()
 
 	pager := client.NewListByFactoryPager(ctx.ResourceGroup, ctx.ResourceName, *managedVirtualNetworkName, nil)
@@ -100,8 +100,8 @@ func getManagedPrivateEndpoints(clientFactory *armdatafactory.ClientFactory, ctx
 		}
 	}
 
-	resources := list.Map(endpoints, func(endpoint *armdatafactory.ManagedPrivateEndpointResource) *az.Resource {
-		return &az.Resource{
+	resources := list.Map(endpoints, func(endpoint *armdatafactory.ManagedPrivateEndpointResource) *models.Resource {
+		return &models.Resource{
 			Id:        *endpoint.ID,
 			Name:      *endpoint.Name,
 			Type:      *endpoint.Type,
@@ -112,7 +112,7 @@ func getManagedPrivateEndpoints(clientFactory *armdatafactory.ClientFactory, ctx
 	return resources, nil
 }
 
-func getIntegrationRuntimes(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfId *string) ([]*az.Resource, error) {
+func getIntegrationRuntimes(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfId *string) ([]*models.Resource, error) {
 	client := clientFactory.NewIntegrationRuntimesClient()
 
 	pager := client.NewListByFactoryPager(ctx.ResourceGroup, ctx.ResourceName, nil)
@@ -129,8 +129,8 @@ func getIntegrationRuntimes(clientFactory *armdatafactory.ClientFactory, ctx *az
 		}
 	}
 
-	resources := list.Map(integration_runtimes, func(ir *armdatafactory.IntegrationRuntimeResource) *az.Resource {
-		return &az.Resource{
+	resources := list.Map(integration_runtimes, func(ir *armdatafactory.IntegrationRuntimeResource) *models.Resource {
+		return &models.Resource{
 			Id:        *ir.ID,
 			Name:      *ir.Name,
 			Type:      *ir.Type,

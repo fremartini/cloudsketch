@@ -1,10 +1,11 @@
 package public_ip_address
 
 import (
-	"cloudsketch/internal/az"
 	"context"
 
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v6"
 )
 
@@ -14,7 +15,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -36,12 +37,12 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 		dependsOn = append(dependsOn, *pip_target)
 	}
 
-	resource := &az.Resource{
+	resource := &models.Resource{
 		Id:        *pip.ID,
 		Name:      *pip.Name,
 		Type:      *pip.Type,
 		DependsOn: dependsOn,
 	}
 
-	return []*az.Resource{resource}, nil
+	return []*models.Resource{resource}, nil
 }

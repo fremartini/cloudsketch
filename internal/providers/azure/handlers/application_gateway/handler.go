@@ -1,8 +1,8 @@
 package application_gateway
 
 import (
-	"cloudsketch/internal/az"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/models"
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v6"
@@ -14,7 +14,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
+func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	client, err := armnetwork.NewApplicationGatewaysClient(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -37,14 +37,14 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 		dependsOn = append(dependsOn, *publicIp)
 	}
 
-	resource := &az.Resource{
+	resource := &models.Resource{
 		Id:        *agw.ID,
 		Name:      *agw.Name,
 		Type:      *agw.Type,
 		DependsOn: dependsOn,
 	}
 
-	return []*az.Resource{resource}, nil
+	return []*models.Resource{resource}, nil
 }
 
 func getSubnet(agw *armnetwork.ApplicationGatewaysClientGetResponse) *string {

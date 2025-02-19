@@ -1,9 +1,9 @@
 package function_app
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 	"strings"
@@ -22,7 +22,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) MapResource(resource *az.Resource) *node.Node {
+func (*handler) MapResource(resource *models.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -37,7 +37,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return nil
 }
 
-func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	arrows := []*node.Arrow{}
 
 	sourceNode := (*resource_map)[source.Id].Node
@@ -86,6 +86,6 @@ func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, reso
 	return arrows
 }
 
-func (*handler) GroupResources(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	return []*node.Node{}
 }
