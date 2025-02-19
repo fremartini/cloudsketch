@@ -2,12 +2,14 @@ package main
 
 import (
 	"cloudsketch/internal/drawio"
+	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers/azure"
 	"context"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/urfave/cli/v3"
 )
@@ -20,14 +22,35 @@ func main() {
 		Usage:       "Azure to DrawIO",
 		UsageText:   fmt.Sprintf("%s <subscription id>", name),
 		Description: "convert a Azure subscription to a DrawIO diagram",
-		Action: func(_ context.Context, c *cli.Command) error {
-			args := c.Args().Slice()
+		Action: func(_ context.Context, command *cli.Command) error {
+			args := command.Args().Slice()
 
 			if len(args) == 0 {
-				return errors.New("missing Azure subscription id")
+				return errors.New("command expects one argument")
 			}
 
-			subscriptionId := args[0]
+			fileOrSubscriptionId := args[0]
+
+			// command can either be a subscription id or a file name
+			if strings.HasSuffix(fileOrSubscriptionId, ".json") {
+				// if the file ends in .json, assume its a valid json file that contains previously populated Azure resources
+				file := fileOrSubscriptionId
+
+				log.Printf("using existing file %s\n", file)
+
+				resources, err := marshall.UnmarshallResources(file)
+
+				if err != nil {
+					return err
+				}
+
+				outFile := strings.ReplaceAll(file, ".json", ".drawio")
+
+				return drawio.New().WriteDiagram(outFile, resources)
+			}
+
+			// otherwise treat it as a subscription id
+			subscriptionId := fileOrSubscriptionId
 
 			provider := azure.NewProvider()
 
@@ -39,9 +62,7 @@ func main() {
 
 			filename = fmt.Sprintf("%s.drawio", filename)
 
-			err = drawio.New().WriteDiagram(filename, resources)
-
-			if err != nil {
+			if drawio.New().WriteDiagram(filename, resources); err != nil {
 				return err
 			}
 

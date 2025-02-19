@@ -42,11 +42,10 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	dependsOn = append(dependsOn, targets...)
 
 	resource := &az.Resource{
-		Id:            *lb.ID,
-		Name:          *lb.Name,
-		Type:          *lb.Type,
-		ResourceGroup: ctx.ResourceGroup,
-		DependsOn:     dependsOn,
+		Id:        *lb.ID,
+		Name:      *lb.Name,
+		Type:      *lb.Type,
+		DependsOn: dependsOn,
 	}
 
 	resources := []*az.Resource{resource}
@@ -87,11 +86,10 @@ func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Contex
 		dependsOn = append(dependsOn, subnet)
 
 		return &az.Resource{
-			Id:            *nic.ID,
-			Name:          *nic.Name,
-			Type:          *nic.Type,
-			ResourceGroup: ctx.ResourceGroup,
-			DependsOn:     dependsOn,
+			Id:        *nic.ID,
+			Name:      *nic.Name,
+			Type:      *nic.Type,
+			DependsOn: dependsOn,
 		}
 	}), nil
 }

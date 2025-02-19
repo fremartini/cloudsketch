@@ -30,11 +30,10 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	pls_target := pls.Properties.LoadBalancerFrontendIPConfigurations[0].ID
 
 	resource := &az.Resource{
-		Id:            *pls.ID,
-		Name:          *pls.Name,
-		Type:          *pls.Type,
-		ResourceGroup: ctx.ResourceGroup,
-		DependsOn:     []string{*pls_target},
+		Id:        *pls.ID,
+		Name:      *pls.Name,
+		Type:      *pls.Type,
+		DependsOn: []string{*pls_target},
 	}
 
 	return []*az.Resource{resource}, nil

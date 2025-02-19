@@ -32,11 +32,10 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	}
 
 	resource := &az.Resource{
-		Id:            *dns_zone.ID,
-		Name:          *dns_zone.Name,
-		Type:          *dns_zone.Type,
-		ResourceGroup: ctx.ResourceGroup,
-		DependsOn:     []string{},
+		Id:        *dns_zone.ID,
+		Name:      *dns_zone.Name,
+		Type:      *dns_zone.Type,
+		DependsOn: []string{},
 	}
 
 	resources := []*az.Resource{resource}
@@ -71,11 +70,10 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 
 	resources := list.Map(records, func(record *armprivatedns.RecordSet) *az.Resource {
 		return &az.Resource{
-			Id:            *record.ID,
-			Name:          *record.Name,
-			Type:          types.DNS_RECORD,
-			ResourceGroup: ctx.ResourceGroup,
-			DependsOn:     []string{*dnsZoneId},
+			Id:        *record.ID,
+			Name:      *record.Name,
+			Type:      types.DNS_RECORD,
+			DependsOn: []string{*dnsZoneId},
 		}
 	})
 

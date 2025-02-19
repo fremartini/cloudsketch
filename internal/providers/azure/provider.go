@@ -15,7 +15,6 @@ import (
 	"cloudsketch/internal/providers/azure/handlers/private_link_service"
 	"cloudsketch/internal/providers/azure/handlers/public_ip_address"
 	"cloudsketch/internal/providers/azure/handlers/resource_group"
-	"cloudsketch/internal/providers/azure/handlers/resources"
 	"cloudsketch/internal/providers/azure/handlers/subscription"
 	"cloudsketch/internal/providers/azure/handlers/virtual_machine"
 	"cloudsketch/internal/providers/azure/handlers/virtual_machine_scale_set"
@@ -29,14 +28,12 @@ import (
 	domainTypes "cloudsketch/internal/drawio/types"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
 type handleFunc = func(*azContext.Context) ([]*az.Resource, error)
 
 var (
-	appContext *azContext.Context    = nil
-	handlers   map[string]handleFunc = map[string]handleFunc{
+	handlers map[string]handleFunc = map[string]handleFunc{
 		types.APPLICATION_GATEWAY:       application_gateway.New().Handle,
 		types.DATA_FACTORY:              data_factory.New().Handle,
 		types.LOAD_BALANCER:             load_balancer.New().Handle,
@@ -71,7 +68,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 		return nil, "", err
 	}
 
-	appContext = &azContext.Context{
+	ctx := &azContext.Context{
 		SubscriptionId: subscription.Id,
 		Credentials:    credentials,
 	}
@@ -82,32 +79,16 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 	allResources, ok := marshall.UnmarshalIfExists(filenameWithSuffix)
 
 	if ok {
-		log.Println("using existing file")
+		log.Printf("using existing file %s\n", filenameWithSuffix)
 
 		return allResources, filename, nil
 	}
 
-	resourceGroups, err := resource_group.New().Handle(appContext.SubscriptionId, appContext.Credentials)
+	allResources, err = resource_group.New().Handle(ctx)
 
 	if err != nil {
-		return nil, "", fmt.Errorf("listing of resource groups failed: %+v", err)
+		return nil, "", err
 	}
-
-	allResources = list.FlatMap(resourceGroups, func(resourceGroup *armresources.ResourceGroup) []*az.Resource {
-		resource, err := resources.New().Handle(&azContext.Context{
-			SubscriptionId: appContext.SubscriptionId,
-			Credentials:    appContext.Credentials,
-			ResourceName:   *resourceGroup.Name,
-			ResourceGroup:  *resourceGroup.Name,
-			ResourceId:     *resourceGroup.ID,
-		})
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		return resource
-	})
 
 	// add the subscription entry
 	allResources = append(allResources, &az.Resource{
@@ -123,20 +104,15 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 
 		// no handler is registered. Add the resource as-is
 		if !ok {
-			return []*az.Resource{{
-				Id:            resource.Id,
-				Name:          resource.Name,
-				Type:          resource.Type,
-				ResourceGroup: resource.ResourceGroup,
-			}}
+			return []*az.Resource{resource}
 		}
 
 		// handler is registered. Add whatever it returns
 		resourcesToAdd, err := f(&azContext.Context{
-			SubscriptionId: appContext.SubscriptionId,
-			Credentials:    appContext.Credentials,
-			ResourceName:   resource.Name,
+			SubscriptionId: ctx.SubscriptionId,
+			Credentials:    ctx.Credentials,
 			ResourceGroup:  resource.ResourceGroup,
+			ResourceName:   resource.Name,
 			ResourceId:     resource.Id,
 		})
 
@@ -164,7 +140,6 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*az.Resource, s
 	return allResources, filename, nil
 }
 
-// TODO: move to handler?
 func mapTypeToDomainType(azType string) string {
 	domainTypes := map[string]string{
 		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE,

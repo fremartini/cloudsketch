@@ -39,7 +39,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	}
 
 	// subnets are a subresource of virtual networks so they must be fetched together
-	subnets, err := mapSubnetResources(vnet.Properties.Subnets, ctx, vnetResource.Id)
+	subnets, err := mapSubnetResources(vnet.Properties.Subnets, vnetResource.Id)
 
 	if err != nil {
 		return nil, err
@@ -61,17 +61,16 @@ func mapVirtualNetworkResource(vnet *armnetwork.VirtualNetworksClientGetResponse
 	}
 
 	resource := &az.Resource{
-		Id:            ctx.ResourceId,
-		Name:          ctx.ResourceName,
-		Type:          types.VIRTUAL_NETWORK,
-		ResourceGroup: ctx.ResourceGroup,
-		Properties:    properties,
+		Id:         ctx.ResourceId,
+		Name:       ctx.ResourceName,
+		Type:       types.VIRTUAL_NETWORK,
+		Properties: properties,
 	}
 
 	return resource, nil
 }
 
-func mapSubnetResources(subnets []*armnetwork.Subnet, ctx *azContext.Context, vnetId string) ([]*az.Resource, error) {
+func mapSubnetResources(subnets []*armnetwork.Subnet, vnetId string) ([]*az.Resource, error) {
 	resources := list.Map(subnets, func(subnet *armnetwork.Subnet) *az.Resource {
 		dependsOn := []string{vnetId}
 
@@ -94,12 +93,11 @@ func mapSubnetResources(subnets []*armnetwork.Subnet, ctx *azContext.Context, vn
 		}
 
 		snet := &az.Resource{
-			Id:            *subnet.ID,
-			Name:          *subnet.Name,
-			Type:          *subnet.Type,
-			ResourceGroup: ctx.ResourceGroup,
-			DependsOn:     dependsOn,
-			Properties:    properties,
+			Id:         *subnet.ID,
+			Name:       *subnet.Name,
+			Type:       *subnet.Type,
+			DependsOn:  dependsOn,
+			Properties: properties,
 		}
 
 		return snet

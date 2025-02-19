@@ -31,10 +31,9 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	}
 
 	resource := &az.Resource{
-		Id:            *adf.ID,
-		Name:          *adf.Name,
-		Type:          *adf.Type,
-		ResourceGroup: ctx.ResourceGroup,
+		Id:   *adf.ID,
+		Name: *adf.Name,
+		Type: *adf.Type,
 	}
 
 	resources := []*az.Resource{resource}
@@ -103,11 +102,10 @@ func getManagedPrivateEndpoints(clientFactory *armdatafactory.ClientFactory, ctx
 
 	resources := list.Map(endpoints, func(endpoint *armdatafactory.ManagedPrivateEndpointResource) *az.Resource {
 		return &az.Resource{
-			Id:            *endpoint.ID,
-			Name:          *endpoint.Name,
-			Type:          *endpoint.Type,
-			ResourceGroup: ctx.ResourceGroup,
-			DependsOn:     []string{*adfId},
+			Id:        *endpoint.ID,
+			Name:      *endpoint.Name,
+			Type:      *endpoint.Type,
+			DependsOn: []string{*adfId},
 		}
 	})
 
@@ -133,11 +131,10 @@ func getIntegrationRuntimes(clientFactory *armdatafactory.ClientFactory, ctx *az
 
 	resources := list.Map(integration_runtimes, func(ir *armdatafactory.IntegrationRuntimeResource) *az.Resource {
 		return &az.Resource{
-			Id:            *ir.ID,
-			Name:          *ir.Name,
-			Type:          *ir.Type,
-			ResourceGroup: ctx.ResourceGroup,
-			DependsOn:     []string{*adfId},
+			Id:        *ir.ID,
+			Name:      *ir.Name,
+			Type:      *ir.Type,
+			DependsOn: []string{*adfId},
 		}
 	})
 

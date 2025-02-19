@@ -39,11 +39,10 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 
 	resources := []*az.Resource{
 		{
-			Id:            *vm.ID,
-			Name:          *vm.Name,
-			Type:          *vm.Type,
-			ResourceGroup: ctx.ResourceGroup,
-			DependsOn:     dependsOn,
+			Id:        *vm.ID,
+			Name:      *vm.Name,
+			Type:      *vm.Type,
+			DependsOn: dependsOn,
 		},
 	}
 

@@ -70,12 +70,11 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*az.Resource, error) {
 	dependsOn := []string{*planId}
 
 	resource := &az.Resource{
-		Id:            *app.ID,
-		Name:          *app.Name,
-		Type:          subType,
-		ResourceGroup: ctx.ResourceGroup,
-		DependsOn:     dependsOn,
-		Properties:    properties,
+		Id:         *app.ID,
+		Name:       *app.Name,
+		Type:       subType,
+		DependsOn:  dependsOn,
+		Properties: properties,
 	}
 
 	return []*az.Resource{resource}, nil
