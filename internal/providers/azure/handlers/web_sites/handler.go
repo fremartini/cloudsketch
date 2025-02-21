@@ -40,13 +40,13 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 		return nil, err
 	}
 
-	app, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
+	app, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	config, err := client.GetConfiguration(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
+	config, err := client.GetConfiguration(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err

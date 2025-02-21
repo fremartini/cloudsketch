@@ -29,7 +29,9 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 		Height: HEIGHT,
 	}
 
-	return node.NewIcon(IMAGE, resource.Name, &geometry)
+	link := resource.GetLinkOrDefault()
+
+	return node.NewIcon(IMAGE, resource.Name, &geometry, link)
 }
 
 func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {

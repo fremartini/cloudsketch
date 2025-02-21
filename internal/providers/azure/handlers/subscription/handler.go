@@ -21,14 +21,15 @@ func (*handler) Handle(subscriptionId string, credentials *azidentity.DefaultAzu
 		return nil, err
 	}
 
-	client, err := clientFactory.NewClient().Get(context.Background(), subscriptionId, nil)
+	subscription, err := clientFactory.NewClient().Get(context.Background(), subscriptionId, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &azContext.SubscriptionContext{
-		Id:   *client.Subscription.SubscriptionID,
-		Name: *client.Subscription.DisplayName,
+		Id:       *subscription.Subscription.SubscriptionID,
+		Name:     *subscription.Subscription.DisplayName,
+		TenantId: *subscription.Subscription.TenantID,
 	}, nil
 }

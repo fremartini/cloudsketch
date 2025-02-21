@@ -43,10 +43,10 @@ func (n *Arrow) ToMXCell() string {
 		buffer.WriteString(fmt.Sprintf("%s=%v ", k, string(j)))
 	}
 
-	cell := fmt.Sprintf(`<mxCell %s>
+	cell := fmt.Sprintf(`
+				<mxCell %s>
 					<mxGeometry relative="1" as="geometry" />
-				</mxCell>`,
-		strings.TrimSpace(buffer.String()))
+				</mxCell>`, strings.TrimSpace(buffer.String()))
 
 	return cell
 }

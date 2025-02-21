@@ -24,7 +24,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 
 	client := clientFactory.NewFactoriesClient()
 
-	adf, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
+	adf, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 func getManagedVirtualNetworks(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfName *string) ([]*armdatafactory.ManagedVirtualNetworkResource, error) {
 	client := clientFactory.NewManagedVirtualNetworksClient()
 
-	pager := client.NewListByFactoryPager(ctx.ResourceGroup, *adfName, nil)
+	pager := client.NewListByFactoryPager(ctx.ResourceGroupName, *adfName, nil)
 
 	var networks []*armdatafactory.ManagedVirtualNetworkResource
 	for pager.More() {
@@ -86,7 +86,7 @@ func getManagedVirtualNetworks(clientFactory *armdatafactory.ClientFactory, ctx 
 func getManagedPrivateEndpoints(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfId, managedVirtualNetworkName *string) ([]*models.Resource, error) {
 	client := clientFactory.NewManagedPrivateEndpointsClient()
 
-	pager := client.NewListByFactoryPager(ctx.ResourceGroup, ctx.ResourceName, *managedVirtualNetworkName, nil)
+	pager := client.NewListByFactoryPager(ctx.ResourceGroupName, ctx.ResourceName, *managedVirtualNetworkName, nil)
 
 	var endpoints []*armdatafactory.ManagedPrivateEndpointResource
 	for pager.More() {
@@ -115,7 +115,7 @@ func getManagedPrivateEndpoints(clientFactory *armdatafactory.ClientFactory, ctx
 func getIntegrationRuntimes(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfId *string) ([]*models.Resource, error) {
 	client := clientFactory.NewIntegrationRuntimesClient()
 
-	pager := client.NewListByFactoryPager(ctx.ResourceGroup, ctx.ResourceName, nil)
+	pager := client.NewListByFactoryPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	var integration_runtimes []*armdatafactory.IntegrationRuntimeResource
 	for pager.More() {

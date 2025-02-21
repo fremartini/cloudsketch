@@ -100,7 +100,7 @@ func New() *drawio {
 }
 
 func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) error {
-	// at this point only the modelsure resources are known - this function adds the corresponding DrawIO icons
+	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
 	resource_map := populateResourceMap(resources)
 
 	// some resources group other resources
