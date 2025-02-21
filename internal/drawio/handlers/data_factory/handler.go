@@ -1,17 +1,18 @@
 package data_factory
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/models"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.DATA_FACTORY
+	TYPE   = types.DATA_FACTORY
 	IMAGE  = images.DATA_FACTORY
 	WIDTH  = 68
 	HEIGHT = 68
@@ -25,7 +26,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) MapResource(resource *az.Resource) *node.Node {
+func (*handler) MapResource(resource *models.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -41,7 +42,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 
 }
 
-func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	arrows := []*node.Arrow{}
 
 	sourceId := (*resource_map)[source.Id].Node.Id()
@@ -55,7 +56,7 @@ func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, reso
 	return arrows
 }
 
-func (*handler) GroupResources(dataFactory *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) GroupResources(dataFactory *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	nodes := []*node.Node{}
 
 	resourcesInDataFactory := getResourcesInDataFactory(resources, dataFactory.Id, resource_map)
@@ -88,11 +89,11 @@ func (*handler) GroupResources(dataFactory *az.Resource, resources []*az.Resourc
 	return nodes
 }
 
-func getResourcesInDataFactory(resources []*az.Resource, adfId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
-	azResourcesInAsp := list.Filter(resources, func(resource *az.Resource) bool {
+func getResourcesInDataFactory(resources []*models.Resource, adfId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
+	azResourcesInAsp := list.Filter(resources, func(resource *models.Resource) bool {
 		return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == adfId })
 	})
-	resourcesInAsp := list.Map(azResourcesInAsp, func(resource *az.Resource) *node.ResourceAndNode {
+	resourcesInAsp := list.Map(azResourcesInAsp, func(resource *models.Resource) *node.ResourceAndNode {
 		return (*resource_map)[resource.Id]
 	})
 	return resourcesInAsp

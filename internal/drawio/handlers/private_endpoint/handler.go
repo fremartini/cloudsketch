@@ -1,16 +1,17 @@
 package private_endpoint
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/models"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.PRIVATE_ENDPOINT
+	TYPE   = types.PRIVATE_ENDPOINT
 	IMAGE  = images.PRIVATE_ENDPOINT
 	WIDTH  = 68
 	HEIGHT = 65
@@ -20,7 +21,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) MapResource(resource *az.Resource) *node.Node {
+func (*handler) MapResource(resource *models.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -35,7 +36,9 @@ func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_
 	// storage accounts might have multiple private endpoints attached to it
 	attachedTo := (*resource_map)[privateEndpoint.Resource.Properties["attachedTo"]]
 
-	if attachedTo.Resource.Type == az.WEB_SITES {
+	if attachedTo.Resource.Type == types.APP_SERVICE ||
+		attachedTo.Resource.Type == types.FUNCTION_APP ||
+		attachedTo.Resource.Type == types.LOGIC_APP {
 		addImplicitDependencyToFunctionApp(privateEndpoint.Resource, attachedTo.Resource, resource_map)
 	}
 
@@ -44,14 +47,14 @@ func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_
 	if len(attachedPrivateEndpoints) > 1 {
 		// multiple private endpoints point to this resource. If they all
 		// belong to the same subnet they can be merged
-		resources := []*az.Resource{}
+		resources := []*models.Resource{}
 		for _, e := range *resource_map {
 			resources = append(resources, e.Resource)
 		}
 
 		firstSubnet := getPrivateEndpointSubnet(privateEndpoint.Resource, resources)
 
-		allPrivateEndpointsInSameSubnet := list.Fold(attachedPrivateEndpoints, true, func(resource *az.Resource, matches bool) bool {
+		allPrivateEndpointsInSameSubnet := list.Fold(attachedPrivateEndpoints, true, func(resource *models.Resource, matches bool) bool {
 			privateEndpointSubnet := getPrivateEndpointSubnet(resource, resources)
 
 			return matches && privateEndpointSubnet == firstSubnet
@@ -75,20 +78,20 @@ func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_
 	return node.SetIcon(attachedTo.Node, privateEndpoint.Node, node.TOP_RIGHT)
 }
 
-func getPrivateEndpointSubnet(resource *az.Resource, resources []*az.Resource) *string {
+func getPrivateEndpointSubnet(resource *models.Resource, resources []*models.Resource) *string {
 	for _, dependency := range resource.DependsOn {
 		// TODO: refactor this!
-		if c := list.Contains(resources, func(resource *az.Resource) bool {
+		if c := list.Contains(resources, func(resource *models.Resource) bool {
 			return resource.Id == dependency
 		}); !c {
 			continue
 		}
 
-		resource := list.First(resources, func(resource *az.Resource) bool {
+		resource := list.First(resources, func(resource *models.Resource) bool {
 			return resource.Id == dependency
 		})
 
-		if resource.Type == az.SUBNET {
+		if resource.Type == types.SUBNET {
 			return &resource.Id
 		}
 	}
@@ -96,7 +99,7 @@ func getPrivateEndpointSubnet(resource *az.Resource, resources []*az.Resource) *
 	return nil
 }
 
-func addImplicitDependencyToFunctionApp(privateEndpoint, functionApp *az.Resource, resource_map *map[string]*node.ResourceAndNode) {
+func addImplicitDependencyToFunctionApp(privateEndpoint, functionApp *models.Resource, resource_map *map[string]*node.ResourceAndNode) {
 	// App Service Plans need a reference to the subnet it should be added to. This is fetched from the
 	// resources inside the plan. If the resource this Private Endpoint is attached to, is a function app
 	// an implicit dependency is added to the App Service to reference
@@ -107,7 +110,7 @@ func addImplicitDependencyToFunctionApp(privateEndpoint, functionApp *az.Resourc
 			continue
 		}
 
-		if dependentResource.Resource.Type != az.SUBNET {
+		if dependentResource.Resource.Type != types.SUBNET {
 			continue
 		}
 
@@ -116,13 +119,13 @@ func addImplicitDependencyToFunctionApp(privateEndpoint, functionApp *az.Resourc
 	}
 }
 
-func getPrivateEndpointPointingToResource(resource_map *map[string]*node.ResourceAndNode, attachedResource *az.Resource) []*az.Resource {
-	privateEndpoints := []*az.Resource{}
+func getPrivateEndpointPointingToResource(resource_map *map[string]*node.ResourceAndNode, attachedResource *models.Resource) []*models.Resource {
+	privateEndpoints := []*models.Resource{}
 
 	// figure out how many private endpoints are pointing to the storage account
 	for _, v := range *resource_map {
 		// filter out the private endpoints
-		if v.Resource.Type != az.PRIVATE_ENDPOINT {
+		if v.Resource.Type != types.PRIVATE_ENDPOINT {
 			continue
 		}
 
@@ -139,14 +142,14 @@ func getPrivateEndpointPointingToResource(resource_map *map[string]*node.Resourc
 	return privateEndpoints
 }
 
-func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	arrows := []*node.Arrow{}
 
 	sourceNode := (*resource_map)[source.Id].Node
 
 	for _, target := range targets {
 		// don't draw arrows to subnets
-		if target.Type == az.SUBNET {
+		if target.Type == types.SUBNET {
 			continue
 		}
 
@@ -165,6 +168,6 @@ func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, reso
 	return arrows
 }
 
-func (*handler) GroupResources(_ *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	return []*node.Node{}
 }

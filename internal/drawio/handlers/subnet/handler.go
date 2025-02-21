@@ -1,10 +1,11 @@
 package subnet
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/models"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 	"fmt"
 	"math"
@@ -13,7 +14,7 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = az.SUBNET
+	TYPE   = types.SUBNET
 	IMAGE  = images.SUBNET
 	WIDTH  = 68
 	HEIGHT = 41
@@ -27,7 +28,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) MapResource(resource *az.Resource) *node.Node {
+func (*handler) MapResource(resource *models.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -50,7 +51,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 			return false
 		}
 
-		return r.Resource.Type == az.ROUTE_TBLE
+		return r.Resource.Type == types.ROUTE_TABLE
 	})
 
 	if len(routeTables) != 1 {
@@ -62,14 +63,14 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return node.SetIcon(resource.Node, routeTable.Node, node.TOP_LEFT)
 }
 
-func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	arrows := []*node.Arrow{}
 
 	sourceNode := (*resource_map)[source.Id].Node
 
 	for _, target := range targets {
 		// don't draw arrows to virtual networks
-		if target.Type == az.VIRTUAL_NETWORK {
+		if target.Type == types.VIRTUAL_NETWORK {
 			continue
 		}
 
@@ -88,7 +89,7 @@ func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, reso
 	return arrows
 }
 
-func (*handler) GroupResources(subnet *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) GroupResources(subnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	resourcesInSubnet := getResourcesInSubnet(resources, subnet.Id, resource_map)
 
 	// a subnet can contain resources that belong to the same group, these needs to be filtered to
@@ -141,11 +142,11 @@ func (*handler) GroupResources(subnet *az.Resource, resources []*az.Resource, re
 	return []*node.Node{box}
 }
 
-func getResourcesInSubnet(resources []*az.Resource, subnetId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
-	azResourcesInSubnet := list.Filter(resources, func(resource *az.Resource) bool {
+func getResourcesInSubnet(resources []*models.Resource, subnetId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
+	azResourcesInSubnet := list.Filter(resources, func(resource *models.Resource) bool {
 		return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == subnetId })
 	})
-	resourcesInSubnet := list.Map(azResourcesInSubnet, func(resource *az.Resource) *node.ResourceAndNode {
+	resourcesInSubnet := list.Map(azResourcesInSubnet, func(resource *models.Resource) *node.ResourceAndNode {
 		return (*resource_map)[resource.Id]
 	})
 	return resourcesInSubnet

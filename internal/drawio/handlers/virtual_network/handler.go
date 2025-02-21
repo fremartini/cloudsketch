@@ -1,17 +1,18 @@
 package virtual_network
 
 import (
-	"cloudsketch/internal/az"
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
+	"cloudsketch/internal/drawio/models"
+	"cloudsketch/internal/drawio/types"
 	"fmt"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = az.VIRTUAL_NETWORK
+	TYPE   = types.VIRTUAL_NETWORK
 	IMAGE  = images.VIRTUAL_NETWORK
 	WIDTH  = 67
 	HEIGHT = 40
@@ -25,7 +26,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) MapResource(resource *az.Resource) *node.Node {
+func (*handler) MapResource(resource *models.Resource) *node.Node {
 	geometry := node.Geometry{
 		X:      0,
 		Y:      0,
@@ -48,11 +49,11 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return nil
 }
 
-func (*handler) DrawDependency(source *az.Resource, targets []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	return []*node.Arrow{}
 }
 
-func (*handler) GroupResources(vnet *az.Resource, resources []*az.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	geometry := &node.Geometry{
 		X:      0,
 		Y:      0,

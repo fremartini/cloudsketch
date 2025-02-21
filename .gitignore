@@ -2,3 +2,5 @@
 *.drawio*
 *.json
 *.exe
+!example/example.json
+!example/example.drawio

@@ -1,14 +1,12 @@
 package node
 
-import (
-	"cloudsketch/internal/az"
-)
+import "cloudsketch/internal/drawio/models"
 
 type Geometry struct {
 	X, Y, Width, Height int
 }
 
 type ResourceAndNode struct {
-	Resource *az.Resource
+	Resource *models.Resource
 	Node     *Node
 }
