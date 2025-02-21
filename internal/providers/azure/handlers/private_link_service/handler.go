@@ -21,7 +21,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 		return nil, err
 	}
 
-	pls, err := clientFactory.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
+	pls, err := clientFactory.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err

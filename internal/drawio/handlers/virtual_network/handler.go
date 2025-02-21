@@ -36,13 +36,15 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 
 	vnetSize, ok := resource.Properties["size"]
 
+	link := resource.GetLinkOrDefault()
+
 	if !ok {
-		return node.NewIcon(IMAGE, resource.Name, &geometry)
+		return node.NewIcon(IMAGE, resource.Name, &geometry, link)
 	}
 
 	name := fmt.Sprintf("%s/%s", resource.Name, vnetSize)
 
-	return node.NewIcon(IMAGE, name, &geometry)
+	return node.NewIcon(IMAGE, name, &geometry, link)
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {

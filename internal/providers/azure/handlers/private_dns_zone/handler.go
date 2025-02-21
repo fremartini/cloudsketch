@@ -25,7 +25,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 
 	client := clientFactory.NewPrivateZonesClient()
 
-	dns_zone, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
+	dns_zone, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Context, dnsZoneId *string) ([]*models.Resource, error) {
 	client := clientFactory.NewRecordSetsClient()
 
-	pager := client.NewListPager(ctx.ResourceGroup, ctx.ResourceName, nil)
+	pager := client.NewListPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	var records []*armprivatedns.RecordSet
 	for pager.More() {

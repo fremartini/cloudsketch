@@ -24,7 +24,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 
 	client := clientFactory.NewPublicIPAddressesClient()
 
-	pip, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
+	pip, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err

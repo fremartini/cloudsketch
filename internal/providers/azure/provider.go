@@ -72,6 +72,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	ctx := &azContext.Context{
 		SubscriptionId: subscription.Id,
 		Credentials:    credentials,
+		TenantId:       subscription.TenantId,
 	}
 
 	filename := fmt.Sprintf("%s_%s", subscription.Name, subscription.Id)
@@ -110,11 +111,12 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 
 		// handler is registered. Add whatever it returns
 		resourcesToAdd, err := f(&azContext.Context{
-			SubscriptionId: ctx.SubscriptionId,
-			Credentials:    ctx.Credentials,
-			ResourceGroup:  resource.ResourceGroup,
-			ResourceName:   resource.Name,
-			ResourceId:     resource.Id,
+			SubscriptionId:    ctx.SubscriptionId,
+			TenantId:          ctx.TenantId,
+			Credentials:       ctx.Credentials,
+			ResourceGroupName: resource.ResourceGroup,
+			ResourceName:      resource.Name,
+			ResourceId:        resource.Id,
 		})
 
 		if err != nil {
@@ -130,7 +132,9 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)
 	}
 
-	domainModels := list.Map(allResources, mapToDomainResource)
+	domainModels := list.Map(allResources, func(r *models.Resource) *domainModels.Resource {
+		return mapToDomainResource(r, ctx.TenantId)
+	})
 
 	// cache resources for next run
 	err = marshall.MarshallResources(filenameWithSuffix, domainModels)
@@ -142,14 +146,27 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	return domainModels, filename, nil
 }
 
-func mapToDomainResource(resource *models.Resource) *domainModels.Resource {
+func mapToDomainResource(resource *models.Resource, tenantId string) *domainModels.Resource {
+	properties := resource.Properties
+
+	if properties == nil {
+		properties = map[string]string{}
+	}
+
+	properties["link"] = generateAzurePortalLink(resource, tenantId)
+
 	return &domainModels.Resource{
 		Id:         resource.Id,
 		Type:       mapTypeToDomainType(resource.Type),
 		Name:       resource.Name,
 		DependsOn:  resource.DependsOn,
-		Properties: resource.Properties,
+		Properties: properties,
 	}
+}
+
+func generateAzurePortalLink(resource *models.Resource, tenant string) string {
+	// https://portal.azure.com/#@<tenant>/resource/<resource id>
+	return fmt.Sprintf("https://portal.azure.com/#@%s/resource%s", tenant, resource.Id)
 }
 
 func mapTypeToDomainType(azType string) string {

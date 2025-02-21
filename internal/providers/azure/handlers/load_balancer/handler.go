@@ -25,7 +25,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 
 	client := clientFactory.NewLoadBalancersClient()
 
-	lb, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
+	lb, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Context) ([]*models.Resource, error) {
 	client := clientFactory.NewLoadBalancerFrontendIPConfigurationsClient()
 
-	pager := client.NewListPager(ctx.ResourceGroup, ctx.ResourceName, nil)
+	pager := client.NewListPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	var nics []*armnetwork.FrontendIPConfiguration
 	for pager.More() {
@@ -97,7 +97,7 @@ func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Contex
 func getBackendTargets(clientFactory *armnetwork.ClientFactory, ctx *azContext.Context) ([]string, error) {
 	client := clientFactory.NewLoadBalancerNetworkInterfacesClient()
 
-	pager := client.NewListPager(ctx.ResourceGroup, ctx.ResourceName, nil)
+	pager := client.NewListPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	var nics []*armnetwork.Interface
 	for pager.More() {

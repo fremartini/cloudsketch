@@ -15,10 +15,14 @@ type Node struct {
 	ContainedIn *Node
 }
 
-func NewIcon(image, label string, geometry *Geometry) *Node {
+func NewIcon(image, label string, geometry *Geometry, link *string) *Node {
 	values := map[string]interface{}{
 		"style": fmt.Sprintf("image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=%s;labelBackgroundColor=none;", image),
 		"value": label,
+	}
+
+	if link != nil {
+		values["link"] = *link
 	}
 
 	return NewGeneric(values, geometry)
@@ -26,6 +30,7 @@ func NewIcon(image, label string, geometry *Geometry) *Node {
 
 func NewBox(geometry *Geometry, style *string) *Node {
 	values := map[string]interface{}{
+		"value": "",
 		"style": "rounded=0;whiteSpace=wrap;html=1;",
 	}
 
@@ -99,10 +104,24 @@ func (n *Node) ToMXCell() string {
 		buffer.WriteString(fmt.Sprintf("%s=%v ", k, string(j)))
 	}
 
-	cell := fmt.Sprintf(`<mxCell %s>
+	link, ok := n.values["link"]
+
+	if ok {
+		// cell has a link attached. DrawIO requires these to be nested in a 'UserObject'
+		cell := fmt.Sprintf(`
+				<UserObject label="%s" link="%s" id="%s">
+	        		<mxCell style="%s" parent="%s" vertex="%s">
+        				<mxGeometry x="%v" y="%v" width="%v" height="%v" as="geometry" />
+        			</mxCell>
+				</UserObject>`, n.values["value"], link, n.id, n.values["style"], n.values["parent"], n.values["vertex"], n.geometry.X, n.geometry.Y, n.geometry.Width, n.geometry.Height)
+
+		return cell
+	}
+
+	cell := fmt.Sprintf(`
+				<mxCell %s>
 					<mxGeometry x="%v" y="%v" width="%v" height="%v" as="geometry" />
-				</mxCell>`,
-		strings.TrimSpace(buffer.String()), n.geometry.X, n.geometry.Y, n.geometry.Width, n.geometry.Height)
+				</mxCell>`, strings.TrimSpace(buffer.String()), n.geometry.X, n.geometry.Y, n.geometry.Width, n.geometry.Height)
 
 	return cell
 }

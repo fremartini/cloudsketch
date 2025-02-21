@@ -26,7 +26,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 
 	client := clientFactory.NewVirtualNetworksClient()
 
-	vnet, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.ResourceName, nil)
+	vnet, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err

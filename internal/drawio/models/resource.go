@@ -5,3 +5,12 @@ type Resource struct {
 	DependsOn      []string
 	Properties     map[string]string
 }
+
+func (r *Resource) GetLinkOrDefault() *string {
+	link, ok := r.Properties["link"]
+	if ok {
+		return &link
+	}
+
+	return nil
+}
