@@ -171,7 +171,8 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 
 func mapTypeToDomainType(azType string) string {
 	domainTypes := map[string]string{
-		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE,
+		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
+		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE_PLAN,
 		types.APPLICATION_GATEWAY:                   domainTypes.APPLICATION_GATEWAY,
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
@@ -181,10 +182,12 @@ func mapTypeToDomainType(azType string) string {
 		types.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT: domainTypes.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT,
 		types.DATABRICKS_WORKSPACE:                  domainTypes.DATABRICKS_WORKSPACE,
 		types.DNS_RECORD:                            domainTypes.DNS_RECORD,
+		types.FUNCTION_APP:                          domainTypes.FUNCTION_APP,
 		types.KEY_VAULT:                             domainTypes.KEY_VAULT,
 		types.LOAD_BALANCER:                         domainTypes.LOAD_BALANCER,
 		types.LOAD_BALANCER_FRONTEND:                domainTypes.LOAD_BALANCER_FRONTEND,
 		types.LOG_ANALYTICS:                         domainTypes.LOG_ANALYTICS,
+		types.LOGIC_APP:                             domainTypes.LOGIC_APP,
 		types.NAT_GATEWAY:                           domainTypes.NAT_GATEWAY,
 		types.NETWORK_INTERFACE:                     domainTypes.NETWORK_INTERFACE,
 		types.NETWORK_SECURITY_GROUP:                domainTypes.NETWORK_SECURITY_GROUP,
@@ -202,9 +205,6 @@ func mapTypeToDomainType(azType string) string {
 		types.VIRTUAL_MACHINE:                       domainTypes.VIRTUAL_MACHINE,
 		types.VIRTUAL_MACHINE_SCALE_SET:             domainTypes.VIRTUAL_MACHINE_SCALE_SET,
 		types.VIRTUAL_NETWORK:                       domainTypes.VIRTUAL_NETWORK,
-		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
-		types.FUNCTION_APP:                          domainTypes.FUNCTION_APP,
-		types.LOGIC_APP:                             domainTypes.LOGIC_APP,
 	}
 
 	domainType, ok := domainTypes[azType]
