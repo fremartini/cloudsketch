@@ -38,7 +38,17 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return []*node.Arrow{}
+	arrows := []*node.Arrow{}
+
+	sourceId := (*resource_map)[source.Id].Node.Id()
+
+	for _, target := range targets {
+		targetId := (*resource_map)[target.Id].Node.Id()
+
+		arrows = append(arrows, node.NewArrow(sourceId, targetId, nil))
+	}
+
+	return arrows
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

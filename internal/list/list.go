@@ -47,6 +47,16 @@ func First[T any](v []T, f func(T) bool) T {
 	panic("no element satisifies predicate")
 }
 
+func FirstOrDefault[T any](v []T, def T, f func(T) bool) T {
+	for _, i := range v {
+		if f(i) {
+			return i
+		}
+	}
+
+	return def
+}
+
 func Fold[T, K any](v []T, acc K, f func(T, K) K) K {
 	for _, i := range v {
 		acc = f(i, acc)

@@ -5,7 +5,9 @@ import (
 	"cloudsketch/internal/marshall"
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/handlers/application_gateway"
+	"cloudsketch/internal/providers/azure/handlers/application_insights"
 	"cloudsketch/internal/providers/azure/handlers/data_factory"
+	"cloudsketch/internal/providers/azure/handlers/key_vault"
 	"cloudsketch/internal/providers/azure/handlers/load_balancer"
 	"cloudsketch/internal/providers/azure/handlers/nat_gateway"
 	"cloudsketch/internal/providers/azure/handlers/network_interface"
@@ -36,7 +38,9 @@ type handleFunc = func(*azContext.Context) ([]*models.Resource, error)
 var (
 	handlers map[string]handleFunc = map[string]handleFunc{
 		types.APPLICATION_GATEWAY:       application_gateway.New().Handle,
+		types.APPLICATION_INSIGHTS:      application_insights.New().Handle,
 		types.DATA_FACTORY:              data_factory.New().Handle,
+		types.KEY_VAULT:                 key_vault.New().Handle,
 		types.LOAD_BALANCER:             load_balancer.New().Handle,
 		types.NAT_GATEWAY:               nat_gateway.New().Handle,
 		types.NETWORK_INTERFACE:         network_interface.New().Handle,

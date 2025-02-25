@@ -10,7 +10,7 @@ const (
 	DATA_FACTORY_INTEGRATION_RUNTIME      = "Microsoft.DataFactory/factories/integrationruntimes"
 	DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT = "Microsoft.DataFactory/factories/managedvirtualnetworks/managedprivateendpoints"
 	DATABRICKS_WORKSPACE                  = "Microsoft.Databricks/workspaces"
-	DNS_RECORD                            = "custom/privateDnsZones/record"
+	DNS_RECORD                            = "CloudSketch/privateDnsZones/record"
 	KEY_VAULT                             = "Microsoft.KeyVault/vaults"
 	LOAD_BALANCER                         = "Microsoft.Network/loadBalancers"
 	LOAD_BALANCER_FRONTEND                = "Microsoft.Network/loadBalancers/frontendIPConfigurations"

@@ -180,9 +180,15 @@ func drawDependenciesRecursively(resource *models.Resource, resources []*models.
 			continue
 		}
 
-		dependency := list.First(resources, func(r *models.Resource) bool {
+		dependency := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
 			return r.Id == dependencyId
 		})
+
+		if dependency == nil {
+			log.Printf("unknown resource %s, skipping...", dependencyId)
+			// resource is unknown
+			continue
+		}
 
 		drawDependenciesRecursively(dependency, resources, resource_map, seen_unhandled_resources)
 
