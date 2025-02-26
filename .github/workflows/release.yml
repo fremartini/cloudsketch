@@ -47,7 +47,7 @@ jobs:
         go-version: ${{ env.GO_VERSION }}
 
     - name: Build ${{ env.OS_GOOS }}/${{ env.OS_GOARCH }}
-      run: GOOS=${{ env.OS_GOOS }} GOARCH=${{ env.OS_GOARCH }} go build -o ${{ env.EXECUTABLE_NAME }}.exe
+      run: GOOS=${{ env.OS_GOOS }} GOARCH=${{ env.OS_GOARCH }} go build -o ${{ env.EXECUTABLE_NAME }}.exe -ldflags "-X main.Version=${{ env.VERSION }}"
       shell: bash
 
     - name: Create archive
