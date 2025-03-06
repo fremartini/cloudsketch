@@ -1,14 +1,11 @@
 package build_graph
 
 import (
-	"bufio"
 	"bytes"
 	"cloudsketch/internal/list"
 	"errors"
 	"fmt"
-	"os"
 	"sort"
-	"strings"
 )
 
 type build_graph struct {
@@ -36,14 +33,16 @@ type Task struct {
 	references []string
 	inputs     []string
 	outputs    []string
+	action     func()
 }
 
-func NewTask(label string, references, inputs, outputs []string) *Task {
+func NewTask(label string, references, inputs, outputs []string, action func()) *Task {
 	return &Task{
 		label:      label,
 		references: references,
 		inputs:     inputs,
 		outputs:    outputs,
+		action:     action,
 	}
 }
 
@@ -86,59 +85,52 @@ func buildGraph(tasks []*Task) (map[*Task][]*Task, map[*Task][]*Task, error) {
 	return graph, inverse_graph, nil
 }
 
-func (g *build_graph) ToDotFile(name string) (string, error) {
-	f, err := os.Create(fmt.Sprintf("%s.gv", name))
-
-	if err != nil {
-		return "", err
+func (g *build_graph) Resolve(t *Task) {
+	for _, ref := range g.inverse_graph[t] {
+		// recursively resolve the tasks dependencies
+		g.Resolve(ref)
 	}
 
-	defer f.Close()
+	// when the task has no dependencies it can be resolved
+	t.action()
+}
 
+func (g *build_graph) ToDotFile(name string) string {
 	var buffer bytes.Buffer
 
 	buffer.WriteString(fmt.Sprintf("digraph %s {\n", name))
 
 	for _, task := range g.tasks {
-		if len(task.inputs) > 0 {
-			for _, input := range task.inputs {
-				buffer.WriteString("\t")
-				buffer.WriteString(fmt.Sprintf(`%s [label="%s" shape=plaintext];`, input, input))
-				buffer.WriteString(fmt.Sprintf("\n\t%s -> %s;\n", input, task.label))
-			}
-		}
+		writeInputNodes(&buffer, task.label, task.inputs)
 
-		if len(task.references) > 0 {
-			for _, dependency := range task.references {
-				buffer.WriteString(fmt.Sprintf("\t%s -> %s;\n", task.label, dependency))
-			}
-		}
+		writeReferences(&buffer, task.label, task.references)
 
-		if len(task.outputs) > 0 {
-			for _, output := range task.outputs {
-				buffer.WriteString("\t")
-				buffer.WriteString(fmt.Sprintf(`%s [label="%s" shape=plaintext];`, output, output))
-				buffer.WriteString(fmt.Sprintf("\n\t%s -> %s;\n", task.label, output))
-			}
-		}
+		writeOutputNodes(&buffer, task.label, task.outputs)
 	}
 
 	buffer.WriteString("}")
 
-	w := bufio.NewWriter(f)
-	_, err = w.WriteString(buffer.String())
-
-	if err != nil {
-		return "", err
-	}
-
-	return ReplaceMany(buffer.String(), []string{"\n", "\t"}, ""), w.Flush()
+	return buffer.String()
 }
 
-func ReplaceMany(s string, old []string, new string) string {
-	for _, toReplace := range old {
-		s = strings.ReplaceAll(s, toReplace, new)
+func writeInputNodes(buffer *bytes.Buffer, label string, inputs []string) {
+	for _, input := range inputs {
+		buffer.WriteString("\t")
+		buffer.WriteString(fmt.Sprintf(`%s [label="%s" shape=plaintext];`, input, input))
+		buffer.WriteString(fmt.Sprintf("\n\t%s -> %s;\n", input, label))
 	}
+}
 
-	return s
+func writeReferences(buffer *bytes.Buffer, label string, references []string) {
+	for _, reference := range references {
+		buffer.WriteString(fmt.Sprintf("\t%s -> %s;\n", label, reference))
+	}
+}
+
+func writeOutputNodes(buffer *bytes.Buffer, label string, outputs []string) {
+	for _, output := range outputs {
+		buffer.WriteString("\t")
+		buffer.WriteString(fmt.Sprintf(`%s [label="%s" shape=plaintext];`, output, output))
+		buffer.WriteString(fmt.Sprintf("\n\t%s -> %s;\n", label, output))
+	}
 }
