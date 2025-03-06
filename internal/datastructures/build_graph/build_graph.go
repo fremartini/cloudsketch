@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 )
 
 type build_graph struct {
@@ -67,9 +68,14 @@ func buildGraph(tasks []*Task) (map[*Task][]*Task, map[*Task][]*Task, error) {
 		}
 
 		for _, reference := range task.references {
-			dependentTask := list.First(tasks, func(t *Task) bool {
+			dependentTask := list.FirstOrDefault(tasks, nil, func(t *Task) bool {
 				return t.label == reference
 			})
+
+			if dependentTask == nil {
+				// a non-existing task was referenced
+				continue
+			}
 
 			graph[task] = append(graph[task], dependentTask)
 
@@ -93,6 +99,14 @@ func (g *build_graph) Resolve(t *Task) {
 
 	// when the task has no dependencies it can be resolved
 	t.action()
+}
+
+func ReplaceMany(s string, old []string, new string) string {
+	for _, toReplace := range old {
+		s = strings.ReplaceAll(s, toReplace, new)
+	}
+
+	return s
 }
 
 func (g *build_graph) ToDotFile(name string) string {
