@@ -73,8 +73,7 @@ func buildGraph(tasks []*Task) (map[*Task][]*Task, map[*Task][]*Task, error) {
 			})
 
 			if dependentTask == nil {
-				// a non-existing task was referenced
-				continue
+				return nil, nil, fmt.Errorf("an unknown task was referenced %s", reference)
 			}
 
 			graph[task] = append(graph[task], dependentTask)

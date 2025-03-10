@@ -157,6 +157,8 @@ func populateResourceMap(resources []*models.Resource) (*map[string]*node.Resour
 	resource_map := &map[string]*node.ResourceAndNode{}
 	seen_unhandled_resources := set.New[string]()
 
+	// TODO: clean up graph by removing references to nodes that dont exists
+
 	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
 		return build_graph.NewTask(r.Id, r.DependsOn, []string{}, []string{}, func() { drawResource(r, seen_unhandled_resources, resource_map) })
 	})
