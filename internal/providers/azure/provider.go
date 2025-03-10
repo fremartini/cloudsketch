@@ -33,25 +33,27 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 )
 
-type handleFunc = func(*azContext.Context) ([]*models.Resource, error)
+type handler interface {
+	Handle(ctx *azContext.Context) ([]*models.Resource, error)
+}
 
 var (
-	handlers map[string]handleFunc = map[string]handleFunc{
-		types.APPLICATION_GATEWAY:       application_gateway.New().Handle,
-		types.APPLICATION_INSIGHTS:      application_insights.New().Handle,
-		types.DATA_FACTORY:              data_factory.New().Handle,
-		types.KEY_VAULT:                 key_vault.New().Handle,
-		types.LOAD_BALANCER:             load_balancer.New().Handle,
-		types.NAT_GATEWAY:               nat_gateway.New().Handle,
-		types.NETWORK_INTERFACE:         network_interface.New().Handle,
-		types.PRIVATE_DNS_ZONE:          private_dns_zone.New().Handle,
-		types.PRIVATE_ENDPOINT:          private_endpoint.New().Handle,
-		types.PRIVATE_LINK_SERVICE:      private_link_service.New().Handle,
-		types.PUBLIC_IP_ADDRESS:         public_ip_address.New().Handle,
-		types.VIRTUAL_MACHINE:           virtual_machine.New().Handle,
-		types.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New().Handle,
-		types.VIRTUAL_NETWORK:           virtual_network.New().Handle,
-		types.WEB_SITES:                 web_sites.New().Handle,
+	handlers map[string]handler = map[string]handler{
+		types.APPLICATION_GATEWAY:       application_gateway.New(),
+		types.APPLICATION_INSIGHTS:      application_insights.New(),
+		types.DATA_FACTORY:              data_factory.New(),
+		types.KEY_VAULT:                 key_vault.New(),
+		types.LOAD_BALANCER:             load_balancer.New(),
+		types.NAT_GATEWAY:               nat_gateway.New(),
+		types.NETWORK_INTERFACE:         network_interface.New(),
+		types.PRIVATE_DNS_ZONE:          private_dns_zone.New(),
+		types.PRIVATE_ENDPOINT:          private_endpoint.New(),
+		types.PRIVATE_LINK_SERVICE:      private_link_service.New(),
+		types.PUBLIC_IP_ADDRESS:         public_ip_address.New(),
+		types.VIRTUAL_MACHINE:           virtual_machine.New(),
+		types.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New(),
+		types.VIRTUAL_NETWORK:           virtual_network.New(),
+		types.WEB_SITES:                 web_sites.New(),
 	}
 )
 
@@ -106,7 +108,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	allResources = list.FlatMap(allResources, func(resource *models.Resource) []*models.Resource {
 		log.Print(resource.Name)
 
-		f, ok := handlers[resource.Type]
+		handler, ok := handlers[resource.Type]
 
 		// no handler is registered. Add the resource as-is
 		if !ok {
@@ -114,7 +116,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 		}
 
 		// handler is registered. Add whatever it returns
-		resourcesToAdd, err := f(&azContext.Context{
+		resourcesToAdd, err := handler.Handle(&azContext.Context{
 			SubscriptionId:    ctx.SubscriptionId,
 			TenantId:          ctx.TenantId,
 			Credentials:       ctx.Credentials,
