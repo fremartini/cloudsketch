@@ -153,11 +153,26 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 	return dgrm.Write(filename)
 }
 
+func filterUnknownDependencies(resources []*models.Resource) []*models.Resource {
+	for _, resource := range resources {
+		resource.DependsOn = list.Filter(resource.DependsOn, func(d string) bool {
+			dependency := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
+				return r.Id == d
+			})
+
+			return dependency != nil
+		})
+	}
+
+	return resources
+}
+
 func populateResourceMap(resources []*models.Resource) (*map[string]*node.ResourceAndNode, error) {
 	resource_map := &map[string]*node.ResourceAndNode{}
 	seen_unhandled_resources := set.New[string]()
 
-	// TODO: clean up graph by removing references to nodes that dont exists
+	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
+	resources = filterUnknownDependencies(resources)
 
 	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
 		return build_graph.NewTask(r.Id, r.DependsOn, []string{}, []string{}, func() { drawResource(r, seen_unhandled_resources, resource_map) })
