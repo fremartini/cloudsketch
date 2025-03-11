@@ -18,7 +18,6 @@ var version string
 
 func main() {
 	name := "cloudsketch"
-
 	cmd := &cli.Command{
 		Name:        name,
 		Usage:       "Azure to DrawIO",
@@ -28,7 +27,7 @@ func main() {
 			{
 				Name:        "version",
 				Aliases:     []string{"v"},
-				Description: "show version",
+				Description: "Show version",
 				Action: func(_ context.Context, command *cli.Command) error {
 					fmt.Println(version)
 

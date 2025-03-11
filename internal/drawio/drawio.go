@@ -1,6 +1,7 @@
 package drawio
 
 import (
+	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/drawio/handlers/app_service"
 	"cloudsketch/internal/drawio/handlers/app_service_plan"
@@ -41,6 +42,7 @@ import (
 	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
+	"fmt"
 	"log"
 )
 
@@ -101,7 +103,11 @@ func New() *drawio {
 
 func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) error {
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
-	resource_map := populateResourceMap(resources)
+	resource_map, err := populateResourceMap(resources)
+
+	if err != nil {
+		return err
+	}
 
 	// some resources group other resources
 	groups := processGroups(resource_map)
@@ -147,62 +153,50 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 	return dgrm.Write(filename)
 }
 
-func populateResourceMap(resources []*models.Resource) *map[string]*node.ResourceAndNode {
+func filterUnknownDependencies(resources []*models.Resource) []*models.Resource {
+	for _, resource := range resources {
+		resource.DependsOn = list.Filter(resource.DependsOn, func(d string) bool {
+			dependency := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
+				return r.Id == d
+			})
+
+			return dependency != nil
+		})
+	}
+
+	return resources
+}
+
+func populateResourceMap(resources []*models.Resource) (*map[string]*node.ResourceAndNode, error) {
 	resource_map := &map[string]*node.ResourceAndNode{}
 	seen_unhandled_resources := set.New[string]()
 
-	for _, resource := range resources {
-		// draw dependencies
-		drawDependenciesRecursively(resource, resources, resource_map, seen_unhandled_resources)
+	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
+	resources = filterUnknownDependencies(resources)
 
-		if (*resource_map)[resource.Id] != nil {
-			// resource already drawn
-			continue
-		}
+	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
+		return build_graph.NewTask(r.Id, r.DependsOn, []string{}, []string{}, func() { drawResource(r, seen_unhandled_resources, resource_map) })
+	})
 
-		// draw this resource
-		resourceAndNode := drawResource(resource, seen_unhandled_resources)
+	bg, err := build_graph.NewGraph(tasks)
 
-		if resourceAndNode == nil {
-			continue
-		}
-
-		(*resource_map)[resource.Id] = resourceAndNode
+	if err != nil {
+		return nil, fmt.Errorf("error during construction of dependency graph: %+v", err)
 	}
 
-	return resource_map
-}
-
-func drawDependenciesRecursively(resource *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode, seen_unhandled_resources *set.Set[string]) {
-	for _, dependencyId := range resource.DependsOn {
-		if (*resource_map)[dependencyId] != nil {
-			// dependency already drawn
-			continue
-		}
-
-		dependency := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
-			return r.Id == dependencyId
-		})
-
-		if dependency == nil {
-			log.Printf("unknown resource %s, skipping...", dependencyId)
-			// resource is unknown
-			continue
-		}
-
-		drawDependenciesRecursively(dependency, resources, resource_map, seen_unhandled_resources)
-
-		resourceAndNode := drawResource(dependency, seen_unhandled_resources)
-
-		if resourceAndNode == nil {
-			continue
-		}
-
-		(*resource_map)[dependency.Id] = resourceAndNode
+	for _, task := range tasks {
+		bg.Resolve(task)
 	}
+
+	return resource_map, nil
 }
 
-func drawResource(resource *models.Resource, seen_unhandled_resources *set.Set[string]) *node.ResourceAndNode {
+func drawResource(resource *models.Resource, seen_unhandled_resources *set.Set[string], resource_map *map[string]*node.ResourceAndNode) {
+	if (*resource_map)[resource.Id] != nil {
+		// resource already drawn
+		return
+	}
+
 	f, ok := commands[resource.Type]
 
 	if !ok {
@@ -214,12 +208,12 @@ func drawResource(resource *models.Resource, seen_unhandled_resources *set.Set[s
 			seen_unhandled_resources.Add(resource.Type)
 		}
 
-		return nil
+		return
 	}
 
 	icon := f.MapResource(resource)
 
-	return &node.ResourceAndNode{
+	(*resource_map)[resource.Id] = &node.ResourceAndNode{
 		Resource: resource,
 		Node:     icon,
 	}
