@@ -12,11 +12,6 @@ const (
 	Padding = 50
 )
 
-var (
-	BoxOriginX     = 0
-	MaxHeightSoFar = 0
-)
-
 type diagram struct {
 	cells []string
 }

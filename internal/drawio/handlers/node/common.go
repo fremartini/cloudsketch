@@ -93,7 +93,7 @@ func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int) {
 	fillResourcesInBoxLine(box, resourcesInGrouping, padding)
 }
 
-func tallestResource(resourcesInGrouping []*Node) int {
+func tallestNode(resourcesInGrouping []*Node) int {
 	heightValues := list.Map(resourcesInGrouping, func(r *Node) int {
 		return r.GetGeometry().Height
 	})
@@ -105,21 +105,21 @@ func tallestResource(resourcesInGrouping []*Node) int {
 	return tallest
 }
 
-func fillResourcesInBoxLine(box *Node, resources []*Node, padding int) {
-	tallestResource := tallestResource(resources)
+func fillResourcesInBoxLine(box *Node, nodes []*Node, padding int) {
+	tallestNode := tallestNode(nodes)
 
 	nextX := padding
 	boxGeometry := box.GetGeometry()
-	boxGeometry.Height += padding*2 + tallestResource
+	boxGeometry.Height += padding*2 + tallestNode
 
-	for _, resourceToPlace := range resources {
-		nodeToPlaceGeometry := resourceToPlace.GetGeometry()
+	for _, node := range nodes {
+		nodeToPlaceGeometry := node.GetGeometry()
 
 		offsetY := boxGeometry.Height/2 - nodeToPlaceGeometry.Height/2
 
-		resourceToPlace.SetProperty("parent", box.Id())
-		resourceToPlace.ContainedIn = box
-		resourceToPlace.SetPosition(nextX, offsetY)
+		node.SetProperty("parent", box.Id())
+		node.ContainedIn = box
+		node.SetPosition(nextX, offsetY)
 
 		nextX += nodeToPlaceGeometry.Width + padding
 
@@ -129,18 +129,18 @@ func fillResourcesInBoxLine(box *Node, resources []*Node, padding int) {
 	boxGeometry.Width += padding
 }
 
-func fillResourcesInBoxSquare(box *Node, resourcesInGrouping []*Node, padding int) {
+func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int) {
 
 	// sort by volume
-	sort.Slice(resourcesInGrouping, func(i, j int) bool {
-		volumeA := resourcesInGrouping[i].GetGeometry().Height + resourcesInGrouping[i].GetGeometry().Width
-		volumeB := resourcesInGrouping[j].GetGeometry().Height + resourcesInGrouping[j].GetGeometry().Width
+	sort.Slice(nodes, func(i, j int) bool {
+		volumeA := nodes[i].GetGeometry().Height + nodes[i].GetGeometry().Width
+		volumeB := nodes[j].GetGeometry().Height + nodes[j].GetGeometry().Width
 
 		return volumeA < volumeB
 	})
 
 	// number of rows and columns is the square root of the elements in the group
-	maxRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(resourcesInGrouping)))))
+	maxRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(nodes)))))
 
 	currIndx := 0
 
@@ -151,12 +151,12 @@ func fillResourcesInBoxSquare(box *Node, resourcesInGrouping []*Node, padding in
 
 	for row := 0; row < maxRowsAndColumns; row++ {
 		for column := 0; column < maxRowsAndColumns; column++ {
-			if currIndx > len(resourcesInGrouping)-1 {
+			if currIndx > len(nodes)-1 {
 				// no more elements
 				break
 			}
 
-			nodeToPlace := resourcesInGrouping[currIndx]
+			nodeToPlace := nodes[currIndx]
 			nodeToPlaceGeometry := nodeToPlace.GetGeometry()
 
 			if nodeToPlace.ContainedIn != nil {
@@ -186,6 +186,6 @@ func fillResourcesInBoxSquare(box *Node, resourcesInGrouping []*Node, padding in
 	}
 
 	// off by one error
-	boxGeometry.Height += resourcesInGrouping[len(resourcesInGrouping)-1].GetGeometry().Height + padding
+	boxGeometry.Height += nodes[len(nodes)-1].GetGeometry().Height + padding
 	boxGeometry.Width += padding
 }

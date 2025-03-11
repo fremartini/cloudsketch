@@ -14,14 +14,27 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+var version string
+
 func main() {
 	name := "cloudsketch"
-
 	cmd := &cli.Command{
 		Name:        name,
 		Usage:       "Azure to DrawIO",
 		UsageText:   fmt.Sprintf("%s <subscription id>", name),
 		Description: "convert a Azure subscription to a DrawIO diagram",
+		Commands: []*cli.Command{
+			{
+				Name:        "version",
+				Aliases:     []string{"v"},
+				Description: "Show version",
+				Action: func(_ context.Context, command *cli.Command) error {
+					fmt.Println(version)
+
+					return nil
+				},
+			},
+		},
 		Action: func(_ context.Context, command *cli.Command) error {
 			args := command.Args().Slice()
 
@@ -62,7 +75,7 @@ func main() {
 
 			filename = fmt.Sprintf("%s.drawio", filename)
 
-			if drawio.New().WriteDiagram(filename, resources); err != nil {
+			if err := drawio.New().WriteDiagram(filename, resources); err != nil {
 				return err
 			}
 

@@ -9,7 +9,7 @@ env:
   REPO_NAME: ${{ github.event.repository.name }}
   OUT_FOLDER: ${{ github.event.repository.name }}
   EXECUTABLE_NAME: ${{ github.event.repository.name }}
-  GO_VERSION: '1.23'
+  GO_VERSION: '1.24'
 
 permissions:
   contents: write
@@ -47,7 +47,7 @@ jobs:
         go-version: ${{ env.GO_VERSION }}
 
     - name: Build ${{ env.OS_GOOS }}/${{ env.OS_GOARCH }}
-      run: GOOS=${{ env.OS_GOOS }} GOARCH=${{ env.OS_GOARCH }} go build -o ${{ env.EXECUTABLE_NAME }}.exe
+      run: GOOS=${{ env.OS_GOOS }} GOARCH=${{ env.OS_GOARCH }} go build -o ${{ env.EXECUTABLE_NAME }}.exe -ldflags "-X main.version=${{ env.VERSION }}"
       shell: bash
 
     - name: Create archive

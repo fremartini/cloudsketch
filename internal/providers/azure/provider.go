@@ -5,7 +5,9 @@ import (
 	"cloudsketch/internal/marshall"
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/handlers/application_gateway"
+	"cloudsketch/internal/providers/azure/handlers/application_insights"
 	"cloudsketch/internal/providers/azure/handlers/data_factory"
+	"cloudsketch/internal/providers/azure/handlers/key_vault"
 	"cloudsketch/internal/providers/azure/handlers/load_balancer"
 	"cloudsketch/internal/providers/azure/handlers/nat_gateway"
 	"cloudsketch/internal/providers/azure/handlers/network_interface"
@@ -31,23 +33,27 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 )
 
-type handleFunc = func(*azContext.Context) ([]*models.Resource, error)
+type handler interface {
+	Handle(ctx *azContext.Context) ([]*models.Resource, error)
+}
 
 var (
-	handlers map[string]handleFunc = map[string]handleFunc{
-		types.APPLICATION_GATEWAY:       application_gateway.New().Handle,
-		types.DATA_FACTORY:              data_factory.New().Handle,
-		types.LOAD_BALANCER:             load_balancer.New().Handle,
-		types.NAT_GATEWAY:               nat_gateway.New().Handle,
-		types.NETWORK_INTERFACE:         network_interface.New().Handle,
-		types.PRIVATE_DNS_ZONE:          private_dns_zone.New().Handle,
-		types.PRIVATE_ENDPOINT:          private_endpoint.New().Handle,
-		types.PRIVATE_LINK_SERVICE:      private_link_service.New().Handle,
-		types.PUBLIC_IP_ADDRESS:         public_ip_address.New().Handle,
-		types.VIRTUAL_MACHINE:           virtual_machine.New().Handle,
-		types.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New().Handle,
-		types.VIRTUAL_NETWORK:           virtual_network.New().Handle,
-		types.WEB_SITES:                 web_sites.New().Handle,
+	handlers map[string]handler = map[string]handler{
+		types.APPLICATION_GATEWAY:       application_gateway.New(),
+		types.APPLICATION_INSIGHTS:      application_insights.New(),
+		types.DATA_FACTORY:              data_factory.New(),
+		types.KEY_VAULT:                 key_vault.New(),
+		types.LOAD_BALANCER:             load_balancer.New(),
+		types.NAT_GATEWAY:               nat_gateway.New(),
+		types.NETWORK_INTERFACE:         network_interface.New(),
+		types.PRIVATE_DNS_ZONE:          private_dns_zone.New(),
+		types.PRIVATE_ENDPOINT:          private_endpoint.New(),
+		types.PRIVATE_LINK_SERVICE:      private_link_service.New(),
+		types.PUBLIC_IP_ADDRESS:         public_ip_address.New(),
+		types.VIRTUAL_MACHINE:           virtual_machine.New(),
+		types.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New(),
+		types.VIRTUAL_NETWORK:           virtual_network.New(),
+		types.WEB_SITES:                 web_sites.New(),
 	}
 )
 
@@ -102,7 +108,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	allResources = list.FlatMap(allResources, func(resource *models.Resource) []*models.Resource {
 		log.Print(resource.Name)
 
-		f, ok := handlers[resource.Type]
+		handler, ok := handlers[resource.Type]
 
 		// no handler is registered. Add the resource as-is
 		if !ok {
@@ -110,7 +116,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 		}
 
 		// handler is registered. Add whatever it returns
-		resourcesToAdd, err := f(&azContext.Context{
+		resourcesToAdd, err := handler.Handle(&azContext.Context{
 			SubscriptionId:    ctx.SubscriptionId,
 			TenantId:          ctx.TenantId,
 			Credentials:       ctx.Credentials,
@@ -171,7 +177,8 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 
 func mapTypeToDomainType(azType string) string {
 	domainTypes := map[string]string{
-		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE,
+		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
+		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE_PLAN,
 		types.APPLICATION_GATEWAY:                   domainTypes.APPLICATION_GATEWAY,
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
@@ -181,10 +188,12 @@ func mapTypeToDomainType(azType string) string {
 		types.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT: domainTypes.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT,
 		types.DATABRICKS_WORKSPACE:                  domainTypes.DATABRICKS_WORKSPACE,
 		types.DNS_RECORD:                            domainTypes.DNS_RECORD,
+		types.FUNCTION_APP:                          domainTypes.FUNCTION_APP,
 		types.KEY_VAULT:                             domainTypes.KEY_VAULT,
 		types.LOAD_BALANCER:                         domainTypes.LOAD_BALANCER,
 		types.LOAD_BALANCER_FRONTEND:                domainTypes.LOAD_BALANCER_FRONTEND,
 		types.LOG_ANALYTICS:                         domainTypes.LOG_ANALYTICS,
+		types.LOGIC_APP:                             domainTypes.LOGIC_APP,
 		types.NAT_GATEWAY:                           domainTypes.NAT_GATEWAY,
 		types.NETWORK_INTERFACE:                     domainTypes.NETWORK_INTERFACE,
 		types.NETWORK_SECURITY_GROUP:                domainTypes.NETWORK_SECURITY_GROUP,
@@ -202,9 +211,6 @@ func mapTypeToDomainType(azType string) string {
 		types.VIRTUAL_MACHINE:                       domainTypes.VIRTUAL_MACHINE,
 		types.VIRTUAL_MACHINE_SCALE_SET:             domainTypes.VIRTUAL_MACHINE_SCALE_SET,
 		types.VIRTUAL_NETWORK:                       domainTypes.VIRTUAL_NETWORK,
-		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
-		types.FUNCTION_APP:                          domainTypes.FUNCTION_APP,
-		types.LOGIC_APP:                             domainTypes.LOGIC_APP,
 	}
 
 	domainType, ok := domainTypes[azType]

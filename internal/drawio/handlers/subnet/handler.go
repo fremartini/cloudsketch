@@ -8,7 +8,6 @@ import (
 	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 	"fmt"
-	"math"
 )
 
 type handler struct{}
@@ -98,9 +97,7 @@ func (*handler) GroupResources(subnet *models.Resource, resources []*models.Reso
 	// avoid moving the same group multiple times
 	seenGroups := map[string]bool{}
 
-	resourcesInSubnet = list.Filter(resourcesInSubnet, func(r *node.ResourceAndNode) bool {
-		n := r.Node.GetParentOrThis()
-
+	resourcesInSubnet = list.Filter(resourcesInSubnet, func(n *node.Node) bool {
 		if seenGroups[n.Id()] {
 			return false
 		}
@@ -110,46 +107,34 @@ func (*handler) GroupResources(subnet *models.Resource, resources []*models.Reso
 		return true
 	})
 
-	geometry := &node.Geometry{
-		X:      diagram.BoxOriginX,
-		Y:      0,
-		Width:  0,
-		Height: 0,
-	}
-
-	box := node.NewBox(geometry, &STYLE)
-
 	subnetNode := (*resource_map)[subnet.Id].Node
 
 	// subnets can be in a group because of UDRs
 	subnetNode = subnetNode.GetParentOrThis()
-
 	subnetNodeGeometry := subnetNode.GetGeometry()
 
+	box := node.NewBox(&node.Geometry{
+		X:      0,
+		Y:      0,
+		Width:  0,
+		Height: 0,
+	}, &STYLE)
+
 	subnetNode.SetProperty("parent", box.Id())
+	subnetNode.ContainedIn = box
 	subnetNode.SetPosition(-subnetNodeGeometry.Width/2, -subnetNodeGeometry.Height/2)
 
-	nodesToMove := list.Map(resourcesInSubnet, func(r *node.ResourceAndNode) *node.Node {
-		return r.Node.GetParentOrThis()
-	})
-
-	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
-
-	// adjust padding between the current box and the next subnets box on the X axis
-	diagram.BoxOriginX = geometry.X + geometry.Width + (subnetNodeGeometry.Width/2 + diagram.Padding)
-
-	// the vnet needs to know about the tallest vnet so it can fit it
-	diagram.MaxHeightSoFar = int(math.Max(float64(diagram.MaxHeightSoFar), float64(box.GetGeometry().Height)))
+	node.FillResourcesInBox(box, resourcesInSubnet, diagram.Padding)
 
 	return []*node.Node{box}
 }
 
-func getResourcesInSubnet(resources []*models.Resource, subnetId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
+func getResourcesInSubnet(resources []*models.Resource, subnetId string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	azResourcesInSubnet := list.Filter(resources, func(resource *models.Resource) bool {
 		return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == subnetId })
 	})
-	resourcesInSubnet := list.Map(azResourcesInSubnet, func(resource *models.Resource) *node.ResourceAndNode {
-		return (*resource_map)[resource.Id]
+	resourcesInSubnet := list.Map(azResourcesInSubnet, func(resource *models.Resource) *node.Node {
+		return (*resource_map)[resource.Id].Node.GetParentOrThis()
 	})
 	return resourcesInSubnet
 }

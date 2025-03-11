@@ -44,7 +44,6 @@ func (*handler) DrawDependency(source *models.Resource, targets []*models.Resour
 	sourceId := (*resource_map)[source.Id].Node.Id()
 
 	for _, target := range targets {
-
 		targetId := (*resource_map)[target.Id].Node.Id()
 
 		arrows = append(arrows, node.NewArrow(sourceId, targetId, nil))

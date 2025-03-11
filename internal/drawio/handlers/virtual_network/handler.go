@@ -6,6 +6,7 @@ import (
 	"cloudsketch/internal/drawio/images"
 	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
+	"cloudsketch/internal/list"
 	"fmt"
 )
 
@@ -56,28 +57,41 @@ func (*handler) DrawDependency(source *models.Resource, targets []*models.Resour
 }
 
 func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	geometry := &node.Geometry{
-		X:      0,
-		Y:      0,
-		Width:  diagram.BoxOriginX,
-		Height: diagram.MaxHeightSoFar,
-	}
+	subnets := getAllSubnetsInVnet(vnet.Id, resources, resource_map)
 
 	vnetNode := (*resource_map)[vnet.Id].Node
 	vnetNodegeometry := vnetNode.GetGeometry()
 
-	// move the box a bit to the left and above to fit its children
-	geometry = &node.Geometry{
-		X:      geometry.X - diagram.Padding,
-		Y:      geometry.Y - diagram.Padding,
-		Width:  geometry.Width + diagram.Padding,
-		Height: geometry.Height + (2 * diagram.Padding),
-	}
+	box := node.NewBox(&node.Geometry{
+		X:      0,
+		Y:      0,
+		Width:  0,
+		Height: 0,
+	}, &STYLE)
 
-	box := node.NewBox(geometry, &STYLE)
+	node.FillResourcesInBox(box, subnets, diagram.Padding)
 
 	vnetNode.SetProperty("parent", box.Id())
-	vnetNode.SetPosition(-vnetNodegeometry.Width/2, geometry.Height-vnetNodegeometry.Height/2)
+	vnetNode.ContainedIn = box
+	vnetNode.SetPosition(-vnetNodegeometry.Width/2, -vnetNodegeometry.Height/2)
 
 	return []*node.Node{box}
+}
+
+func getAllSubnetsInVnet(vnetId string, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+	subnets := list.Filter(resources, func(r *models.Resource) bool {
+		if r.Type != types.SUBNET {
+			return false
+		}
+
+		return list.Contains(r.DependsOn, func(dependency string) bool {
+			return dependency == vnetId
+		})
+	})
+
+	nodes := list.Map(subnets, func(r *models.Resource) *node.Node {
+		return (*resource_map)[r.Id].Node.GetParentOrThis()
+	})
+
+	return nodes
 }
