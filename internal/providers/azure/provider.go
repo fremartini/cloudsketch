@@ -202,6 +202,7 @@ func mapTypeToDomainType(azType string) string {
 		types.PRIVATE_ENDPOINT:                      domainTypes.PRIVATE_ENDPOINT,
 		types.PRIVATE_LINK_SERVICE:                  domainTypes.PRIVATE_LINK_SERVICE,
 		types.PUBLIC_IP_ADDRESS:                     domainTypes.PUBLIC_IP_ADDRESS,
+		types.REDIS:                                 domainTypes.REDIS,
 		types.ROUTE_TABLE:                           domainTypes.ROUTE_TABLE,
 		types.SQL_DATABASE:                          domainTypes.SQL_DATABASE,
 		types.SQL_SERVER:                            domainTypes.SQL_SERVER,

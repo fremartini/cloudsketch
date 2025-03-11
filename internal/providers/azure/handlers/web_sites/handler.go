@@ -1,6 +1,7 @@
 package web_sites
 
 import (
+	"cloudsketch/internal/list"
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v4"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources/v2"
 )
 
 type handler struct{}
@@ -52,6 +54,16 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 		return nil, err
 	}
 
+	dependsOn := []string{}
+
+	resourceDependenciesInTags, err := getResourceReferencesInTags(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	dependsOn = append(dependsOn, resourceDependenciesInTags...)
+
 	properties := map[string]string{}
 
 	configValues := config.Properties.AzureStorageAccounts[ctx.ResourceName]
@@ -67,7 +79,7 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	properties["outboundSubnet"] = strings.ToLower(*outboundSubnetId)
 
 	planId := app.Properties.ServerFarmID
-	dependsOn := []string{*planId}
+	dependsOn = append(dependsOn, *planId)
 
 	resource := &models.Resource{
 		Id:         *app.ID,
@@ -78,4 +90,37 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	}
 
 	return []*models.Resource{resource}, nil
+}
+
+func getResourceReferencesInTags(ctx *azContext.Context) ([]string, error) {
+	clientFactory, err := armresources.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	client := clientFactory.NewTagsClient()
+
+	tags, err := client.GetAtScope(context.Background(), ctx.ResourceId, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := []string{}
+	tagsToKeep := []string{
+		"hidden-link: /app-insights-resource-id",
+	}
+
+	for k, v := range tags.Properties.Tags {
+		if !list.Contains(tagsToKeep, func(t string) bool {
+			return k == t
+		}) {
+			continue
+		}
+
+		result = append(result, *v)
+	}
+
+	return result, nil
 }

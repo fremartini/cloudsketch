@@ -26,6 +26,7 @@ const (
 	PRIVATE_ENDPOINT                      = "PRIVATE_ENDPOINT"
 	PRIVATE_LINK_SERVICE                  = "PRIVATE_LINK_SERVICE"
 	PUBLIC_IP_ADDRESS                     = "PUBLIC_IP_ADDRESS"
+	REDIS                                 = "REDIS"
 	ROUTE_TABLE                           = "ROUTE_TABLE"
 	SQL_DATABASE                          = "SQL_DATABASE"
 	SQL_SERVER                            = "SQL_SERVER"

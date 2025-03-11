@@ -30,6 +30,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/private_endpoint"
 	"cloudsketch/internal/drawio/handlers/private_link_service"
 	"cloudsketch/internal/drawio/handlers/public_ip_address"
+	"cloudsketch/internal/drawio/handlers/redis"
 	"cloudsketch/internal/drawio/handlers/route_table"
 	"cloudsketch/internal/drawio/handlers/sql_database"
 	"cloudsketch/internal/drawio/handlers/sql_server"
@@ -82,6 +83,7 @@ var (
 		private_endpoint.TYPE:                      private_endpoint.New(),
 		private_link_service.TYPE:                  private_link_service.New(),
 		public_ip_address.TYPE:                     public_ip_address.New(),
+		redis.TYPE:                                 redis.New(),
 		route_table.TYPE:                           route_table.New(),
 		sql_database.TYPE:                          sql_database.New(),
 		sql_server.TYPE:                            sql_server.New(),

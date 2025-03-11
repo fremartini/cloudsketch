@@ -26,6 +26,7 @@ const (
 	PRIVATE_ENDPOINT                      = "Microsoft.Network/privateEndpoints"
 	PRIVATE_LINK_SERVICE                  = "Microsoft.Network/privateLinkServices"
 	PUBLIC_IP_ADDRESS                     = "Microsoft.Network/publicIPAddresses"
+	REDIS                                 = "Microsoft.Cache/Redis"
 	ROUTE_TABLE                           = "Microsoft.Network/routeTables"
 	SQL_DATABASE                          = "Microsoft.Sql/servers/databases"
 	SQL_SERVER                            = "Microsoft.Sql/servers"
