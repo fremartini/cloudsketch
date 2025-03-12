@@ -137,15 +137,15 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 
 	// private endpoints and NICs are typically used as icons attached to other icons and should therefore be rendered in front
 	// TODO: implement a better solution?
-	allResourcesWithoutPEandNICs := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type != types.PRIVATE_ENDPOINT && n.Resource.Type != types.NETWORK_INTERFACE
+	allResourcesThatShouldGoInBack := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
+		return n.Resource.Type != types.PRIVATE_ENDPOINT && n.Resource.Type != types.NETWORK_INTERFACE && n.Resource.Type != types.PUBLIC_IP_ADDRESS
 	})
 
-	privateEndpointsAndNICS := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE
+	allResourcesThatShouldGoInFront := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
+		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE || n.Resource.Type == types.PUBLIC_IP_ADDRESS
 	})
 
-	allResources = append(allResourcesWithoutPEandNICs, privateEndpointsAndNICS...)
+	allResources = append(allResourcesThatShouldGoInBack, allResourcesThatShouldGoInFront...)
 	allResourcesNodes := list.Map(allResources, func(n *node.ResourceAndNode) *node.Node {
 		return n.Node
 	})

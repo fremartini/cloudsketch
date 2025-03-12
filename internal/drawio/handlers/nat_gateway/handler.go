@@ -34,6 +34,17 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	// this resource can depend on its public ip. If this is the case they should be grouped
+	for _, d := range resource.Resource.DependsOn {
+		dependency := (*resource_map)[d]
+
+		if dependency.Resource.Type != types.PUBLIC_IP_ADDRESS {
+			continue
+		}
+
+		return node.SetIcon(resource.Node, dependency.Node, node.TOP_RIGHT)
+	}
+
 	return nil
 }
 
@@ -45,6 +56,11 @@ func (*handler) DrawDependency(source *models.Resource, targets []*models.Resour
 	for _, target := range targets {
 		// don't draw arrows to subnets
 		if target.Type == types.SUBNET {
+			continue
+		}
+
+		// don't draw arrows to public ips
+		if target.Type == types.PUBLIC_IP_ADDRESS {
 			continue
 		}
 
