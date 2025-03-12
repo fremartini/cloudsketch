@@ -32,7 +32,6 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	for _, config := range bastion.Properties.IPConfigurations {
 		dependsOn = append(dependsOn, *config.Properties.PublicIPAddress.ID)
 		dependsOn = append(dependsOn, *config.Properties.Subnet.ID)
-		dependsOn = append(dependsOn, *config.Properties.PublicIPAddress.ID)
 	}
 
 	resource := &models.Resource{

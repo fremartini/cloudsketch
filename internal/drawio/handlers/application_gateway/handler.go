@@ -5,6 +5,7 @@ import (
 	"cloudsketch/internal/drawio/images"
 	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
+	"cloudsketch/internal/list"
 )
 
 type handler struct{}
@@ -34,15 +35,19 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
-	// this resource can depend on its public ip. If this is the case they should be grouped
-	for _, d := range resource.Resource.DependsOn {
-		dependency := (*resource_map)[d]
+	publicIps := list.Filter(resource.Resource.DependsOn, func(dependency string) bool {
+		r, ok := (*resource_map)[dependency]
 
-		if dependency.Resource.Type != types.PUBLIC_IP_ADDRESS {
-			continue
+		if !ok {
+			return false
 		}
 
-		return node.SetIcon(resource.Node, dependency.Node, node.TOP_RIGHT)
+		return r.Resource.Type == types.PUBLIC_IP_ADDRESS
+	})
+
+	if len(publicIps) == 1 {
+		pipResource := (*resource_map)[publicIps[0]]
+		return node.SetIcon(resource.Node, pipResource.Node, node.TOP_RIGHT)
 	}
 
 	return nil

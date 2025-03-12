@@ -75,12 +75,48 @@ func SetIcon(centerIcon, attachedIcon *Node, position int) *Node {
 	return group
 }
 
-func ScaleDownAndSetIconBottomLeft(iconToMove *Node, relativeTo *Node) {
+func ScaleDownAndSetIconRelativeTo(iconToMove *Node, relativeTo *Node, position int) {
 	relativeToGeometry := relativeTo.GetGeometry()
 	iconToMoveGeometry := iconToMove.GetGeometry()
 
-	iconToMove.SetDimensions(iconToMoveGeometry.Width/2, iconToMoveGeometry.Height/2)
-	iconToMove.SetPosition(relativeToGeometry.X-(iconToMoveGeometry.Width/2), relativeToGeometry.Height-(iconToMoveGeometry.Height/2))
+	widthScaled := (iconToMoveGeometry.Width / 2)
+	heightScaled := (iconToMoveGeometry.Height / 2)
+
+	iconToMove.SetDimensions(widthScaled, heightScaled)
+
+	x := 0
+	y := 0
+
+	switch position {
+	case TOP_LEFT:
+		{
+			x = relativeToGeometry.X
+			y = relativeToGeometry.Y
+			break
+		}
+	case TOP_RIGHT:
+		{
+			x = relativeToGeometry.Width
+			y = relativeToGeometry.Y
+			break
+		}
+	case BOTTOM_LEFT:
+		{
+			x = relativeToGeometry.X
+			y = relativeToGeometry.Height
+			break
+		}
+	case BOTTOM_RIGHT:
+		{
+			x = relativeToGeometry.Width
+			y = relativeToGeometry.Height
+			break
+		}
+	default:
+		log.Fatalf("Undefined position %v", position)
+	}
+
+	iconToMove.SetPosition(x-widthScaled/2, y-heightScaled/2)
 }
 
 func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int) {

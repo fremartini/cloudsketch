@@ -84,7 +84,7 @@ func (*handler) GroupResources(dataFactory *models.Resource, resources []*models
 	// move all resources in the adf into the box
 	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
 
-	node.ScaleDownAndSetIconBottomLeft(dataFactoryNode, box)
+	node.ScaleDownAndSetIconRelativeTo(dataFactoryNode, box, node.BOTTOM_LEFT)
 
 	nodes = append(nodes, box)
 
