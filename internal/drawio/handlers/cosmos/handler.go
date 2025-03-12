@@ -1,20 +1,19 @@
-package nat_gateway
+package cosmos
 
 import (
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
 	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
-	"cloudsketch/internal/list"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = types.NAT_GATEWAY
-	IMAGE  = images.NAT_GATEWAY
-	WIDTH  = 68
-	HEIGHT = 68
+	TYPE   = types.COSMOS
+	IMAGE  = images.COSMOS
+	WIDTH  = 64
+	HEIGHT = 64
 )
 
 func New() *handler {
@@ -35,21 +34,6 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
-	publicIps := list.Filter(resource.Resource.DependsOn, func(dependency string) bool {
-		r, ok := (*resource_map)[dependency]
-
-		if !ok {
-			return false
-		}
-
-		return r.Resource.Type == types.PUBLIC_IP_ADDRESS
-	})
-
-	if len(publicIps) == 1 {
-		pipResource := (*resource_map)[publicIps[0]]
-		return node.SetIcon(resource.Node, pipResource.Node, node.TOP_RIGHT)
-	}
-
 	return nil
 }
 
@@ -59,16 +43,6 @@ func (*handler) DrawDependency(source *models.Resource, targets []*models.Resour
 	sourceId := (*resource_map)[source.Id].Node.Id()
 
 	for _, target := range targets {
-		// don't draw arrows to subnets
-		if target.Type == types.SUBNET {
-			continue
-		}
-
-		// don't draw arrows to public ips
-		if target.Type == types.PUBLIC_IP_ADDRESS {
-			continue
-		}
-
 		targetId := (*resource_map)[target.Id].Node.Id()
 
 		arrows = append(arrows, node.NewArrow(sourceId, targetId, nil))

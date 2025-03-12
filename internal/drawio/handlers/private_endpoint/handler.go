@@ -87,16 +87,13 @@ func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_
 
 func getPrivateEndpointSubnet(resource *models.Resource, resources []*models.Resource) *string {
 	for _, dependency := range resource.DependsOn {
-		// TODO: refactor this!
-		if c := list.Contains(resources, func(resource *models.Resource) bool {
-			return resource.Id == dependency
-		}); !c {
-			continue
-		}
-
-		resource := list.First(resources, func(resource *models.Resource) bool {
+		resource := list.FirstOrDefault(resources, nil, func(resource *models.Resource) bool {
 			return resource.Id == dependency
 		})
+
+		if resource == nil {
+			continue
+		}
 
 		if resource.Type == types.SUBNET {
 			return &resource.Id

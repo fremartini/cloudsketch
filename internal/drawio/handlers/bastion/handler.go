@@ -1,4 +1,4 @@
-package nat_gateway
+package bastion
 
 import (
 	"cloudsketch/internal/drawio/handlers/node"
@@ -11,9 +11,9 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = types.NAT_GATEWAY
-	IMAGE  = images.NAT_GATEWAY
-	WIDTH  = 68
+	TYPE   = types.BASTION
+	IMAGE  = images.BASTION
+	WIDTH  = 58
 	HEIGHT = 68
 )
 

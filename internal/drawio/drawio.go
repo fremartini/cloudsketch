@@ -8,7 +8,9 @@ import (
 	"cloudsketch/internal/drawio/handlers/application_gateway"
 	"cloudsketch/internal/drawio/handlers/application_insights"
 	"cloudsketch/internal/drawio/handlers/application_security_group"
+	"cloudsketch/internal/drawio/handlers/bastion"
 	"cloudsketch/internal/drawio/handlers/container_registry"
+	"cloudsketch/internal/drawio/handlers/cosmos"
 	"cloudsketch/internal/drawio/handlers/data_factory"
 	"cloudsketch/internal/drawio/handlers/data_factory_integration_runtime"
 	"cloudsketch/internal/drawio/handlers/data_factory_managed_private_endpoint"
@@ -30,9 +32,13 @@ import (
 	"cloudsketch/internal/drawio/handlers/private_endpoint"
 	"cloudsketch/internal/drawio/handlers/private_link_service"
 	"cloudsketch/internal/drawio/handlers/public_ip_address"
+	"cloudsketch/internal/drawio/handlers/recovery_service_vault"
+	"cloudsketch/internal/drawio/handlers/redis"
 	"cloudsketch/internal/drawio/handlers/route_table"
+	"cloudsketch/internal/drawio/handlers/signalr"
 	"cloudsketch/internal/drawio/handlers/sql_database"
 	"cloudsketch/internal/drawio/handlers/sql_server"
+	"cloudsketch/internal/drawio/handlers/static_web_app"
 	"cloudsketch/internal/drawio/handlers/storage_account"
 	"cloudsketch/internal/drawio/handlers/subnet"
 	"cloudsketch/internal/drawio/handlers/subscription"
@@ -62,7 +68,9 @@ var (
 		application_gateway.TYPE:                   application_gateway.New(),
 		application_insights.TYPE:                  application_insights.New(),
 		application_security_group.TYPE:            application_security_group.New(),
+		bastion.TYPE:                               bastion.New(),
 		container_registry.TYPE:                    container_registry.New(),
+		cosmos.TYPE:                                cosmos.New(),
 		data_factory.TYPE:                          data_factory.New(),
 		data_factory_integration_runtime.TYPE:      data_factory_integration_runtime.New(),
 		data_factory_managed_private_endpoint.TYPE: data_factory_managed_private_endpoint.New(),
@@ -82,9 +90,13 @@ var (
 		private_endpoint.TYPE:                      private_endpoint.New(),
 		private_link_service.TYPE:                  private_link_service.New(),
 		public_ip_address.TYPE:                     public_ip_address.New(),
+		recovery_service_vault.TYPE:                recovery_service_vault.New(),
+		redis.TYPE:                                 redis.New(),
 		route_table.TYPE:                           route_table.New(),
+		signalr.TYPE:                               signalr.New(),
 		sql_database.TYPE:                          sql_database.New(),
 		sql_server.TYPE:                            sql_server.New(),
+		static_web_app.TYPE:                        static_web_app.New(),
 		storage_account.TYPE:                       storage_account.New(),
 		subnet.TYPE:                                subnet.New(),
 		subscription.TYPE:                          subscription.New(),
@@ -125,15 +137,15 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 
 	// private endpoints and NICs are typically used as icons attached to other icons and should therefore be rendered in front
 	// TODO: implement a better solution?
-	allResourcesWithoutPEandNICs := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type != types.PRIVATE_ENDPOINT && n.Resource.Type != types.NETWORK_INTERFACE
+	allResourcesThatShouldGoInBack := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
+		return n.Resource.Type != types.PRIVATE_ENDPOINT && n.Resource.Type != types.NETWORK_INTERFACE && n.Resource.Type != types.PUBLIC_IP_ADDRESS
 	})
 
-	privateEndpointsAndNICS := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE
+	allResourcesThatShouldGoInFront := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
+		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE || n.Resource.Type == types.PUBLIC_IP_ADDRESS
 	})
 
-	allResources = append(allResourcesWithoutPEandNICs, privateEndpointsAndNICS...)
+	allResources = append(allResourcesThatShouldGoInBack, allResourcesThatShouldGoInFront...)
 	allResourcesNodes := list.Map(allResources, func(n *node.ResourceAndNode) *node.Node {
 		return n.Node
 	})

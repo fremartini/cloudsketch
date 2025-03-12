@@ -45,6 +45,8 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	var tmp *node.Node = nil
+
 	routeTables := list.Filter(resource.Resource.DependsOn, func(dependency string) bool {
 		r, ok := (*resource_map)[dependency]
 
@@ -55,13 +57,57 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 		return r.Resource.Type == types.ROUTE_TABLE
 	})
 
-	if len(routeTables) != 1 {
-		return nil
+	if len(routeTables) == 1 {
+		routeTable := (*resource_map)[routeTables[0]]
+
+		tmp = node.SetIcon(resource.Node, routeTable.Node, node.TOP_LEFT)
 	}
 
-	routeTable := (*resource_map)[routeTables[0]]
+	networkSecurityGroups := list.Filter(resource.Resource.DependsOn, func(dependency string) bool {
+		r, ok := (*resource_map)[dependency]
 
-	return node.SetIcon(resource.Node, routeTable.Node, node.TOP_LEFT)
+		if !ok {
+			return false
+		}
+
+		return r.Resource.Type == types.NETWORK_SECURITY_GROUP
+	})
+
+	if len(networkSecurityGroups) == 1 {
+		networkSecurityGroup := (*resource_map)[networkSecurityGroups[0]]
+
+		// other subnets might point to the same NSG. If they do, ignore the merging
+		if snets := resourcesWithReferencesTo(resource_map, networkSecurityGroup.Resource.Id); snets != 1 {
+			return tmp
+		}
+
+		if tmp == nil {
+			// route table icon was not set
+			return node.SetIcon(resource.Node, networkSecurityGroup.Node, node.TOP_RIGHT)
+		}
+
+		// route table icon was set
+		networkSecurityGroup.Node.SetProperty("parent", tmp.Id())
+		node.ScaleDownAndSetIconRelativeTo(networkSecurityGroup.Node, resource.Node.GetParentOrThis(), node.TOP_RIGHT)
+		networkSecurityGroup.Node.ContainedIn = tmp
+		networkSecurityGroup.Node.SetProperty("value", "")
+	}
+
+	return tmp
+}
+
+func resourcesWithReferencesTo(resource_map *map[string]*node.ResourceAndNode, resourceId string) int {
+	count := 0
+
+	for _, v := range *resource_map {
+		if list.Contains(v.Resource.DependsOn, func(d string) bool {
+			return d == resourceId
+		}) {
+			count++
+		}
+	}
+
+	return count
 }
 
 func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {

@@ -1,11 +1,13 @@
 package azure
 
 import (
+	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/handlers/application_gateway"
 	"cloudsketch/internal/providers/azure/handlers/application_insights"
+	"cloudsketch/internal/providers/azure/handlers/bastion"
 	"cloudsketch/internal/providers/azure/handlers/data_factory"
 	"cloudsketch/internal/providers/azure/handlers/key_vault"
 	"cloudsketch/internal/providers/azure/handlers/load_balancer"
@@ -14,7 +16,6 @@ import (
 	"cloudsketch/internal/providers/azure/handlers/private_dns_zone"
 	"cloudsketch/internal/providers/azure/handlers/private_endpoint"
 	"cloudsketch/internal/providers/azure/handlers/private_link_service"
-	"cloudsketch/internal/providers/azure/handlers/public_ip_address"
 	"cloudsketch/internal/providers/azure/handlers/resource_group"
 	"cloudsketch/internal/providers/azure/handlers/subscription"
 	"cloudsketch/internal/providers/azure/handlers/virtual_machine"
@@ -42,6 +43,7 @@ var (
 		types.APPLICATION_GATEWAY:       application_gateway.New(),
 		types.APPLICATION_INSIGHTS:      application_insights.New(),
 		types.DATA_FACTORY:              data_factory.New(),
+		types.BASTION:                   bastion.New(),
 		types.KEY_VAULT:                 key_vault.New(),
 		types.LOAD_BALANCER:             load_balancer.New(),
 		types.NAT_GATEWAY:               nat_gateway.New(),
@@ -49,7 +51,6 @@ var (
 		types.PRIVATE_DNS_ZONE:          private_dns_zone.New(),
 		types.PRIVATE_ENDPOINT:          private_endpoint.New(),
 		types.PRIVATE_LINK_SERVICE:      private_link_service.New(),
-		types.PUBLIC_IP_ADDRESS:         public_ip_address.New(),
 		types.VIRTUAL_MACHINE:           virtual_machine.New(),
 		types.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New(),
 		types.VIRTUAL_NETWORK:           virtual_network.New(),
@@ -138,8 +139,9 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)
 	}
 
+	seen_unhandled_types := set.New[string]()
 	domainModels := list.Map(allResources, func(r *models.Resource) *domainModels.Resource {
-		return mapToDomainResource(r, ctx.TenantId)
+		return mapToDomainResource(r, ctx.TenantId, seen_unhandled_types)
 	})
 
 	// cache resources for next run
@@ -152,7 +154,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	return domainModels, filename, nil
 }
 
-func mapToDomainResource(resource *models.Resource, tenantId string) *domainModels.Resource {
+func mapToDomainResource(resource *models.Resource, tenantId string, seen_unhandled_types *set.Set[string]) *domainModels.Resource {
 	properties := resource.Properties
 
 	if properties == nil {
@@ -163,7 +165,7 @@ func mapToDomainResource(resource *models.Resource, tenantId string) *domainMode
 
 	return &domainModels.Resource{
 		Id:         resource.Id,
-		Type:       mapTypeToDomainType(resource.Type),
+		Type:       mapTypeToDomainType(resource.Type, seen_unhandled_types),
 		Name:       resource.Name,
 		DependsOn:  resource.DependsOn,
 		Properties: properties,
@@ -175,14 +177,16 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 	return fmt.Sprintf("https://portal.azure.com/#@%s/resource%s", tenant, resource.Id)
 }
 
-func mapTypeToDomainType(azType string) string {
+func mapTypeToDomainType(azType string, seen_unhandled_types *set.Set[string]) string {
 	domainTypes := map[string]string{
 		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
 		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE_PLAN,
 		types.APPLICATION_GATEWAY:                   domainTypes.APPLICATION_GATEWAY,
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
+		types.BASTION:                               domainTypes.BASTION,
 		types.CONTAINER_REGISTRY:                    domainTypes.CONTAINER_REGISTRY,
+		types.COSMOS:                                domainTypes.COSMOS,
 		types.DATA_FACTORY:                          domainTypes.DATA_FACTORY,
 		types.DATA_FACTORY_INTEGRATION_RUNTIME:      domainTypes.DATA_FACTORY_INTEGRATION_RUNTIME,
 		types.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT: domainTypes.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT,
@@ -202,9 +206,13 @@ func mapTypeToDomainType(azType string) string {
 		types.PRIVATE_ENDPOINT:                      domainTypes.PRIVATE_ENDPOINT,
 		types.PRIVATE_LINK_SERVICE:                  domainTypes.PRIVATE_LINK_SERVICE,
 		types.PUBLIC_IP_ADDRESS:                     domainTypes.PUBLIC_IP_ADDRESS,
+		types.RECOVERY_SERVICE_VAULT:                domainTypes.RECOVERY_SERVICE_VAULT,
+		types.REDIS:                                 domainTypes.REDIS,
 		types.ROUTE_TABLE:                           domainTypes.ROUTE_TABLE,
+		types.SIGNALR:                               domainTypes.SIGNALR,
 		types.SQL_DATABASE:                          domainTypes.SQL_DATABASE,
 		types.SQL_SERVER:                            domainTypes.SQL_SERVER,
+		types.STATIC_WEB_APP:                        domainTypes.STATIC_WEB_APP,
 		types.STORAGE_ACCOUNT:                       domainTypes.STORAGE_ACCOUNT,
 		types.SUBNET:                                domainTypes.SUBNET,
 		types.SUBSCRIPTION:                          domainTypes.SUBSCRIPTION,
@@ -216,7 +224,14 @@ func mapTypeToDomainType(azType string) string {
 	domainType, ok := domainTypes[azType]
 
 	if !ok {
-		log.Printf("undefined mapping from Azure types %s to domain type", azType)
+		seenResourceType := seen_unhandled_types.Contains(azType)
+
+		// mechanism to prevent spamming the output with the same type
+		if !seenResourceType {
+			log.Printf("undefined mapping from Azure types %s to domain type", azType)
+			seen_unhandled_types.Add(azType)
+		}
+
 		return azType
 	}
 

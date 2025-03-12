@@ -124,7 +124,7 @@ func (*handler) GroupResources(appServicePlan *models.Resource, resources []*mod
 	// move all resources in the app service plan into the box
 	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
 
-	node.ScaleDownAndSetIconBottomLeft(appServicePlanNode, box)
+	node.ScaleDownAndSetIconRelativeTo(appServicePlanNode, box, node.BOTTOM_LEFT)
 
 	// add an explicit dependency to the subnet
 	appServicePlan.DependsOn = append(appServicePlan.DependsOn, *firstAppServiceSubnet)

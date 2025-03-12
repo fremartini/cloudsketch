@@ -60,6 +60,13 @@ func (*handler) DrawDependency(source *models.Resource, targets []*models.Resour
 		arrows = append(arrows, node.NewArrow(sourceNode.Id(), targetNode.Id(), nil))
 	}
 
+	// add a dependency to the outbound subnet
+	dashed := "dashed=1"
+
+	outboundSubnet := source.Properties["outboundSubnet"]
+	outboundSubnetNode := (*resource_map)[outboundSubnet].Node
+	arrows = append(arrows, node.NewArrow(sourceNode.Id(), outboundSubnetNode.Id(), &dashed))
+
 	return arrows
 }
 
