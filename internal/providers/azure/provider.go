@@ -7,6 +7,7 @@ import (
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/handlers/application_gateway"
 	"cloudsketch/internal/providers/azure/handlers/application_insights"
+	"cloudsketch/internal/providers/azure/handlers/bastion"
 	"cloudsketch/internal/providers/azure/handlers/data_factory"
 	"cloudsketch/internal/providers/azure/handlers/key_vault"
 	"cloudsketch/internal/providers/azure/handlers/load_balancer"
@@ -15,7 +16,6 @@ import (
 	"cloudsketch/internal/providers/azure/handlers/private_dns_zone"
 	"cloudsketch/internal/providers/azure/handlers/private_endpoint"
 	"cloudsketch/internal/providers/azure/handlers/private_link_service"
-	"cloudsketch/internal/providers/azure/handlers/public_ip_address"
 	"cloudsketch/internal/providers/azure/handlers/resource_group"
 	"cloudsketch/internal/providers/azure/handlers/subscription"
 	"cloudsketch/internal/providers/azure/handlers/virtual_machine"
@@ -43,6 +43,7 @@ var (
 		types.APPLICATION_GATEWAY:       application_gateway.New(),
 		types.APPLICATION_INSIGHTS:      application_insights.New(),
 		types.DATA_FACTORY:              data_factory.New(),
+		types.BASTION:                   bastion.New(),
 		types.KEY_VAULT:                 key_vault.New(),
 		types.LOAD_BALANCER:             load_balancer.New(),
 		types.NAT_GATEWAY:               nat_gateway.New(),
@@ -50,7 +51,6 @@ var (
 		types.PRIVATE_DNS_ZONE:          private_dns_zone.New(),
 		types.PRIVATE_ENDPOINT:          private_endpoint.New(),
 		types.PRIVATE_LINK_SERVICE:      private_link_service.New(),
-		types.PUBLIC_IP_ADDRESS:         public_ip_address.New(),
 		types.VIRTUAL_MACHINE:           virtual_machine.New(),
 		types.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New(),
 		types.VIRTUAL_NETWORK:           virtual_network.New(),
@@ -139,8 +139,9 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)
 	}
 
+	seen_unhandled_types := set.New[string]()
 	domainModels := list.Map(allResources, func(r *models.Resource) *domainModels.Resource {
-		return mapToDomainResource(r, ctx.TenantId)
+		return mapToDomainResource(r, ctx.TenantId, seen_unhandled_types)
 	})
 
 	// cache resources for next run
@@ -153,7 +154,7 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	return domainModels, filename, nil
 }
 
-func mapToDomainResource(resource *models.Resource, tenantId string) *domainModels.Resource {
+func mapToDomainResource(resource *models.Resource, tenantId string, seen_unhandled_types *set.Set[string]) *domainModels.Resource {
 	properties := resource.Properties
 
 	if properties == nil {
@@ -161,8 +162,6 @@ func mapToDomainResource(resource *models.Resource, tenantId string) *domainMode
 	}
 
 	properties["link"] = generateAzurePortalLink(resource, tenantId)
-
-	seen_unhandled_types := set.New[string]()
 
 	return &domainModels.Resource{
 		Id:         resource.Id,
@@ -185,6 +184,7 @@ func mapTypeToDomainType(azType string, seen_unhandled_types *set.Set[string]) s
 		types.APPLICATION_GATEWAY:                   domainTypes.APPLICATION_GATEWAY,
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
+		types.BASTION:                               domainTypes.BASTION,
 		types.CONTAINER_REGISTRY:                    domainTypes.CONTAINER_REGISTRY,
 		types.COSMOS:                                domainTypes.COSMOS,
 		types.DATA_FACTORY:                          domainTypes.DATA_FACTORY,

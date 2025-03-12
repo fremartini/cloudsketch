@@ -1,10 +1,9 @@
-package public_ip_address
+package bastion
 
 import (
-	"context"
-
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/models"
+	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v6"
 )
@@ -16,15 +15,13 @@ func New() *handler {
 }
 
 func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+	client, err := armnetwork.NewBastionHostsClient(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	client := clientFactory.NewPublicIPAddressesClient()
-
-	pip, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	bastion, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err
@@ -32,15 +29,15 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 
 	dependsOn := []string{}
 
-	if pip.Properties.NatGateway != nil {
-		pip_target := pip.Properties.NatGateway.ID
-		dependsOn = append(dependsOn, *pip_target)
+	for _, config := range bastion.Properties.IPConfigurations {
+		dependsOn = append(dependsOn, *config.Properties.PublicIPAddress.ID)
+		dependsOn = append(dependsOn, *config.Properties.Subnet.ID)
 	}
 
 	resource := &models.Resource{
-		Id:        *pip.ID,
-		Name:      *pip.Name,
-		Type:      *pip.Type,
+		Id:        ctx.ResourceId,
+		Name:      ctx.ResourceName,
+		Type:      *bastion.Type,
 		DependsOn: dependsOn,
 	}
 

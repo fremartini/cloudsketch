@@ -8,6 +8,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/application_gateway"
 	"cloudsketch/internal/drawio/handlers/application_insights"
 	"cloudsketch/internal/drawio/handlers/application_security_group"
+	"cloudsketch/internal/drawio/handlers/bastion"
 	"cloudsketch/internal/drawio/handlers/container_registry"
 	"cloudsketch/internal/drawio/handlers/cosmos"
 	"cloudsketch/internal/drawio/handlers/data_factory"
@@ -36,6 +37,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/route_table"
 	"cloudsketch/internal/drawio/handlers/sql_database"
 	"cloudsketch/internal/drawio/handlers/sql_server"
+	"cloudsketch/internal/drawio/handlers/static_web_app"
 	"cloudsketch/internal/drawio/handlers/storage_account"
 	"cloudsketch/internal/drawio/handlers/subnet"
 	"cloudsketch/internal/drawio/handlers/subscription"
@@ -65,6 +67,7 @@ var (
 		application_gateway.TYPE:                   application_gateway.New(),
 		application_insights.TYPE:                  application_insights.New(),
 		application_security_group.TYPE:            application_security_group.New(),
+		bastion.TYPE:                               bastion.New(),
 		container_registry.TYPE:                    container_registry.New(),
 		cosmos.TYPE:                                cosmos.New(),
 		data_factory.TYPE:                          data_factory.New(),
@@ -91,6 +94,7 @@ var (
 		route_table.TYPE:                           route_table.New(),
 		sql_database.TYPE:                          sql_database.New(),
 		sql_server.TYPE:                            sql_server.New(),
+		static_web_app.TYPE:                        static_web_app.New(),
 		storage_account.TYPE:                       storage_account.New(),
 		subnet.TYPE:                                subnet.New(),
 		subscription.TYPE:                          subscription.New(),

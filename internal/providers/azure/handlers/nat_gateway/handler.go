@@ -34,6 +34,10 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 		dependsOn = append(dependsOn, *subnet.ID)
 	}
 
+	for _, pip := range ngw.Properties.PublicIPAddresses {
+		dependsOn = append(dependsOn, *pip.ID)
+	}
+
 	resource := &models.Resource{
 		Id:         *ngw.ID,
 		Name:       *ngw.Name,
