@@ -7,6 +7,7 @@ const (
 	APPLICATION_INSIGHTS                  = "img/lib/azure2/devops/Application_Insights.svg"
 	APPLICATION_SECURITY_GROUP            = "img/lib/azure2/security/Application_Security_Groups.svg"
 	CONTAINER_REGISTRY                    = "img/lib/azure2/containers/Container_Registries.svg"
+	COSMOS                                = "img/lib/azure2/databases/Azure_Cosmos_DB.svg"
 	DATA_FACTORY                          = "img/lib/azure2/databases/Data_Factory.svg"
 	DATA_FACTORY_INTEGRATION_RUNTIME      = VIRTUAL_MACHINE
 	DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT = PRIVATE_ENDPOINT
@@ -25,6 +26,7 @@ const (
 	PRIVATE_ENDPOINT                      = "img/lib/azure2/other/Private_Endpoints.svg"
 	PRIVATE_LINK_SERVICE                  = "img/lib/azure2/networking/Private_Link_Service.svg"
 	PUBLIC_IP_ADDRESS                     = "img/lib/azure2/networking/Public_IP_Addresses.svg"
+	RECOVERY_SERVICE_VAULT                = "img/lib/azure2/storage/Recovery_Services_Vaults.svg"
 	REDIS                                 = "img/lib/azure2/databases/Cache_Redis.svg"
 	SUBSCRIPTION                          = "img/lib/azure2/general/Subscriptions.svg"
 	SQL_DATABASE                          = "img/lib/azure2/databases/SQL_Database.svg"

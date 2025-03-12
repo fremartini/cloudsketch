@@ -9,6 +9,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/application_insights"
 	"cloudsketch/internal/drawio/handlers/application_security_group"
 	"cloudsketch/internal/drawio/handlers/container_registry"
+	"cloudsketch/internal/drawio/handlers/cosmos"
 	"cloudsketch/internal/drawio/handlers/data_factory"
 	"cloudsketch/internal/drawio/handlers/data_factory_integration_runtime"
 	"cloudsketch/internal/drawio/handlers/data_factory_managed_private_endpoint"
@@ -30,6 +31,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/private_endpoint"
 	"cloudsketch/internal/drawio/handlers/private_link_service"
 	"cloudsketch/internal/drawio/handlers/public_ip_address"
+	"cloudsketch/internal/drawio/handlers/recovery_service_vault"
 	"cloudsketch/internal/drawio/handlers/redis"
 	"cloudsketch/internal/drawio/handlers/route_table"
 	"cloudsketch/internal/drawio/handlers/sql_database"
@@ -64,6 +66,7 @@ var (
 		application_insights.TYPE:                  application_insights.New(),
 		application_security_group.TYPE:            application_security_group.New(),
 		container_registry.TYPE:                    container_registry.New(),
+		cosmos.TYPE:                                cosmos.New(),
 		data_factory.TYPE:                          data_factory.New(),
 		data_factory_integration_runtime.TYPE:      data_factory_integration_runtime.New(),
 		data_factory_managed_private_endpoint.TYPE: data_factory_managed_private_endpoint.New(),
@@ -83,6 +86,7 @@ var (
 		private_endpoint.TYPE:                      private_endpoint.New(),
 		private_link_service.TYPE:                  private_link_service.New(),
 		public_ip_address.TYPE:                     public_ip_address.New(),
+		recovery_service_vault.TYPE:                recovery_service_vault.New(),
 		redis.TYPE:                                 redis.New(),
 		route_table.TYPE:                           route_table.New(),
 		sql_database.TYPE:                          sql_database.New(),

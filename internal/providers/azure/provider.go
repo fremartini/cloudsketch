@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
 	azContext "cloudsketch/internal/providers/azure/context"
@@ -161,9 +162,11 @@ func mapToDomainResource(resource *models.Resource, tenantId string) *domainMode
 
 	properties["link"] = generateAzurePortalLink(resource, tenantId)
 
+	seen_unhandled_types := set.New[string]()
+
 	return &domainModels.Resource{
 		Id:         resource.Id,
-		Type:       mapTypeToDomainType(resource.Type),
+		Type:       mapTypeToDomainType(resource.Type, seen_unhandled_types),
 		Name:       resource.Name,
 		DependsOn:  resource.DependsOn,
 		Properties: properties,
@@ -175,7 +178,7 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 	return fmt.Sprintf("https://portal.azure.com/#@%s/resource%s", tenant, resource.Id)
 }
 
-func mapTypeToDomainType(azType string) string {
+func mapTypeToDomainType(azType string, seen_unhandled_types *set.Set[string]) string {
 	domainTypes := map[string]string{
 		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
 		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE_PLAN,
@@ -183,6 +186,7 @@ func mapTypeToDomainType(azType string) string {
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
 		types.CONTAINER_REGISTRY:                    domainTypes.CONTAINER_REGISTRY,
+		types.COSMOS:                                domainTypes.COSMOS,
 		types.DATA_FACTORY:                          domainTypes.DATA_FACTORY,
 		types.DATA_FACTORY_INTEGRATION_RUNTIME:      domainTypes.DATA_FACTORY_INTEGRATION_RUNTIME,
 		types.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT: domainTypes.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT,
@@ -202,6 +206,7 @@ func mapTypeToDomainType(azType string) string {
 		types.PRIVATE_ENDPOINT:                      domainTypes.PRIVATE_ENDPOINT,
 		types.PRIVATE_LINK_SERVICE:                  domainTypes.PRIVATE_LINK_SERVICE,
 		types.PUBLIC_IP_ADDRESS:                     domainTypes.PUBLIC_IP_ADDRESS,
+		types.RECOVERY_SERVICE_VAULT:                domainTypes.RECOVERY_SERVICE_VAULT,
 		types.REDIS:                                 domainTypes.REDIS,
 		types.ROUTE_TABLE:                           domainTypes.ROUTE_TABLE,
 		types.SQL_DATABASE:                          domainTypes.SQL_DATABASE,
@@ -217,7 +222,14 @@ func mapTypeToDomainType(azType string) string {
 	domainType, ok := domainTypes[azType]
 
 	if !ok {
-		log.Printf("undefined mapping from Azure types %s to domain type", azType)
+		seenResourceType := seen_unhandled_types.Contains(azType)
+
+		// mechanism to prevent spamming the output with the same type
+		if !seenResourceType {
+			log.Printf("undefined mapping from Azure types %s to domain type", azType)
+			seen_unhandled_types.Add(azType)
+		}
+
 		return azType
 	}
 
