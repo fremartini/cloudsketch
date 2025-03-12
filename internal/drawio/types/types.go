@@ -30,6 +30,7 @@ const (
 	PUBLIC_IP_ADDRESS                     = "PUBLIC_IP_ADDRESS"
 	RECOVERY_SERVICE_VAULT                = "RECOVERY_SERVICE_VAULT"
 	REDIS                                 = "REDIS"
+	SIGNALR                               = "SIGNALR"
 	ROUTE_TABLE                           = "ROUTE_TABLE"
 	SQL_DATABASE                          = "SQL_DATABASE"
 	SQL_SERVER                            = "SQL_SERVER"

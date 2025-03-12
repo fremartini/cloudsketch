@@ -35,6 +35,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/recovery_service_vault"
 	"cloudsketch/internal/drawio/handlers/redis"
 	"cloudsketch/internal/drawio/handlers/route_table"
+	"cloudsketch/internal/drawio/handlers/signalr"
 	"cloudsketch/internal/drawio/handlers/sql_database"
 	"cloudsketch/internal/drawio/handlers/sql_server"
 	"cloudsketch/internal/drawio/handlers/static_web_app"
@@ -92,6 +93,7 @@ var (
 		recovery_service_vault.TYPE:                recovery_service_vault.New(),
 		redis.TYPE:                                 redis.New(),
 		route_table.TYPE:                           route_table.New(),
+		signalr.TYPE:                               signalr.New(),
 		sql_database.TYPE:                          sql_database.New(),
 		sql_server.TYPE:                            sql_server.New(),
 		static_web_app.TYPE:                        static_web_app.New(),

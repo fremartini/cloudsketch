@@ -29,6 +29,7 @@ const (
 	PUBLIC_IP_ADDRESS                     = "img/lib/azure2/networking/Public_IP_Addresses.svg"
 	RECOVERY_SERVICE_VAULT                = "img/lib/azure2/storage/Recovery_Services_Vaults.svg"
 	REDIS                                 = "img/lib/azure2/databases/Cache_Redis.svg"
+	SIGNALR                               = "img/lib/azure2/web/SignalR.svg"
 	SUBSCRIPTION                          = "img/lib/azure2/general/Subscriptions.svg"
 	SQL_DATABASE                          = "img/lib/azure2/databases/SQL_Database.svg"
 	SQL_SERVER                            = "img/lib/azure2/databases/SQL_Server.svg"

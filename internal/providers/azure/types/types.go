@@ -31,6 +31,7 @@ const (
 	RECOVERY_SERVICE_VAULT                = "Microsoft.RecoveryServices/vaults"
 	REDIS                                 = "Microsoft.Cache/Redis"
 	ROUTE_TABLE                           = "Microsoft.Network/routeTables"
+	SIGNALR                               = "Microsoft.SignalRService/SignalR"
 	SQL_DATABASE                          = "Microsoft.Sql/servers/databases"
 	SQL_SERVER                            = "Microsoft.Sql/servers"
 	STATIC_WEB_APP                        = "Microsoft.Web/staticSites"
