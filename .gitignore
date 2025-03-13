@@ -4,3 +4,4 @@
 *.exe
 !example/example.json
 !example/example.drawio
+.cloudsketch

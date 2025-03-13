@@ -44,56 +44,51 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 	return node.NewIcon(IMAGE, name, &geometry, link)
 }
 
-func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
-	var tmp *node.Node = nil
-
-	routeTables := list.Filter(resource.Resource.DependsOn, func(dependency string) bool {
+func getResourcseOfType(resource *models.Resource, resource_map *map[string]*node.ResourceAndNode, typ string) []string {
+	return list.Filter(resource.DependsOn, func(dependency string) bool {
 		r, ok := (*resource_map)[dependency]
 
 		if !ok {
 			return false
 		}
 
-		return r.Resource.Type == types.ROUTE_TABLE
+		return r.Resource.Type == typ
 	})
+}
 
+func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	var parentGroup *node.Node = nil
+
+	routeTables := getResourcseOfType(resource.Resource, resource_map, types.ROUTE_TABLE)
 	if len(routeTables) == 1 {
 		routeTable := (*resource_map)[routeTables[0]]
 
-		tmp = node.SetIcon(resource.Node, routeTable.Node, node.TOP_LEFT)
+		parentGroup = node.SetIcon(resource.Node, routeTable.Node, node.TOP_LEFT)
 	}
 
-	networkSecurityGroups := list.Filter(resource.Resource.DependsOn, func(dependency string) bool {
-		r, ok := (*resource_map)[dependency]
-
-		if !ok {
-			return false
-		}
-
-		return r.Resource.Type == types.NETWORK_SECURITY_GROUP
-	})
+	networkSecurityGroups := getResourcseOfType(resource.Resource, resource_map, types.NETWORK_SECURITY_GROUP)
 
 	if len(networkSecurityGroups) == 1 {
 		networkSecurityGroup := (*resource_map)[networkSecurityGroups[0]]
 
 		// other subnets might point to the same NSG. If they do, ignore the merging
 		if snets := resourcesWithReferencesTo(resource_map, networkSecurityGroup.Resource.Id); snets != 1 {
-			return tmp
+			return parentGroup
 		}
 
-		if tmp == nil {
+		if parentGroup == nil {
 			// route table icon was not set
 			return node.SetIcon(resource.Node, networkSecurityGroup.Node, node.TOP_RIGHT)
 		}
 
 		// route table icon was set
-		networkSecurityGroup.Node.SetProperty("parent", tmp.Id())
+		networkSecurityGroup.Node.SetProperty("parent", parentGroup.Id())
 		node.ScaleDownAndSetIconRelativeTo(networkSecurityGroup.Node, resource.Node.GetParentOrThis(), node.TOP_RIGHT)
-		networkSecurityGroup.Node.ContainedIn = tmp
+		networkSecurityGroup.Node.ContainedIn = parentGroup
 		networkSecurityGroup.Node.SetProperty("value", "")
 	}
 
-	return tmp
+	return parentGroup
 }
 
 func resourcesWithReferencesTo(resource_map *map[string]*node.ResourceAndNode, resourceId string) int {

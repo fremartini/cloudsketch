@@ -1,25 +1,24 @@
 package marshall
 
 import (
-	"cloudsketch/internal/drawio/models"
 	"encoding/json"
 	"errors"
 	"log"
 	"os"
 )
 
-func UnmarshalIfExists(file string) ([]*models.Resource, bool) {
+func UnmarshalIfExists[T any](file string) (*T, bool) {
 	if !FileExists(file) {
 		return nil, false
 	}
 
-	resources, err := UnmarshallResources(file)
+	config, err := UnmarshallResources[T](file)
 
 	if err != nil {
 		panic(err)
 	}
 
-	return resources, true
+	return config, true
 }
 
 func FileExists(file string) bool {
@@ -28,7 +27,7 @@ func FileExists(file string) bool {
 	return !errors.Is(err, os.ErrNotExist)
 }
 
-func MarshallResources(file string, resources []*models.Resource) error {
+func MarshallResources[T any](file string, resources T) error {
 	bytes, err := json.MarshalIndent(resources, "", "\t")
 
 	if err != nil {
@@ -48,16 +47,16 @@ func MarshallResources(file string, resources []*models.Resource) error {
 	return err
 }
 
-func UnmarshallResources(file string) ([]*models.Resource, error) {
+func UnmarshallResources[T any](file string) (*T, error) {
 	bytes, err := os.ReadFile(file)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var resources []*models.Resource
+	var config *T
 
-	err = json.Unmarshal(bytes, &resources)
+	err = json.Unmarshal(bytes, &config)
 
-	return resources, err
+	return config, err
 }

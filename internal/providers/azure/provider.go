@@ -85,12 +85,12 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	filename := fmt.Sprintf("%s_%s", subscription.Name, subscription.Id)
 	filenameWithSuffix := fmt.Sprintf("%s.json", filename)
 
-	cachedResources, ok := marshall.UnmarshalIfExists(filenameWithSuffix)
+	cachedResources, ok := marshall.UnmarshalIfExists[[]*domainModels.Resource](filenameWithSuffix)
 
 	if ok {
 		log.Printf("using existing file %s\n", filenameWithSuffix)
 
-		return cachedResources, filename, nil
+		return *cachedResources, filename, nil
 	}
 
 	allResources, err := resource_group.New().Handle(ctx)

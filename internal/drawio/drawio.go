@@ -1,6 +1,7 @@
 package drawio
 
 import (
+	"cloudsketch/internal/config"
 	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/drawio/handlers/app_service"
@@ -113,7 +114,22 @@ func New() *drawio {
 	return &drawio{}
 }
 
+func removeBlacklistedEntries() {
+	config, ok := config.Read()
+
+	if !ok {
+		return
+	}
+
+	// remove entries on the blacklist
+	for _, blacklistedItem := range config.Blacklist {
+		delete(commands, blacklistedItem)
+	}
+}
+
 func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) error {
+	removeBlacklistedEntries()
+
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
 	resource_map, err := populateResourceMap(resources)
 
@@ -138,11 +154,11 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 	// private endpoints and NICs are typically used as icons attached to other icons and should therefore be rendered in front
 	// TODO: implement a better solution?
 	allResourcesThatShouldGoInBack := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type != types.PRIVATE_ENDPOINT && n.Resource.Type != types.NETWORK_INTERFACE && n.Resource.Type != types.PUBLIC_IP_ADDRESS
+		return n.Resource.Type != types.PRIVATE_ENDPOINT && n.Resource.Type != types.NETWORK_INTERFACE && n.Resource.Type != types.PUBLIC_IP_ADDRESS && n.Resource.Type != types.NETWORK_SECURITY_GROUP
 	})
 
 	allResourcesThatShouldGoInFront := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE || n.Resource.Type == types.PUBLIC_IP_ADDRESS
+		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE || n.Resource.Type == types.PUBLIC_IP_ADDRESS || n.Resource.Type == types.NETWORK_SECURITY_GROUP
 	})
 
 	allResources = append(allResourcesThatShouldGoInBack, allResourcesThatShouldGoInFront...)
