@@ -12,13 +12,13 @@ func UnmarshalIfExists[T any](file string) (*T, bool) {
 		return nil, false
 	}
 
-	config, err := UnmarshallResources[T](file)
+	r, err := UnmarshallResources[T](file)
 
 	if err != nil {
 		panic(err)
 	}
 
-	return config, true
+	return r, true
 }
 
 func FileExists(file string) bool {
@@ -27,8 +27,8 @@ func FileExists(file string) bool {
 	return !errors.Is(err, os.ErrNotExist)
 }
 
-func MarshallResources[T any](file string, resources T) error {
-	bytes, err := json.MarshalIndent(resources, "", "\t")
+func MarshallResources[T any](file string, r T) error {
+	bytes, err := json.MarshalIndent(r, "", "\t")
 
 	if err != nil {
 		log.Fatal(err)
@@ -54,9 +54,9 @@ func UnmarshallResources[T any](file string) (*T, error) {
 		log.Fatal(err)
 	}
 
-	var config *T
+	var r *T
 
-	err = json.Unmarshal(bytes, &config)
+	err = json.Unmarshal(bytes, &r)
 
-	return config, err
+	return r, err
 }
