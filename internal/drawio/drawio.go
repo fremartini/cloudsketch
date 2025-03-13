@@ -4,6 +4,7 @@ import (
 	"cloudsketch/internal/config"
 	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/datastructures/set"
+	"cloudsketch/internal/drawio/handlers/ai_services"
 	"cloudsketch/internal/drawio/handlers/app_service"
 	"cloudsketch/internal/drawio/handlers/app_service_plan"
 	"cloudsketch/internal/drawio/handlers/application_gateway"
@@ -24,6 +25,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/load_balancer_frontend"
 	"cloudsketch/internal/drawio/handlers/log_analytics"
 	"cloudsketch/internal/drawio/handlers/logic_app"
+	"cloudsketch/internal/drawio/handlers/machine_learning_workspace"
 	"cloudsketch/internal/drawio/handlers/nat_gateway"
 	"cloudsketch/internal/drawio/handlers/network_interface"
 	"cloudsketch/internal/drawio/handlers/network_security_group"
@@ -36,6 +38,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/recovery_service_vault"
 	"cloudsketch/internal/drawio/handlers/redis"
 	"cloudsketch/internal/drawio/handlers/route_table"
+	"cloudsketch/internal/drawio/handlers/search_service"
 	"cloudsketch/internal/drawio/handlers/signalr"
 	"cloudsketch/internal/drawio/handlers/sql_database"
 	"cloudsketch/internal/drawio/handlers/sql_server"
@@ -64,6 +67,7 @@ type handler interface {
 
 var (
 	commands handleFuncMap = handleFuncMap{
+		ai_services.TYPE:                           ai_services.New(),
 		app_service.TYPE:                           app_service.New(),
 		app_service_plan.TYPE:                      app_service_plan.New(),
 		application_gateway.TYPE:                   application_gateway.New(),
@@ -83,6 +87,7 @@ var (
 		load_balancer_frontend.TYPE:                load_balancer_frontend.New(),
 		log_analytics.TYPE:                         log_analytics.New(),
 		logic_app.TYPE:                             logic_app.New(),
+		machine_learning_workspace.TYPE:            machine_learning_workspace.New(),
 		nat_gateway.TYPE:                           nat_gateway.New(),
 		network_interface.TYPE:                     network_interface.New(),
 		network_security_group.TYPE:                network_security_group.New(),
@@ -94,6 +99,7 @@ var (
 		recovery_service_vault.TYPE:                recovery_service_vault.New(),
 		redis.TYPE:                                 redis.New(),
 		route_table.TYPE:                           route_table.New(),
+		search_service.TYPE:                        search_service.New(),
 		signalr.TYPE:                               signalr.New(),
 		sql_database.TYPE:                          sql_database.New(),
 		sql_server.TYPE:                            sql_server.New(),

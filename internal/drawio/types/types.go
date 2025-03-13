@@ -1,6 +1,7 @@
 package types
 
 const (
+	AI_SERVICES                           = "AI_SERVICES"
 	APP_SERVICE                           = "APP_SERVICE"
 	APP_SERVICE_PLAN                      = "APP_SERVICE_PLAN"
 	APPLICATION_GATEWAY                   = "APPLICATION_GATEWAY"
@@ -20,6 +21,7 @@ const (
 	LOAD_BALANCER_FRONTEND                = "LOAD_BALANCER_FRONTEND"
 	LOG_ANALYTICS                         = "LOG_ANALYTICS"
 	LOGIC_APP                             = "LOGIC_APP"
+	MACHINE_LEARNING_WORKSPACE            = "MACHINE_LEARNING_WORKSPACE"
 	NAT_GATEWAY                           = "NAT_GATEWAY"
 	NETWORK_INTERFACE                     = "NETWORK_INTERFACE"
 	NETWORK_SECURITY_GROUP                = "NETWORK_SECURITY_GROUP"
@@ -32,6 +34,7 @@ const (
 	REDIS                                 = "REDIS"
 	SIGNALR                               = "SIGNALR"
 	ROUTE_TABLE                           = "ROUTE_TABLE"
+	SEARCH_SERVICE                        = "SEARCH_SERVICE"
 	SQL_DATABASE                          = "SQL_DATABASE"
 	SQL_SERVER                            = "SQL_SERVER"
 	STATIC_WEB_APP                        = "STATIC_WEB_APP"
