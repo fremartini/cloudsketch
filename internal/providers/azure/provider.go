@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"cloudsketch/internal/concurrent"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
@@ -123,26 +124,28 @@ func fetchAndMapResources(subscription *azContext.SubscriptionContext, ctx *azCo
 		return ok
 	})
 
-	resources = list.FlatMap(resourcesWithHandlers, func(resource *models.Resource) []*models.Resource {
-		log.Print(resource.Name)
+	functionsToApply := list.Map(resourcesWithHandlers, func(resource *models.Resource) func() ([]*models.Resource, error) {
+		return func() ([]*models.Resource, error) {
+			log.Print(resource.Name)
 
-		handler := handlers[resource.Type]
+			handler := handlers[resource.Type]
 
-		resourcesToAdd, err := handler.Handle(&azContext.Context{
-			SubscriptionId:    ctx.SubscriptionId,
-			TenantId:          ctx.TenantId,
-			Credentials:       ctx.Credentials,
-			ResourceGroupName: resource.ResourceGroup,
-			ResourceName:      resource.Name,
-			ResourceId:        resource.Id,
-		})
-
-		if err != nil {
-			log.Fatal(err)
+			return handler.Handle(&azContext.Context{
+				SubscriptionId:    ctx.SubscriptionId,
+				TenantId:          ctx.TenantId,
+				Credentials:       ctx.Credentials,
+				ResourceGroupName: resource.ResourceGroup,
+				ResourceName:      resource.Name,
+				ResourceId:        resource.Id,
+			})
 		}
-
-		return resourcesToAdd
 	})
+
+	resources, err = concurrent.FanOut(functionsToApply)
+
+	if err != nil {
+		return nil, err
+	}
 
 	// add the resources that don't have any handlers as-is
 	resources = append(resources, resourcesWithoutHandlers...)

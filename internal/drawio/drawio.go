@@ -278,7 +278,7 @@ func addDependencyArrows(resource_map *map[string]*node.ResourceAndNode) []*node
 		dependencyIds := list.Filter(resource.DependsOn, func(dependency string) bool {
 			targetMissing := (*resource_map)[dependency] == nil || (*resource_map)[dependency].Node == nil
 			if targetMissing {
-				log.Printf("target %s was not drawn, skipping ...", dependency)
+				log.Printf("target %s was not drawn, skipping", dependency)
 				return false
 			}
 
