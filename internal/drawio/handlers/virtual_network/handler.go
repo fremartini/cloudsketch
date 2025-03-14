@@ -57,7 +57,7 @@ func (*handler) DrawDependency(source *models.Resource, targets []*models.Resour
 }
 
 func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	subnets := getAllSubnetsInVnet(vnet.Id, resources, resource_map)
+	subnets := getAllSResourcesInVnet(vnet.Id, resources, resource_map)
 
 	vnetNode := (*resource_map)[vnet.Id].Node
 	vnetNodegeometry := vnetNode.GetGeometry()
@@ -78,12 +78,8 @@ func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resour
 	return []*node.Node{box}
 }
 
-func getAllSubnetsInVnet(vnetId string, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func getAllSResourcesInVnet(vnetId string, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	subnets := list.Filter(resources, func(r *models.Resource) bool {
-		if r.Type != types.SUBNET {
-			return false
-		}
-
 		return list.Contains(r.DependsOn, func(dependency string) bool {
 			return dependency == vnetId
 		})

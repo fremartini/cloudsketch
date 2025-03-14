@@ -120,7 +120,7 @@ func New() *drawio {
 	return &drawio{}
 }
 
-func removeBlacklistedEntries() {
+func removeBlacklistedHandlers() {
 	config, ok := config.Read()
 
 	if !ok {
@@ -134,7 +134,7 @@ func removeBlacklistedEntries() {
 }
 
 func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) error {
-	removeBlacklistedEntries()
+	removeBlacklistedHandlers()
 
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
 	resource_map, err := populateResourceMap(resources)
@@ -157,13 +157,8 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 		allResources = append(allResources, resource)
 	}
 
-	// private endpoints and NICs are typically used as icons attached to other icons and should therefore be rendered in front
-	// TODO: implement a better solution?
-	allResourcesThatShouldGoInBack := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type != types.PRIVATE_ENDPOINT && n.Resource.Type != types.NETWORK_INTERFACE && n.Resource.Type != types.PUBLIC_IP_ADDRESS && n.Resource.Type != types.NETWORK_SECURITY_GROUP
-	})
-
-	allResourcesThatShouldGoInFront := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
+	// private endpoints, NICs, PIPs and NSGs are typically used as icons attached to other icons and should therefore be rendered in front of them
+	allResourcesThatShouldGoInFront, allResourcesThatShouldGoInBack := list.GroupBy(allResources, func(n *node.ResourceAndNode) bool {
 		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE || n.Resource.Type == types.PUBLIC_IP_ADDRESS || n.Resource.Type == types.NETWORK_SECURITY_GROUP
 	})
 
@@ -318,8 +313,8 @@ func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	})
 
 	// virtual netwoks and subnets needs to be handled last since they "depend" on all other resources
-	subnets := DrawGroupForResourceType(resources, types.SUBNET, resource_map)
-	vnets := DrawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
+	subnets := drawGroupForResourceType(resources, types.SUBNET, resource_map)
+	vnets := drawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
 
 	// return vnets first so they are rendered in the background
 	nodes := append(vnets, append(subnets, boxes...)...)
@@ -327,7 +322,7 @@ func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	return nodes
 }
 
-func DrawGroupForResourceType(resources []*models.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func drawGroupForResourceType(resources []*models.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	nodes := []*node.Node{}
 
 	resourcesWithType := list.Filter(resources, func(r *models.Resource) bool {
