@@ -198,13 +198,13 @@ func filterUnknownDependencies(resources []*models.Resource) []*models.Resource 
 
 func populateResourceMap(resources []*models.Resource) (*map[string]*node.ResourceAndNode, error) {
 	resource_map := &map[string]*node.ResourceAndNode{}
-	seen_unhandled_resources := set.New[string]()
+	unhandled_resources := set.New[string]()
 
 	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
 	resources = filterUnknownDependencies(resources)
 
 	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
-		return build_graph.NewTask(r.Id, r.DependsOn, []string{}, []string{}, func() { drawResource(r, seen_unhandled_resources, resource_map) })
+		return build_graph.NewTask(r.Id, r.DependsOn, []string{}, []string{}, func() { drawResource(r, unhandled_resources, resource_map) })
 	})
 
 	bg, err := build_graph.NewGraph(tasks)
@@ -220,7 +220,7 @@ func populateResourceMap(resources []*models.Resource) (*map[string]*node.Resour
 	return resource_map, nil
 }
 
-func drawResource(resource *models.Resource, seen_unhandled_resources *set.Set[string], resource_map *map[string]*node.ResourceAndNode) {
+func drawResource(resource *models.Resource, unhandled_resources *set.Set[string], resource_map *map[string]*node.ResourceAndNode) {
 	if (*resource_map)[resource.Id] != nil {
 		// resource already drawn
 		return
@@ -229,12 +229,12 @@ func drawResource(resource *models.Resource, seen_unhandled_resources *set.Set[s
 	f, ok := commands[resource.Type]
 
 	if !ok {
-		seenResourceType := seen_unhandled_resources.Contains(resource.Type)
+		seenResourceType := unhandled_resources.Contains(resource.Type)
 
 		// mechanism to prevent spamming the output with the same type
 		if !seenResourceType {
 			log.Printf("unhandled type %s", resource.Type)
-			seen_unhandled_resources.Add(resource.Type)
+			unhandled_resources.Add(resource.Type)
 		}
 
 		return
@@ -278,7 +278,7 @@ func addDependencyArrows(resource_map *map[string]*node.ResourceAndNode) []*node
 		dependencyIds := list.Filter(resource.DependsOn, func(dependency string) bool {
 			targetMissing := (*resource_map)[dependency] == nil || (*resource_map)[dependency].Node == nil
 			if targetMissing {
-				log.Printf("target %s was not drawn, skipping ...", dependency)
+				log.Printf("target %s was not drawn, skipping", dependency)
 				return false
 			}
 

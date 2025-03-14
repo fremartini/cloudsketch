@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"cloudsketch/internal/concurrency"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
@@ -66,6 +67,7 @@ func NewProvider() *azureProvider {
 
 func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.Resource, string, error) {
 	credentials, err := azidentity.NewDefaultAzureCredential(nil)
+
 	if err != nil {
 		return nil, "", fmt.Errorf("authentication failure: %+v", err)
 	}
@@ -93,68 +95,77 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 		return *cachedResources, filename, nil
 	}
 
-	allResources, err := resource_group.New().Handle(ctx)
+	resources, err := fetchAndMapResources(subscription, ctx)
 
 	if err != nil {
 		return nil, "", err
 	}
 
+	// cache resources for next run
+	err = marshall.MarshallResources(filenameWithSuffix, resources)
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	return resources, filename, nil
+}
+
+func fetchAndMapResources(subscription *azContext.SubscriptionContext, ctx *azContext.Context) ([]*domainModels.Resource, error) {
+	resources, err := resource_group.New().Handle(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resourcesWithHandlers, resourcesWithoutHandlers := list.GroupBy(resources, func(resource *models.Resource) bool {
+		_, ok := handlers[resource.Type]
+
+		return ok
+	})
+
+	functionsToApply := list.Map(resourcesWithHandlers, func(resource *models.Resource) func() ([]*models.Resource, error) {
+		return func() ([]*models.Resource, error) {
+			log.Print(resource.Name)
+
+			handler := handlers[resource.Type]
+
+			return handler.Handle(&azContext.Context{
+				SubscriptionId:    ctx.SubscriptionId,
+				TenantId:          ctx.TenantId,
+				Credentials:       ctx.Credentials,
+				ResourceGroupName: resource.ResourceGroup,
+				ResourceName:      resource.Name,
+				ResourceId:        resource.Id,
+			})
+		}
+	})
+
+	resources, err = concurrency.FanOut(functionsToApply)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// add the resources that don't have any handlers as-is
+	resources = append(resources, resourcesWithoutHandlers...)
+
 	// add the subscription entry
-	allResources = append(allResources, &models.Resource{
+	resources = append(resources, &models.Resource{
 		Id:   subscription.Id,
 		Name: subscription.Name,
 		Type: types.SUBSCRIPTION,
 	})
 
-	allResources = list.FlatMap(allResources, func(resource *models.Resource) []*models.Resource {
-		log.Print(resource.Name)
-
-		handler, ok := handlers[resource.Type]
-
-		// no handler is registered. Add the resource as-is
-		if !ok {
-			return []*models.Resource{resource}
-		}
-
-		// handler is registered. Add whatever it returns
-		resourcesToAdd, err := handler.Handle(&azContext.Context{
-			SubscriptionId:    ctx.SubscriptionId,
-			TenantId:          ctx.TenantId,
-			Credentials:       ctx.Credentials,
-			ResourceGroupName: resource.ResourceGroup,
-			ResourceName:      resource.Name,
-			ResourceId:        resource.Id,
-		})
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		return resourcesToAdd
+	unhandled_types := set.New[string]()
+	domainResources := list.Map(resources, func(r *models.Resource) *domainModels.Resource {
+		return mapToDomainResource(r, ctx.TenantId, unhandled_types)
 	})
 
-	// ensure all id's are lowercase and map Azure types to domain types
-	for _, r := range allResources {
-		r.Id = strings.ToLower(r.Id)
-		r.DependsOn = list.Map(r.DependsOn, strings.ToLower)
-	}
-
-	seen_unhandled_types := set.New[string]()
-	domainModels := list.Map(allResources, func(r *models.Resource) *domainModels.Resource {
-		return mapToDomainResource(r, ctx.TenantId, seen_unhandled_types)
-	})
-
-	// cache resources for next run
-	err = marshall.MarshallResources(filenameWithSuffix, domainModels)
-
-	if err != nil {
-		return nil, "", err
-	}
-
-	return domainModels, filename, nil
+	return domainResources, nil
 }
 
-func mapToDomainResource(resource *models.Resource, tenantId string, seen_unhandled_types *set.Set[string]) *domainModels.Resource {
+func mapToDomainResource(resource *models.Resource, tenantId string, unhandled_types *set.Set[string]) *domainModels.Resource {
 	properties := resource.Properties
 
 	if properties == nil {
@@ -163,11 +174,12 @@ func mapToDomainResource(resource *models.Resource, tenantId string, seen_unhand
 
 	properties["link"] = generateAzurePortalLink(resource, tenantId)
 
+	// Azure is not consistent regarding casing. Ensure all id's are lowercase
 	return &domainModels.Resource{
-		Id:         resource.Id,
-		Type:       mapTypeToDomainType(resource.Type, seen_unhandled_types),
+		Id:         strings.ToLower(resource.Id),
+		Type:       mapTypeToDomainType(resource.Type, unhandled_types),
 		Name:       resource.Name,
-		DependsOn:  resource.DependsOn,
+		DependsOn:  list.Map(resource.DependsOn, strings.ToLower),
 		Properties: properties,
 	}
 }
@@ -177,7 +189,7 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 	return fmt.Sprintf("https://portal.azure.com/#@%s/resource%s", tenant, resource.Id)
 }
 
-func mapTypeToDomainType(azType string, seen_unhandled_types *set.Set[string]) string {
+func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string {
 	domainTypes := map[string]string{
 		types.AI_SERVICES:                           domainTypes.AI_SERVICES,
 		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
@@ -227,12 +239,12 @@ func mapTypeToDomainType(azType string, seen_unhandled_types *set.Set[string]) s
 	domainType, ok := domainTypes[azType]
 
 	if !ok {
-		seenResourceType := seen_unhandled_types.Contains(azType)
+		seenResourceType := unhandled_types.Contains(azType)
 
 		// mechanism to prevent spamming the output with the same type
 		if !seenResourceType {
 			log.Printf("undefined mapping from Azure types %s to domain type", azType)
-			seen_unhandled_types.Add(azType)
+			unhandled_types.Add(azType)
 		}
 
 		return azType
