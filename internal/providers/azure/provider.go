@@ -1,7 +1,7 @@
 package azure
 
 import (
-	"cloudsketch/internal/concurrent"
+	"cloudsketch/internal/concurrency"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
@@ -141,7 +141,7 @@ func fetchAndMapResources(subscription *azContext.SubscriptionContext, ctx *azCo
 		}
 	})
 
-	resources, err = concurrent.FanOut(functionsToApply)
+	resources, err = concurrency.FanOut(functionsToApply)
 
 	if err != nil {
 		return nil, err
