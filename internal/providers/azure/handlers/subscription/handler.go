@@ -28,8 +28,9 @@ func (*handler) Handle(subscriptionId string, credentials *azidentity.DefaultAzu
 	}
 
 	return &azContext.SubscriptionContext{
-		Id:       *subscription.Subscription.SubscriptionID,
-		Name:     *subscription.Subscription.DisplayName,
-		TenantId: *subscription.Subscription.TenantID,
+		Id:         *subscription.Subscription.SubscriptionID,
+		ResourceId: *subscription.ID,
+		Name:       *subscription.Subscription.DisplayName,
+		TenantId:   *subscription.Subscription.TenantID,
 	}, nil
 }

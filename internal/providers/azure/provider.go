@@ -152,10 +152,19 @@ func fetchAndMapResources(subscription *azContext.SubscriptionContext, ctx *azCo
 
 	// add the subscription entry
 	resources = append(resources, &models.Resource{
-		Id:   subscription.Id,
+		Id:   subscription.ResourceId,
 		Name: subscription.Name,
 		Type: types.SUBSCRIPTION,
 	})
+
+	// all resources should have a dependency on the subscription. Except the subscription itself
+	for _, resource := range resources {
+		if resource.Type == types.SUBSCRIPTION {
+			continue
+		}
+
+		resource.DependsOn = append(resource.DependsOn, subscription.ResourceId)
+	}
 
 	unhandled_types := set.New[string]()
 	domainResources := list.Map(resources, func(r *models.Resource) *domainModels.Resource {

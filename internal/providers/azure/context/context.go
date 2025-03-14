@@ -8,5 +8,5 @@ type Context struct {
 }
 
 type SubscriptionContext struct {
-	Id, Name, TenantId string
+	Id, ResourceId, Name, TenantId string
 }

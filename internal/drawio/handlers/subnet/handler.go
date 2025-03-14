@@ -1,6 +1,7 @@
 package subnet
 
 import (
+	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
@@ -114,14 +115,14 @@ func (*handler) GroupResources(subnet *models.Resource, resources []*models.Reso
 
 	// a subnet can contain resources that belong to the same group, these needs to be filtered to
 	// avoid moving the same group multiple times
-	seenGroups := map[string]bool{}
+	seenGroups := set.New[string]()
 
 	resourcesInSubnet = list.Filter(resourcesInSubnet, func(n *node.Node) bool {
-		if seenGroups[n.Id()] {
+		if seenGroups.Contains(n.Id()) {
 			return false
 		}
 
-		seenGroups[n.Id()] = true
+		seenGroups.Add(n.Id())
 
 		return true
 	})
