@@ -44,23 +44,15 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	arrows := []*node.Arrow{}
-
-	sourceId := (*resource_map)[source.Id].Node.Id()
-
-	for _, target := range targets {
-		targetId := (*resource_map)[target.Id].Node.Id()
-
-		arrows = append(arrows, node.NewArrow(sourceId, targetId, nil))
-	}
-
-	return arrows
+	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
 }
 
 func (*handler) GroupResources(privateDNSZone *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	nodes := []*node.Node{}
-
 	resourcesInPrivateDNSZone := getResourcesInPrivateDNSZone(resources, privateDNSZone.Id, resource_map)
+
+	if len(resourcesInPrivateDNSZone) == 0 {
+		return []*node.Node{}
+	}
 
 	privateDNSZoneNode := (*resource_map)[privateDNSZone.Id].Node
 	privateDNSZoneNodeGeometry := privateDNSZoneNode.GetGeometry()
@@ -85,9 +77,7 @@ func (*handler) GroupResources(privateDNSZone *models.Resource, resources []*mod
 
 	node.ScaleDownAndSetIconRelativeTo(privateDNSZoneNode, box, node.BOTTOM_LEFT)
 
-	nodes = append(nodes, box)
-
-	return nodes
+	return []*node.Node{box}
 }
 
 func getResourcesInPrivateDNSZone(resources []*models.Resource, adfId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {

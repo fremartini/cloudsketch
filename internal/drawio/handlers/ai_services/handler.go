@@ -1,4 +1,4 @@
-package redis
+package ai_services
 
 import (
 	"cloudsketch/internal/drawio/handlers/node"
@@ -10,10 +10,10 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = types.REDIS
-	IMAGE  = images.REDIS
+	TYPE   = types.AI_SERVICES
+	IMAGE  = images.AI_SERVICES
 	WIDTH  = 64
-	HEIGHT = 52
+	HEIGHT = 68
 )
 
 func New() *handler {

@@ -1,6 +1,7 @@
 package images
 
 const (
+	AI_SERVICES                           = "img/lib/azure2/ai_machine_learning/AI_Studio.svg"
 	APP_SERVICE                           = "img/lib/azure2/app_services/App_Services.svg"
 	APP_SERVICE_PLAN                      = "img/lib/azure2/app_services/App_Service_Plans.svg"
 	APPLICATION_GATEWAY                   = "img/lib/azure2/networking/Application_Gateways.svg"
@@ -19,6 +20,7 @@ const (
 	LOAD_BALANCER_FRONTEND                = PUBLIC_IP_ADDRESS
 	LOG_ANALYTICS                         = "img/lib/azure2/management_governance/Log_Analytics_Workspaces.svg"
 	LOGIC_APP                             = "img/lib/azure2/integration/Logic_Apps.svg"
+	MACHINE_LEARNING_WORKSPACE            = "img/lib/azure2/ai_machine_learning/Machine_Learning.svg"
 	NAT_GATEWAY                           = "img/lib/azure2/networking/NAT.svg"
 	NETWORK_INTERFACE                     = "img/lib/azure2/networking/Network_Interfaces.svg"
 	NETWORK_SECURITY_GROUP                = "img/lib/azure2/networking/Network_Security_Groups.svg"
@@ -29,6 +31,7 @@ const (
 	PUBLIC_IP_ADDRESS                     = "img/lib/azure2/networking/Public_IP_Addresses.svg"
 	RECOVERY_SERVICE_VAULT                = "img/lib/azure2/storage/Recovery_Services_Vaults.svg"
 	REDIS                                 = "img/lib/azure2/databases/Cache_Redis.svg"
+	SEARCH_SERVICE                        = "img/lib/azure2/app_services/Search_Services.svg"
 	SIGNALR                               = "img/lib/azure2/web/SignalR.svg"
 	SUBSCRIPTION                          = "img/lib/azure2/general/Subscriptions.svg"
 	SQL_DATABASE                          = "img/lib/azure2/databases/SQL_Database.svg"

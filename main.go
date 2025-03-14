@@ -2,6 +2,7 @@ package main
 
 import (
 	"cloudsketch/internal/drawio"
+	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers/azure"
 	"context"
@@ -51,7 +52,7 @@ func main() {
 
 				log.Printf("using existing file %s\n", file)
 
-				resources, err := marshall.UnmarshallResources(file)
+				resources, err := marshall.UnmarshallResources[[]*models.Resource](file)
 
 				if err != nil {
 					return err
@@ -59,7 +60,7 @@ func main() {
 
 				outFile := strings.ReplaceAll(file, ".json", ".drawio")
 
-				return drawio.New().WriteDiagram(outFile, resources)
+				return drawio.New().WriteDiagram(outFile, *resources)
 			}
 
 			// otherwise treat it as a subscription id

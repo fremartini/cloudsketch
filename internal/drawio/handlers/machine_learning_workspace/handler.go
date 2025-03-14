@@ -1,4 +1,4 @@
-package redis
+package machine_learning_workspace
 
 import (
 	"cloudsketch/internal/drawio/handlers/node"
@@ -10,10 +10,10 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = types.REDIS
-	IMAGE  = images.REDIS
+	TYPE   = types.MACHINE_LEARNING_WORKSPACE
+	IMAGE  = images.MACHINE_LEARNING_WORKSPACE
 	WIDTH  = 64
-	HEIGHT = 52
+	HEIGHT = 68
 )
 
 func New() *handler {
@@ -38,7 +38,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
+	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.SUBNET})
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

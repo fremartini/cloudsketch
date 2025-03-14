@@ -1,8 +1,10 @@
 package drawio
 
 import (
+	"cloudsketch/internal/config"
 	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/datastructures/set"
+	"cloudsketch/internal/drawio/handlers/ai_services"
 	"cloudsketch/internal/drawio/handlers/app_service"
 	"cloudsketch/internal/drawio/handlers/app_service_plan"
 	"cloudsketch/internal/drawio/handlers/application_gateway"
@@ -23,6 +25,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/load_balancer_frontend"
 	"cloudsketch/internal/drawio/handlers/log_analytics"
 	"cloudsketch/internal/drawio/handlers/logic_app"
+	"cloudsketch/internal/drawio/handlers/machine_learning_workspace"
 	"cloudsketch/internal/drawio/handlers/nat_gateway"
 	"cloudsketch/internal/drawio/handlers/network_interface"
 	"cloudsketch/internal/drawio/handlers/network_security_group"
@@ -35,6 +38,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/recovery_service_vault"
 	"cloudsketch/internal/drawio/handlers/redis"
 	"cloudsketch/internal/drawio/handlers/route_table"
+	"cloudsketch/internal/drawio/handlers/search_service"
 	"cloudsketch/internal/drawio/handlers/signalr"
 	"cloudsketch/internal/drawio/handlers/sql_database"
 	"cloudsketch/internal/drawio/handlers/sql_server"
@@ -63,6 +67,7 @@ type handler interface {
 
 var (
 	commands handleFuncMap = handleFuncMap{
+		ai_services.TYPE:                           ai_services.New(),
 		app_service.TYPE:                           app_service.New(),
 		app_service_plan.TYPE:                      app_service_plan.New(),
 		application_gateway.TYPE:                   application_gateway.New(),
@@ -82,6 +87,7 @@ var (
 		load_balancer_frontend.TYPE:                load_balancer_frontend.New(),
 		log_analytics.TYPE:                         log_analytics.New(),
 		logic_app.TYPE:                             logic_app.New(),
+		machine_learning_workspace.TYPE:            machine_learning_workspace.New(),
 		nat_gateway.TYPE:                           nat_gateway.New(),
 		network_interface.TYPE:                     network_interface.New(),
 		network_security_group.TYPE:                network_security_group.New(),
@@ -93,6 +99,7 @@ var (
 		recovery_service_vault.TYPE:                recovery_service_vault.New(),
 		redis.TYPE:                                 redis.New(),
 		route_table.TYPE:                           route_table.New(),
+		search_service.TYPE:                        search_service.New(),
 		signalr.TYPE:                               signalr.New(),
 		sql_database.TYPE:                          sql_database.New(),
 		sql_server.TYPE:                            sql_server.New(),
@@ -113,7 +120,22 @@ func New() *drawio {
 	return &drawio{}
 }
 
+func removeBlacklistedHandlers() {
+	config, ok := config.Read()
+
+	if !ok {
+		return
+	}
+
+	// remove entries on the blacklist
+	for _, blacklistedItem := range config.Blacklist {
+		delete(commands, blacklistedItem)
+	}
+}
+
 func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) error {
+	removeBlacklistedHandlers()
+
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
 	resource_map, err := populateResourceMap(resources)
 
@@ -135,14 +157,9 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 		allResources = append(allResources, resource)
 	}
 
-	// private endpoints and NICs are typically used as icons attached to other icons and should therefore be rendered in front
-	// TODO: implement a better solution?
-	allResourcesThatShouldGoInBack := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type != types.PRIVATE_ENDPOINT && n.Resource.Type != types.NETWORK_INTERFACE && n.Resource.Type != types.PUBLIC_IP_ADDRESS
-	})
-
-	allResourcesThatShouldGoInFront := list.Filter(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE || n.Resource.Type == types.PUBLIC_IP_ADDRESS
+	// private endpoints, NICs, PIPs and NSGs are typically used as icons attached to other icons and should therefore be rendered in front of them
+	allResourcesThatShouldGoInFront, allResourcesThatShouldGoInBack := list.GroupBy(allResources, func(n *node.ResourceAndNode) bool {
+		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE || n.Resource.Type == types.PUBLIC_IP_ADDRESS || n.Resource.Type == types.NETWORK_SECURITY_GROUP
 	})
 
 	allResources = append(allResourcesThatShouldGoInBack, allResourcesThatShouldGoInFront...)
@@ -296,8 +313,8 @@ func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	})
 
 	// virtual netwoks and subnets needs to be handled last since they "depend" on all other resources
-	subnets := DrawGroupForResourceType(resources, types.SUBNET, resource_map)
-	vnets := DrawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
+	subnets := drawGroupForResourceType(resources, types.SUBNET, resource_map)
+	vnets := drawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
 
 	// return vnets first so they are rendered in the background
 	nodes := append(vnets, append(subnets, boxes...)...)
@@ -305,7 +322,7 @@ func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	return nodes
 }
 
-func DrawGroupForResourceType(resources []*models.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func drawGroupForResourceType(resources []*models.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	nodes := []*node.Node{}
 
 	resourcesWithType := list.Filter(resources, func(r *models.Resource) bool {

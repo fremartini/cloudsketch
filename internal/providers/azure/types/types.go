@@ -1,6 +1,7 @@
 package types
 
 const (
+	AI_SERVICES                           = "Microsoft.CognitiveServices/accounts"
 	APP_SERVICE                           = "Cloudsketch/appservice"
 	APP_SERVICE_PLAN                      = "Microsoft.Web/serverFarms"
 	APPLICATION_GATEWAY                   = "Microsoft.Network/applicationGateways"
@@ -20,6 +21,7 @@ const (
 	LOAD_BALANCER_FRONTEND                = "Microsoft.Network/loadBalancers/frontendIPConfigurations"
 	LOG_ANALYTICS                         = "Microsoft.OperationalInsights/workspaces"
 	LOGIC_APP                             = "Cloudsketch/logicapp"
+	MACHINE_LEARNING_WORKSPACE            = "Microsoft.MachineLearningServices/workspaces"
 	NAT_GATEWAY                           = "Microsoft.Network/natGateways"
 	NETWORK_INTERFACE                     = "Microsoft.Network/networkInterfaces"
 	NETWORK_SECURITY_GROUP                = "Microsoft.Network/networkSecurityGroups"
@@ -31,6 +33,7 @@ const (
 	RECOVERY_SERVICE_VAULT                = "Microsoft.RecoveryServices/vaults"
 	REDIS                                 = "Microsoft.Cache/Redis"
 	ROUTE_TABLE                           = "Microsoft.Network/routeTables"
+	SEARCH_SERVICE                        = "Microsoft.Search/searchServices"
 	SIGNALR                               = "Microsoft.SignalRService/SignalR"
 	SQL_DATABASE                          = "Microsoft.Sql/servers/databases"
 	SQL_SERVER                            = "Microsoft.Sql/servers"

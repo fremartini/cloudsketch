@@ -1,6 +1,7 @@
 package node
 
 import (
+	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/list"
 	"log"
 	"math"
@@ -224,4 +225,37 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int) {
 	// off by one error
 	boxGeometry.Height += nodes[len(nodes)-1].GetGeometry().Height + padding
 	boxGeometry.Width += padding
+}
+
+func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
+	sourceNode := (*resource_map)[source.Id].Node
+
+	targetResources := list.Map(targets, func(target *models.Resource) *ResourceAndNode {
+		return (*resource_map)[target.Id]
+	})
+
+	// remove entries from the blacklist
+	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
+		return !list.Contains(typeBlacklist, func(t string) bool {
+			return target.Resource.Type == t
+		})
+	})
+
+	// remove entries that are in the same group
+	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
+
+		if sourceNode.ContainedIn == nil || target.Node.ContainedIn == nil {
+			return true
+		}
+
+		hasSameGroup := sourceNode.GetParentOrThis() == target.Node.GetParentOrThis()
+
+		return !hasSameGroup
+	})
+
+	arrows := list.Fold(targetResources, []*Arrow{}, func(target *ResourceAndNode, acc []*Arrow) []*Arrow {
+		return append(acc, NewArrow(sourceNode.Id(), target.Node.Id(), nil))
+	})
+
+	return arrows
 }

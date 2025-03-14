@@ -1,4 +1,4 @@
-package redis
+package search_service
 
 import (
 	"cloudsketch/internal/drawio/handlers/node"
@@ -10,9 +10,9 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = types.REDIS
-	IMAGE  = images.REDIS
-	WIDTH  = 64
+	TYPE   = types.SEARCH_SERVICE
+	IMAGE  = images.SEARCH_SERVICE
+	WIDTH  = 72
 	HEIGHT = 52
 )
 

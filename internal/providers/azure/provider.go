@@ -85,12 +85,12 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	filename := fmt.Sprintf("%s_%s", subscription.Name, subscription.Id)
 	filenameWithSuffix := fmt.Sprintf("%s.json", filename)
 
-	cachedResources, ok := marshall.UnmarshalIfExists(filenameWithSuffix)
+	cachedResources, ok := marshall.UnmarshalIfExists[[]*domainModels.Resource](filenameWithSuffix)
 
 	if ok {
 		log.Printf("using existing file %s\n", filenameWithSuffix)
 
-		return cachedResources, filename, nil
+		return *cachedResources, filename, nil
 	}
 
 	allResources, err := resource_group.New().Handle(ctx)
@@ -179,6 +179,7 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 
 func mapTypeToDomainType(azType string, seen_unhandled_types *set.Set[string]) string {
 	domainTypes := map[string]string{
+		types.AI_SERVICES:                           domainTypes.AI_SERVICES,
 		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
 		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE_PLAN,
 		types.APPLICATION_GATEWAY:                   domainTypes.APPLICATION_GATEWAY,
@@ -198,6 +199,7 @@ func mapTypeToDomainType(azType string, seen_unhandled_types *set.Set[string]) s
 		types.LOAD_BALANCER_FRONTEND:                domainTypes.LOAD_BALANCER_FRONTEND,
 		types.LOG_ANALYTICS:                         domainTypes.LOG_ANALYTICS,
 		types.LOGIC_APP:                             domainTypes.LOGIC_APP,
+		types.MACHINE_LEARNING_WORKSPACE:            domainTypes.MACHINE_LEARNING_WORKSPACE,
 		types.NAT_GATEWAY:                           domainTypes.NAT_GATEWAY,
 		types.NETWORK_INTERFACE:                     domainTypes.NETWORK_INTERFACE,
 		types.NETWORK_SECURITY_GROUP:                domainTypes.NETWORK_SECURITY_GROUP,
@@ -209,6 +211,7 @@ func mapTypeToDomainType(azType string, seen_unhandled_types *set.Set[string]) s
 		types.RECOVERY_SERVICE_VAULT:                domainTypes.RECOVERY_SERVICE_VAULT,
 		types.REDIS:                                 domainTypes.REDIS,
 		types.ROUTE_TABLE:                           domainTypes.ROUTE_TABLE,
+		types.SEARCH_SERVICE:                        domainTypes.SEARCH_SERVICE,
 		types.SIGNALR:                               domainTypes.SIGNALR,
 		types.SQL_DATABASE:                          domainTypes.SQL_DATABASE,
 		types.SQL_SERVER:                            domainTypes.SQL_SERVER,
