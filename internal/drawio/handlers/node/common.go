@@ -228,28 +228,34 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int) {
 }
 
 func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
-	arrows := []*Arrow{}
-
 	sourceNode := (*resource_map)[source.Id].Node
 
-	for _, target := range targets {
-		target := (*resource_map)[target.Id]
+	targetResources := list.Map(targets, func(target *models.Resource) *ResourceAndNode {
+		return (*resource_map)[target.Id]
+	})
 
-		if list.Contains(typeBlacklist, func(t string) bool {
+	// remove entries from the blacklist
+	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
+		return !list.Contains(typeBlacklist, func(t string) bool {
 			return target.Resource.Type == t
-		}) {
-			continue
+		})
+	})
+
+	// remove entries that are in the same group
+	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
+
+		if sourceNode.ContainedIn == nil || target.Node.ContainedIn == nil {
+			return true
 		}
 
-		// if they are in the same group, don't draw the arrow
-		if sourceNode.ContainedIn != nil && target.Node.ContainedIn != nil {
-			if sourceNode.GetParentOrThis() == target.Node.GetParentOrThis() {
-				continue
-			}
-		}
+		hasSameGroup := sourceNode.GetParentOrThis() == target.Node.GetParentOrThis()
 
-		arrows = append(arrows, NewArrow(sourceNode.Id(), target.Node.Id(), nil))
-	}
+		return !hasSameGroup
+	})
+
+	arrows := list.Fold(targetResources, []*Arrow{}, func(target *ResourceAndNode, acc []*Arrow) []*Arrow {
+		return append(acc, NewArrow(sourceNode.Id(), target.Node.Id(), nil))
+	})
 
 	return arrows
 }
