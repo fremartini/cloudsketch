@@ -1,6 +1,7 @@
 package node
 
 import (
+	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/list"
 	"log"
 	"math"
@@ -224,4 +225,31 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int) {
 	// off by one error
 	boxGeometry.Height += nodes[len(nodes)-1].GetGeometry().Height + padding
 	boxGeometry.Width += padding
+}
+
+func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
+	arrows := []*Arrow{}
+
+	sourceNode := (*resource_map)[source.Id].Node
+
+	for _, target := range targets {
+		target := (*resource_map)[target.Id]
+
+		if list.Contains(typeBlacklist, func(t string) bool {
+			return target.Resource.Type == t
+		}) {
+			continue
+		}
+
+		// if they are in the same group, don't draw the arrow
+		if sourceNode.ContainedIn != nil && target.Node.ContainedIn != nil {
+			if sourceNode.GetParentOrThis() == target.Node.GetParentOrThis() {
+				continue
+			}
+		}
+
+		arrows = append(arrows, NewArrow(sourceNode.Id(), target.Node.Id(), nil))
+	}
+
+	return arrows
 }

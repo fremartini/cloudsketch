@@ -53,11 +53,11 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return []*node.Arrow{}
+	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
 }
 
 func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	subnets := getAllSResourcesInVnet(vnet.Id, resources, resource_map)
+	subnets := getAllResourcesInVnet(vnet.Id, resources, resource_map)
 
 	vnetNode := (*resource_map)[vnet.Id].Node
 	vnetNodegeometry := vnetNode.GetGeometry()
@@ -78,7 +78,7 @@ func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resour
 	return []*node.Node{box}
 }
 
-func getAllSResourcesInVnet(vnetId string, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func getAllResourcesInVnet(vnetId string, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	subnets := list.Filter(resources, func(r *models.Resource) bool {
 		return list.Contains(r.DependsOn, func(dependency string) bool {
 			return dependency == vnetId

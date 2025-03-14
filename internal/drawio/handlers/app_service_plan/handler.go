@@ -45,22 +45,8 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	arrows := []*node.Arrow{}
-
-	sourceId := (*resource_map)[source.Id].Node.Id()
-
-	for _, target := range targets {
-		// app service plans have an implicit dependency to a subnet. Don't draw these
-		if target.Type == types.SUBNET {
-			continue
-		}
-
-		targetId := (*resource_map)[target.Id].Node.Id()
-
-		arrows = append(arrows, node.NewArrow(sourceId, targetId, nil))
-	}
-
-	return arrows
+	// app service plans have an implicit dependency to a subnet. Don't draw these
+	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.SUBNET})
 }
 
 func (*handler) GroupResources(appServicePlan *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
