@@ -75,7 +75,8 @@ func (*handler) GroupResources(privateDNSZone *models.Resource, resources []*mod
 	// move all resources in the private dns zone into the box
 	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
 
-	node.ScaleDownAndSetIconRelativeTo(privateDNSZoneNode, box, node.BOTTOM_LEFT)
+	privateDNSZoneNode.SetDimensions(privateDNSZoneNodeGeometry.Width/2, privateDNSZoneNodeGeometry.Height/2)
+	node.SetIconRelativeTo(privateDNSZoneNode, box, node.BOTTOM_LEFT)
 
 	return []*node.Node{box}
 }

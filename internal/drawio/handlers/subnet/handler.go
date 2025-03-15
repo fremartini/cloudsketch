@@ -64,7 +64,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	if len(routeTables) == 1 {
 		routeTable := (*resource_map)[routeTables[0]]
 
-		parentGroup = node.SetIcon(resource.Node, routeTable.Node, node.TOP_LEFT)
+		parentGroup = node.GroupIconsAndSetPosition(resource.Node, routeTable.Node, node.TOP_LEFT)
 	}
 
 	networkSecurityGroups := getResourcseOfType(resource.Resource, resource_map, types.NETWORK_SECURITY_GROUP)
@@ -79,12 +79,16 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 
 		if parentGroup == nil {
 			// route table icon was not set
-			return node.SetIcon(resource.Node, networkSecurityGroup.Node, node.TOP_RIGHT)
+			return node.GroupIconsAndSetPosition(resource.Node, networkSecurityGroup.Node, node.TOP_RIGHT)
 		}
 
 		// route table icon was set
+		networkSecurityGroupGeometry := networkSecurityGroup.Node.GetGeometry()
+
 		networkSecurityGroup.Node.SetProperty("parent", parentGroup.Id())
-		node.ScaleDownAndSetIconRelativeTo(networkSecurityGroup.Node, resource.Node.GetParentOrThis(), node.TOP_RIGHT)
+		networkSecurityGroup.Node.SetDimensions(networkSecurityGroupGeometry.Width/2, networkSecurityGroupGeometry.Width/2)
+
+		node.SetIconRelativeTo(networkSecurityGroup.Node, resource.Node.GetParentOrThis(), node.TOP_RIGHT)
 		networkSecurityGroup.Node.ContainedIn = parentGroup
 		networkSecurityGroup.Node.SetProperty("value", "")
 	}
@@ -131,7 +135,6 @@ func (*handler) GroupResources(subnet *models.Resource, resources []*models.Reso
 
 	// subnets can be in a group because of UDRs
 	subnetNode = subnetNode.GetParentOrThis()
-	subnetNodeGeometry := subnetNode.GetGeometry()
 
 	box := node.NewBox(&node.Geometry{
 		X:      0,
@@ -142,7 +145,7 @@ func (*handler) GroupResources(subnet *models.Resource, resources []*models.Reso
 
 	subnetNode.SetProperty("parent", box.Id())
 	subnetNode.ContainedIn = box
-	subnetNode.SetPosition(-subnetNodeGeometry.Width/2, -subnetNodeGeometry.Height/2)
+	node.SetIconRelativeTo(subnetNode, box, node.TOP_LEFT)
 
 	node.FillResourcesInBox(box, resourcesInSubnet, diagram.Padding)
 

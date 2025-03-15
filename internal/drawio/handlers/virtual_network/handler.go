@@ -75,7 +75,6 @@ func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resour
 	})
 
 	vnetNode := (*resource_map)[vnet.Id].Node
-	vnetNodegeometry := vnetNode.GetGeometry()
 
 	box := node.NewBox(&node.Geometry{
 		X:      0,
@@ -88,7 +87,7 @@ func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resour
 
 	vnetNode.SetProperty("parent", box.Id())
 	vnetNode.ContainedIn = box
-	vnetNode.SetPosition(-vnetNodegeometry.Width/2, -vnetNodegeometry.Height/2)
+	node.SetIconRelativeTo(vnetNode, box, node.BOTTOM_LEFT)
 
 	return []*node.Node{box}
 }

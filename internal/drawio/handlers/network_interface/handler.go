@@ -51,7 +51,7 @@ func (*handler) PostProcessIcon(nic *node.ResourceAndNode, resource_map *map[str
 	}
 
 	// set icon top right
-	return node.SetIcon(attachedTo.Node, nic.Node, node.TOP_RIGHT)
+	return node.GroupIconsAndSetPosition(attachedTo.Node, nic.Node, node.TOP_RIGHT)
 }
 
 func isBlacklistedResource(resourceType string) bool {

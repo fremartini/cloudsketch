@@ -47,7 +47,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 
 	if len(publicIps) == 1 {
 		pipResource := (*resource_map)[publicIps[0]]
-		return node.SetIcon(resource.Node, pipResource.Node, node.TOP_RIGHT)
+		return node.GroupIconsAndSetPosition(resource.Node, pipResource.Node, node.TOP_RIGHT)
 	}
 
 	return nil

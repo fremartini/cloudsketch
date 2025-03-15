@@ -63,7 +63,6 @@ func (*handler) GroupResources(resource *models.Resource, resources []*models.Re
 	})
 
 	subscriptionNode := (*resource_map)[resource.Id].Node
-	subscriptionNodegeometry := subscriptionNode.GetGeometry()
 
 	box := node.NewBox(&node.Geometry{
 		X:      0,
@@ -76,7 +75,7 @@ func (*handler) GroupResources(resource *models.Resource, resources []*models.Re
 
 	subscriptionNode.SetProperty("parent", box.Id())
 	subscriptionNode.ContainedIn = box
-	subscriptionNode.SetPosition(-subscriptionNodegeometry.Width/2, -subscriptionNodegeometry.Height/2)
+	node.SetIconRelativeTo(subscriptionNode, box, node.TOP_LEFT)
 
 	return []*node.Node{box}
 }

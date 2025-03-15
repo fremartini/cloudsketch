@@ -82,7 +82,7 @@ func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_
 	}
 
 	// one private endpoint exists, "merge" the two icons
-	return node.SetIcon(attachedTo.Node, privateEndpoint.Node, node.TOP_RIGHT)
+	return node.GroupIconsAndSetPosition(attachedTo.Node, privateEndpoint.Node, node.TOP_RIGHT)
 }
 
 func getPrivateEndpointSubnet(resource *models.Resource, resources []*models.Resource) *string {
