@@ -60,6 +60,10 @@ func (*handler) DrawDependency(source *models.Resource, targets []*models.Resour
 func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	resourcesInVnet := getAllResourcesInVnet(vnet.Id, resources, resource_map)
 
+	if len(resourcesInVnet) == 0 {
+		return nil
+	}
+
 	// a vnet can contain resources that belong to the same group, these needs to be filtered to
 	// avoid moving the same group multiple times
 	seenGroups := set.New[string]()

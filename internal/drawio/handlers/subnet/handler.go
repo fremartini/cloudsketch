@@ -117,6 +117,10 @@ func (*handler) DrawDependency(source *models.Resource, targets []*models.Resour
 func (*handler) GroupResources(subnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	resourcesInSubnet := getResourcesInSubnet(resources, subnet.Id, resource_map)
 
+	if len(resourcesInSubnet) == 0 {
+		return nil
+	}
+
 	// a subnet can contain resources that belong to the same group, these needs to be filtered to
 	// avoid moving the same group multiple times
 	seenGroups := set.New[string]()
