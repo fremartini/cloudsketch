@@ -195,8 +195,6 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int) {
 }
 
 func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
-	sourceNode := (*resource_map)[source.Id].Node
-
 	// don't draw arrows to subscriptions
 	typeBlacklist = append(typeBlacklist, types.SUBSCRIPTION)
 
@@ -211,9 +209,10 @@ func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Res
 		})
 	})
 
+	sourceNode := (*resource_map)[source.Id].Node
+
 	// remove entries that are in the same group
 	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
-
 		if sourceNode.ContainedIn == nil || target.Node.ContainedIn == nil {
 			return true
 		}

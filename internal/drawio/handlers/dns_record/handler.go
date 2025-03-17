@@ -4,7 +4,6 @@ import (
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
-	"cloudsketch/internal/list"
 )
 
 type handler struct{}
@@ -34,42 +33,6 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
-	target, ok := resource.Resource.Properties["target"]
-
-	if !ok {
-		return nil
-	}
-
-	// attempt to find the resource with the target IP
-	var resources []*models.Resource
-
-	for _, v := range *resource_map {
-		resources = append(resources, v.Resource)
-	}
-
-	resources = list.Filter(resources, func(r *models.Resource) bool {
-		return r.Type == types.NETWORK_INTERFACE
-	})
-
-	resourceWithIp := list.FirstOrDefault(resources, nil, func(nic *models.Resource) bool {
-		ip, ok := nic.Properties["ip"]
-
-		if !ok {
-			return false
-		}
-
-		return ip == target
-	})
-
-	// TODO: unable to locate. NIC has been deleted
-
-	if resourceWithIp == nil {
-		// unable to find matching IP
-		return nil
-	}
-
-	resource.Resource.DependsOn = append(resource.Resource.DependsOn, resource.Resource.Id)
-
 	return nil
 }
 

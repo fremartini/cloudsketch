@@ -6,6 +6,7 @@ import (
 	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
 	"context"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/privatedns/armprivatedns"
 )
@@ -16,7 +17,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
+func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armprivatedns.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -122,4 +123,45 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 	})
 
 	return resources, nil
+}
+
+func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {
+	target, ok := resource.Properties["target"]
+
+	if !ok {
+		return
+	}
+
+	// attempt to find the resource with the target IP
+	resourceWithIp := list.FirstOrDefault(resources, nil, func(nic *models.Resource) bool {
+		ip, ok := nic.Properties["ip"]
+
+		if !ok {
+			return false
+		}
+
+		return ip == target
+	})
+
+	if resourceWithIp == nil {
+		// unable to find matching IP
+		return
+	}
+
+	// the resource that has the IP is likely a NIC. Search the attachedTo property
+	attachedTo, ok := resourceWithIp.Properties["attachedTo"]
+
+	if !ok {
+		return
+	}
+
+	attachedToResource := list.FirstOrDefault(resources, nil, func(resource *models.Resource) bool {
+		return attachedTo == strings.ToLower(resource.Id)
+	})
+
+	if attachedToResource == nil {
+		return
+	}
+
+	resource.DependsOn = append(resource.DependsOn, attachedToResource.Id)
 }

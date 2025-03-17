@@ -14,7 +14,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
+func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
 	client, err := armnetwork.NewBastionHostsClient(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -42,4 +42,8 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 	}
 
 	return []*models.Resource{resource}, nil
+}
+
+func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {
+
 }
