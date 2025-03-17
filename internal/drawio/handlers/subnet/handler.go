@@ -110,7 +110,7 @@ func resourcesWithReferencesTo(resource_map *map[string]*node.ResourceAndNode, r
 	return count
 }
 
-func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.VIRTUAL_NETWORK})
 }
 
@@ -151,7 +151,7 @@ func (*handler) GroupResources(subnet *models.Resource, resources []*models.Reso
 	subnetNode.ContainedIn = box
 	node.SetIconRelativeTo(subnetNode, box, node.TOP_LEFT)
 
-	node.FillResourcesInBox(box, resourcesInSubnet, diagram.Padding)
+	node.FillResourcesInBox(box, resourcesInSubnet, diagram.Padding, true)
 
 	return []*node.Node{box}
 }

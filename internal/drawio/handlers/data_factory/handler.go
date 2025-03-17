@@ -44,7 +44,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 
 }
 
-func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
 }
 
@@ -72,7 +72,7 @@ func (*handler) GroupResources(dataFactory *models.Resource, resources []*models
 	})
 
 	// move all resources in the adf into the box
-	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
+	node.FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
 
 	dataFactoryNode.SetDimensions(dataFactoryNodeGeometry.Width/2, dataFactoryNodeGeometry.Height/2)
 	node.SetIconRelativeTo(dataFactoryNode, box, node.BOTTOM_LEFT)

@@ -32,6 +32,8 @@ func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 
 	properties := map[string]string{}
 
+	properties["ip"] = *nic.Properties.IPConfigurations[0].Properties.PrivateIPAddress
+
 	target := getAttachedResource(nic.Properties)
 
 	if target != nil {

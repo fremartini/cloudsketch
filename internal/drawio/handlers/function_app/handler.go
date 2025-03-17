@@ -39,7 +39,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return nil
 }
 
-func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	arrows := node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
 
 	// add a dependency to the associated storage account.

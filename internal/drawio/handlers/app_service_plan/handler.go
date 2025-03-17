@@ -45,7 +45,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return nil
 }
 
-func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	// app service plans have an implicit dependency to a subnet. Don't draw these
 	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.SUBNET})
 }
@@ -109,7 +109,7 @@ func (*handler) GroupResources(appServicePlan *models.Resource, resources []*mod
 	})
 
 	// move all resources in the app service plan into the box
-	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
+	node.FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
 
 	appServicePlanNode.SetDimensions(appServicePlanNodeGeometry.Width/2, appServicePlanNodeGeometry.Height/2)
 	node.SetIconRelativeTo(appServicePlanNode, box, node.BOTTOM_LEFT)

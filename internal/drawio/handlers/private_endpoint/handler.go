@@ -146,7 +146,7 @@ func getPrivateEndpointPointingToResource(resource_map *map[string]*node.Resourc
 	return privateEndpoints
 }
 
-func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.SUBNET})
 }
 
