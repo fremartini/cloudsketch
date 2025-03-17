@@ -159,7 +159,7 @@ func fetchAndMapResources(subscription *azContext.SubscriptionContext, ctx *azCo
 
 	// all resources should have a dependency on the subscription. Except the subscription itself
 	for _, resource := range resources {
-		if resource.Type == types.SUBSCRIPTION {
+		if resource.Id == subscription.ResourceId {
 			continue
 		}
 
