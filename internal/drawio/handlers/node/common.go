@@ -15,9 +15,9 @@ const (
 	BOTTOM_RIGHT = 3
 )
 
-func SetIcon(centerIcon, attachedIcon *Node, position int) *Node {
+func GroupIconsAndSetPosition(centerIcon, cornerIcon *Node, position int) *Node {
 	centerIconGeometry := centerIcon.GetGeometry()
-	attachedIconGeometry := attachedIcon.GetGeometry()
+	cornerIconGeometry := cornerIcon.GetGeometry()
 
 	// create a group on top of the referenced node, IMPORTANT: copy the geometry to avoid using the same reference
 	group := NewGroup(&Geometry{
@@ -31,59 +31,22 @@ func SetIcon(centerIcon, attachedIcon *Node, position int) *Node {
 	centerIcon.SetProperty("parent", groupId)
 	centerIcon.ContainedIn = group
 
-	widthScaled := attachedIconGeometry.Width / 2
-	heightScaled := attachedIconGeometry.Height / 2
+	widthScaled := cornerIconGeometry.Width / 2
+	heightScaled := cornerIconGeometry.Height / 2
 
-	attachedIcon.SetProperty("parent", groupId)
-	attachedIcon.SetProperty("value", "")
-	attachedIcon.SetDimensions(widthScaled, heightScaled)
-	attachedIcon.ContainedIn = group
+	cornerIcon.SetProperty("parent", groupId)
+	cornerIcon.SetProperty("value", "")
+	cornerIcon.SetDimensions(widthScaled, heightScaled)
+	cornerIcon.ContainedIn = group
 
-	x := 0
-	y := 0
-
-	switch position {
-	case TOP_LEFT:
-		{
-			x = group.GetGeometry().X
-			y = group.GetGeometry().Y
-			break
-		}
-	case TOP_RIGHT:
-		{
-			x = group.GetGeometry().Width
-			y = group.GetGeometry().Y
-			break
-		}
-	case BOTTOM_LEFT:
-		{
-			x = group.GetGeometry().X
-			y = group.GetGeometry().Height
-			break
-		}
-	case BOTTOM_RIGHT:
-		{
-			x = group.GetGeometry().Width
-			y = group.GetGeometry().Height
-			break
-		}
-	default:
-		log.Fatalf("Undefined position %v", position)
-	}
-
-	attachedIcon.SetPosition(x-widthScaled/2, y-heightScaled/2)
+	SetIconRelativeTo(cornerIcon, centerIcon, position)
 
 	return group
 }
 
-func ScaleDownAndSetIconRelativeTo(iconToMove *Node, relativeTo *Node, position int) {
+func SetIconRelativeTo(iconToMove *Node, relativeTo *Node, position int) {
 	relativeToGeometry := relativeTo.GetGeometry()
 	iconToMoveGeometry := iconToMove.GetGeometry()
-
-	widthScaled := (iconToMoveGeometry.Width / 2)
-	heightScaled := (iconToMoveGeometry.Height / 2)
-
-	iconToMove.SetDimensions(widthScaled, heightScaled)
 
 	x := 0
 	y := 0
@@ -117,7 +80,7 @@ func ScaleDownAndSetIconRelativeTo(iconToMove *Node, relativeTo *Node, position 
 		log.Fatalf("Undefined position %v", position)
 	}
 
-	iconToMove.SetPosition(x-widthScaled/2, y-heightScaled/2)
+	iconToMove.SetPosition(x-iconToMoveGeometry.Width/2, y-iconToMoveGeometry.Height/2)
 }
 
 func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int) {

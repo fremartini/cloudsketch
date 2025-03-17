@@ -1,10 +1,20 @@
 [
 	{
+		"Id": "/subscriptions/00000000-0000-0000-0000-000000000000",
+		"Type": "SUBSCRIPTION",
+		"Name": "example-subscription",
+		"ResourceGroup": "",
+		"DependsOn": null,
+		"Properties": null
+	},
+	{
 		"Id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.network/virtualnetworks/example-vnet",
 		"Type": "VIRTUAL_NETWORK",
 		"Name": "example-vnet",
 		"ResourceGroup": "",
-		"DependsOn": null,
+		"DependsOn": [
+			"/subscriptions/00000000-0000-0000-0000-000000000000"
+		],
 		"Properties": {
 			"size": "21"
 		}
@@ -15,7 +25,8 @@
 		"Name": "example-snet",
 		"ResourceGroup": "",
 		"DependsOn": [
-			"/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.network/virtualnetworks/example-vnet"
+			"/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.network/virtualnetworks/example-vnet",
+			"/subscriptions/00000000-0000-0000-0000-000000000000"
 		],
 		"Properties": {
 			"size": "22"
@@ -27,7 +38,8 @@
 		"Name": "example-vmss",
 		"ResourceGroup": "",
 		"DependsOn": [
-			"/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.network/virtualnetworks/example-vnet/subnets/example-snet"
+			"/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.network/virtualnetworks/example-vnet/subnets/example-snet",
+			"/subscriptions/00000000-0000-0000-0000-000000000000"
 		],
 		"Properties": null
 	},
@@ -37,7 +49,8 @@
 		"Name": "example-nic",
 		"ResourceGroup": "",
 		"DependsOn": [
-			"/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.network/virtualnetworks/example-vnet/subnets/example-snet"
+			"/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.network/virtualnetworks/example-vnet/subnets/example-snet",
+			"/subscriptions/00000000-0000-0000-0000-000000000000"
 		],
 		"Properties": {
 			"attachedTo": "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.compute/virtualmachines/example-vm"
@@ -49,7 +62,8 @@
 		"Name": "example-vm",
 		"ResourceGroup": "",
 		"DependsOn": [
-			"/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.network/networkinterfaces/example-nic"
+			"/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.network/networkinterfaces/example-nic",
+			"/subscriptions/00000000-0000-0000-0000-000000000000"
 		],
 		"Properties": null
 	}

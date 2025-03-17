@@ -305,33 +305,32 @@ func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	}
 
 	resourcesWithoutVnetsAndSubnets := list.Filter(resources, func(resource *models.Resource) bool {
-		return resource.Type != types.SUBNET && resource.Type != types.VIRTUAL_NETWORK
+		return resource.Type != types.SUBNET && resource.Type != types.VIRTUAL_NETWORK && resource.Type != types.SUBSCRIPTION
 	})
 
 	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *models.Resource) []*node.Node {
 		return commands[resource.Type].GroupResources(resource, resources, resource_map)
 	})
 
-	// virtual netwoks and subnets needs to be handled last since they "depend" on all other resources
+	// virtual netwoks, subnets and subscription needs to be handled last since they "depend" on all other resources
 	subnets := drawGroupForResourceType(resources, types.SUBNET, resource_map)
 	vnets := drawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
+	subscriptions := drawGroupForResourceType(resources, types.SUBSCRIPTION, resource_map)
 
-	// return vnets first so they are rendered in the background
-	nodes := append(vnets, append(subnets, boxes...)...)
+	// return subscriptions first so they are rendered in the background
+	nodes := append(subscriptions, append(vnets, append(subnets, boxes...)...)...)
 
 	return nodes
 }
 
 func drawGroupForResourceType(resources []*models.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	nodes := []*node.Node{}
-
 	resourcesWithType := list.Filter(resources, func(r *models.Resource) bool {
 		return r.Type == typ
 	})
 
-	for _, resource := range resourcesWithType {
-		nodes = append(nodes, commands[typ].GroupResources(resource, resources, resource_map)...)
-	}
+	nodes := list.FlatMap(resourcesWithType, func(resource *models.Resource) []*node.Node {
+		return commands[typ].GroupResources(resource, resources, resource_map)
+	})
 
 	return nodes
 }

@@ -1,6 +1,7 @@
 package virtual_network
 
 import (
+	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
@@ -57,10 +58,27 @@ func (*handler) DrawDependency(source *models.Resource, targets []*models.Resour
 }
 
 func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	subnets := getAllResourcesInVnet(vnet.Id, resources, resource_map)
+	resourcesInVnet := getAllResourcesInVnet(vnet.Id, resources, resource_map)
+
+	if len(resourcesInVnet) == 0 {
+		return nil
+	}
+
+	// a vnet can contain resources that belong to the same group, these needs to be filtered to
+	// avoid moving the same group multiple times
+	seenGroups := set.New[string]()
+
+	resourcesInVnet = list.Filter(resourcesInVnet, func(n *node.Node) bool {
+		if seenGroups.Contains(n.Id()) {
+			return false
+		}
+
+		seenGroups.Add(n.Id())
+
+		return true
+	})
 
 	vnetNode := (*resource_map)[vnet.Id].Node
-	vnetNodegeometry := vnetNode.GetGeometry()
 
 	box := node.NewBox(&node.Geometry{
 		X:      0,
@@ -69,11 +87,11 @@ func (*handler) GroupResources(vnet *models.Resource, resources []*models.Resour
 		Height: 0,
 	}, &STYLE)
 
-	node.FillResourcesInBox(box, subnets, diagram.Padding)
+	node.FillResourcesInBox(box, resourcesInVnet, diagram.Padding)
 
 	vnetNode.SetProperty("parent", box.Id())
 	vnetNode.ContainedIn = box
-	vnetNode.SetPosition(-vnetNodegeometry.Width/2, -vnetNodegeometry.Height/2)
+	node.SetIconRelativeTo(vnetNode, box, node.BOTTOM_LEFT)
 
 	return []*node.Node{box}
 }

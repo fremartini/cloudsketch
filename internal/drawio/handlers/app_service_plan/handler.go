@@ -1,6 +1,7 @@
 package app_service_plan
 
 import (
+	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/images"
@@ -89,16 +90,16 @@ func (*handler) GroupResources(appServicePlan *models.Resource, resources []*mod
 	appServicePlanNode.ContainedIn = box
 	appServicePlanNode.SetPosition(0, 0)
 
-	seenGroups := map[string]bool{}
+	seenGroups := set.New[string]()
 
 	resourcesInAppServicePlan = list.Filter(resourcesInAppServicePlan, func(r *node.ResourceAndNode) bool {
 		n := r.Node.GetParentOrThis()
 
-		if seenGroups[n.Id()] {
+		if seenGroups.Contains(n.Id()) {
 			return false
 		}
 
-		seenGroups[n.Id()] = true
+		seenGroups.Add(n.Id())
 
 		return true
 	})
@@ -110,7 +111,8 @@ func (*handler) GroupResources(appServicePlan *models.Resource, resources []*mod
 	// move all resources in the app service plan into the box
 	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
 
-	node.ScaleDownAndSetIconRelativeTo(appServicePlanNode, box, node.BOTTOM_LEFT)
+	appServicePlanNode.SetDimensions(appServicePlanNodeGeometry.Width/2, appServicePlanNodeGeometry.Height/2)
+	node.SetIconRelativeTo(appServicePlanNode, box, node.BOTTOM_LEFT)
 
 	// add an explicit dependency to the subnet
 	appServicePlan.DependsOn = append(appServicePlan.DependsOn, *firstAppServiceSubnet)

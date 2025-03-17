@@ -22,7 +22,7 @@ func FanOut[T any](functions []func() ([]T, error)) ([]T, error) {
 
 	workers := int(math.Max(math.Sqrt(float64(len(functions))), 1))
 
-	log.Printf("fetch resources using %v workers", workers)
+	log.Printf("fetching resources using %v workers", workers)
 
 	// fan-out
 	for range workers {
