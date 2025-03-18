@@ -125,43 +125,61 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 	return resources, nil
 }
 
+func getRecordsInZone(dnsZoneId string, resources []*models.Resource) []*models.Resource {
+	dnsRecords := list.Filter(resources, func(resource *models.Resource) bool {
+		return resource.Type == types.DNS_RECORD
+	})
+
+	dnsRecords = list.Filter(dnsRecords, func(dnsRecord *models.Resource) bool {
+		return list.Contains(dnsRecord.DependsOn, func(dependencyId string) bool {
+			return dependencyId == dnsZoneId
+		})
+	})
+
+	return dnsRecords
+}
+
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {
-	target, ok := resource.Properties["target"]
+	recordsInDnsZone := getRecordsInZone(resource.Id, resources)
 
-	if !ok {
-		return
-	}
-
-	// attempt to find the resource with the target IP
-	resourceWithIp := list.FirstOrDefault(resources, nil, func(nic *models.Resource) bool {
-		ip, ok := nic.Properties["ip"]
+	for _, dnsRecord := range recordsInDnsZone {
+		target, ok := dnsRecord.Properties["target"]
 
 		if !ok {
-			return false
+			return
 		}
 
-		return ip == target
-	})
+		// attempt to find the resource with the target IP
+		resourceWithIp := list.FirstOrDefault(resources, nil, func(nic *models.Resource) bool {
+			ip, ok := nic.Properties["ip"]
 
-	if resourceWithIp == nil {
-		// unable to find matching IP
-		return
+			if !ok {
+				return false
+			}
+
+			return ip == target
+		})
+
+		if resourceWithIp == nil {
+			// unable to find matching IP
+			return
+		}
+
+		// the resource that has the IP is likely a NIC. Search the attachedTo property
+		attachedTo, ok := resourceWithIp.Properties["attachedTo"]
+
+		if !ok {
+			return
+		}
+
+		attachedToResource := list.FirstOrDefault(resources, nil, func(resource *models.Resource) bool {
+			return attachedTo == strings.ToLower(resource.Id)
+		})
+
+		if attachedToResource == nil {
+			return
+		}
+
+		dnsRecord.DependsOn = append(dnsRecord.DependsOn, attachedToResource.Id)
 	}
-
-	// the resource that has the IP is likely a NIC. Search the attachedTo property
-	attachedTo, ok := resourceWithIp.Properties["attachedTo"]
-
-	if !ok {
-		return
-	}
-
-	attachedToResource := list.FirstOrDefault(resources, nil, func(resource *models.Resource) bool {
-		return attachedTo == strings.ToLower(resource.Id)
-	})
-
-	if attachedToResource == nil {
-		return
-	}
-
-	resource.DependsOn = append(resource.DependsOn, attachedToResource.Id)
 }

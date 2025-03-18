@@ -30,7 +30,7 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 		Height: HEIGHT,
 	}
 
-	return node.NewGeneric(map[string]interface{}{
+	return node.NewGeneric(map[string]any{
 		"style": STYLE,
 		"value": resource.Name,
 	}, &geometry)

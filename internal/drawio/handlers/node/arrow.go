@@ -9,12 +9,12 @@ import (
 )
 
 type Arrow struct {
-	values         map[string]interface{}
+	values         map[string]any
 	source, target string
 }
 
 func NewArrow(source, target string, style *string) *Arrow {
-	values := map[string]interface{}{
+	values := map[string]any{
 		"id":     guid.NewGuidAlphanumeric(),
 		"source": source,
 		"target": target,

@@ -71,7 +71,6 @@ func (*handler) GroupResources(resource *models.Resource, resources []*models.Re
 		Height: 0,
 	}, nil)
 
-	// TODO: problem at alle nodes er contained i subscription box = ingen pile
 	node.FillResourcesInBox(box, subscriptionResources, diagram.Padding, false)
 
 	subscriptionNode.SetProperty("parent", box.Id())
