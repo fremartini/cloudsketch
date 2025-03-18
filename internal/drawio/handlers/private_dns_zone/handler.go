@@ -43,7 +43,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return nil
 }
 
-func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
 }
 
@@ -73,7 +73,7 @@ func (*handler) GroupResources(privateDNSZone *models.Resource, resources []*mod
 	})
 
 	// move all resources in the private dns zone into the box
-	node.FillResourcesInBox(box, nodesToMove, diagram.Padding)
+	node.FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
 
 	privateDNSZoneNode.SetDimensions(privateDNSZoneNodeGeometry.Width/2, privateDNSZoneNodeGeometry.Height/2)
 	node.SetIconRelativeTo(privateDNSZoneNode, box, node.BOTTOM_LEFT)

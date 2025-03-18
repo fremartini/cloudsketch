@@ -2,6 +2,7 @@ package node
 
 import (
 	"cloudsketch/internal/drawio/models"
+	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
 	"log"
 	"math"
@@ -83,14 +84,14 @@ func SetIconRelativeTo(iconToMove *Node, relativeTo *Node, position int) {
 	iconToMove.SetPosition(x-iconToMoveGeometry.Width/2, y-iconToMoveGeometry.Height/2)
 }
 
-func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int) {
-	if false && len(resourcesInGrouping) > 3 {
+func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int, setResourceParent bool) {
+	/*if len(resourcesInGrouping) > 3 {
 		fillResourcesInBoxSquare(box, resourcesInGrouping, padding)
 
 		return
-	}
+	} */
 
-	fillResourcesInBoxLine(box, resourcesInGrouping, padding)
+	fillResourcesInBoxLine(box, resourcesInGrouping, padding, setResourceParent)
 }
 
 func tallestNode(resourcesInGrouping []*Node) int {
@@ -105,7 +106,7 @@ func tallestNode(resourcesInGrouping []*Node) int {
 	return tallest
 }
 
-func fillResourcesInBoxLine(box *Node, nodes []*Node, padding int) {
+func fillResourcesInBoxLine(box *Node, nodes []*Node, padding int, setResourceParent bool) {
 	tallestNode := tallestNode(nodes)
 
 	nextX := padding
@@ -117,8 +118,11 @@ func fillResourcesInBoxLine(box *Node, nodes []*Node, padding int) {
 
 		offsetY := boxGeometry.Height/2 - nodeToPlaceGeometry.Height/2
 
-		node.SetProperty("parent", box.Id())
-		node.ContainedIn = box
+		if setResourceParent {
+			node.SetProperty("parent", box.Id())
+			node.ContainedIn = box
+		}
+
 		node.SetPosition(nextX, offsetY)
 
 		nextX += nodeToPlaceGeometry.Width + padding
@@ -191,7 +195,8 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int) {
 }
 
 func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
-	sourceNode := (*resource_map)[source.Id].Node
+	// don't draw arrows to subscriptions
+	typeBlacklist = append(typeBlacklist, types.SUBSCRIPTION)
 
 	targetResources := list.Map(targets, func(target *models.Resource) *ResourceAndNode {
 		return (*resource_map)[target.Id]
@@ -204,9 +209,10 @@ func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Res
 		})
 	})
 
+	sourceNode := (*resource_map)[source.Id].Node
+
 	// remove entries that are in the same group
 	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
-
 		if sourceNode.ContainedIn == nil || target.Node.ContainedIn == nil {
 			return true
 		}

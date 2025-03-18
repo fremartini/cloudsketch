@@ -17,7 +17,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
+func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -104,4 +104,8 @@ func mapSubnetResources(subnets []*armnetwork.Subnet, vnetId string) ([]*models.
 	})
 
 	return resources, nil
+}
+
+func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {
+
 }

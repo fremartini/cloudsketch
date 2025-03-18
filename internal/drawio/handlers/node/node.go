@@ -10,13 +10,13 @@ import (
 
 type Node struct {
 	id          string
-	values      map[string]interface{}
+	values      map[string]any
 	geometry    *Geometry
 	ContainedIn *Node
 }
 
 func NewIcon(image, label string, geometry *Geometry, link *string) *Node {
-	values := map[string]interface{}{
+	values := map[string]any{
 		"style": fmt.Sprintf("image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=%s;labelBackgroundColor=none;", image),
 		"value": label,
 	}
@@ -29,7 +29,7 @@ func NewIcon(image, label string, geometry *Geometry, link *string) *Node {
 }
 
 func NewBox(geometry *Geometry, style *string) *Node {
-	values := map[string]interface{}{
+	values := map[string]any{
 		"value": "",
 		"style": "rounded=0;whiteSpace=wrap;html=1;",
 	}
@@ -42,7 +42,7 @@ func NewBox(geometry *Geometry, style *string) *Node {
 }
 
 func NewGroup(geometry *Geometry) *Node {
-	values := map[string]interface{}{
+	values := map[string]any{
 		"value":       "",
 		"style":       "group",
 		"connectable": "0",
@@ -51,7 +51,7 @@ func NewGroup(geometry *Geometry) *Node {
 	return NewGeneric(values, geometry)
 }
 
-func NewGeneric(values map[string]interface{}, geometry *Geometry) *Node {
+func NewGeneric(values map[string]any, geometry *Geometry) *Node {
 	id := guid.NewGuidAlphanumeric()
 
 	values["id"] = id

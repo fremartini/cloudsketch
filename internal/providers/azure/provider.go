@@ -36,7 +36,8 @@ import (
 )
 
 type handler interface {
-	Handle(ctx *azContext.Context) ([]*models.Resource, error)
+	GetResource(ctx *azContext.Context) ([]*models.Resource, error)
+	PostProcess(*models.Resource, []*models.Resource)
 }
 
 var (
@@ -95,23 +96,31 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 		return *cachedResources, filename, nil
 	}
 
-	resources, err := fetchAndMapResources(subscription, ctx)
+	resources, err := fetchResources(subscription, ctx)
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	postProcess(resources)
+
+	domainModels, err := mapResources(resources, subscription, ctx)
 
 	if err != nil {
 		return nil, "", err
 	}
 
 	// cache resources for next run
-	err = marshall.MarshallResources(filenameWithSuffix, resources)
+	err = marshall.MarshallResources(filenameWithSuffix, domainModels)
 
 	if err != nil {
 		return nil, "", err
 	}
 
-	return resources, filename, nil
+	return domainModels, filename, nil
 }
 
-func fetchAndMapResources(subscription *azContext.SubscriptionContext, ctx *azContext.Context) ([]*domainModels.Resource, error) {
+func fetchResources(subscription *azContext.SubscriptionContext, ctx *azContext.Context) ([]*models.Resource, error) {
 	resources, err := resource_group.New().Handle(ctx)
 
 	if err != nil {
@@ -130,7 +139,7 @@ func fetchAndMapResources(subscription *azContext.SubscriptionContext, ctx *azCo
 
 			handler := handlers[resource.Type]
 
-			return handler.Handle(&azContext.Context{
+			return handler.GetResource(&azContext.Context{
 				SubscriptionId:    ctx.SubscriptionId,
 				TenantId:          ctx.TenantId,
 				Credentials:       ctx.Credentials,
@@ -157,6 +166,22 @@ func fetchAndMapResources(subscription *azContext.SubscriptionContext, ctx *azCo
 		Type: types.SUBSCRIPTION,
 	})
 
+	return resources, nil
+}
+
+func postProcess(resources []*models.Resource) {
+	for _, resource := range resources {
+		handler, ok := handlers[resource.Type]
+
+		if !ok {
+			continue
+		}
+
+		handler.PostProcess(resource, resources)
+	}
+}
+
+func mapResources(resources []*models.Resource, subscription *azContext.SubscriptionContext, ctx *azContext.Context) ([]*domainModels.Resource, error) {
 	// all resources should have a dependency on the subscription. Except the subscription itself
 	for _, resource := range resources {
 		if resource.Id == subscription.ResourceId {

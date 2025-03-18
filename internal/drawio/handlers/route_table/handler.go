@@ -30,7 +30,7 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 		Height: HEIGHT,
 	}
 
-	return node.NewGeneric(map[string]interface{}{
+	return node.NewGeneric(map[string]any{
 		"style": STYLE,
 		"value": resource.Name,
 	}, &geometry)
@@ -40,7 +40,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return nil
 }
 
-func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
 }
 

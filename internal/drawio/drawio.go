@@ -56,17 +56,15 @@ import (
 	"log"
 )
 
-type handleFuncMap = map[string]handler
-
 type handler interface {
 	MapResource(*models.Resource) *node.Node
 	PostProcessIcon(*node.ResourceAndNode, *map[string]*node.ResourceAndNode) *node.Node
-	DrawDependency(*models.Resource, []*models.Resource, *map[string]*node.ResourceAndNode) []*node.Arrow
+	DrawDependencies(*models.Resource, []*models.Resource, *map[string]*node.ResourceAndNode) []*node.Arrow
 	GroupResources(*models.Resource, []*models.Resource, *map[string]*node.ResourceAndNode) []*node.Node
 }
 
 var (
-	commands handleFuncMap = handleFuncMap{
+	commands map[string]handler = map[string]handler{
 		ai_services.TYPE:                           ai_services.New(),
 		app_service.TYPE:                           app_service.New(),
 		app_service_plan.TYPE:                      app_service_plan.New(),
@@ -144,13 +142,13 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 	}
 
 	// some resources group other resources
-	groups := processGroups(resource_map)
+	groups := postProcessIcons(resource_map)
 
 	// some resources like vnets and subnets needs boxes draw around them, and their resources moved into them
-	boxes := addBoxes(resource_map)
+	boxes := groupResources(resource_map)
 
 	// with every DrawIO icon present, add the dependency arrows
-	dependencyArrows := addDependencyArrows(resource_map)
+	dependencyArrows := addDependencies(resource_map)
 
 	allResources := []*node.ResourceAndNode{}
 	for _, resource := range *resource_map {
@@ -248,23 +246,24 @@ func drawResource(resource *models.Resource, unhandled_resources *set.Set[string
 	}
 }
 
-func processGroups(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	groups := []*node.Node{}
+func postProcessIcons(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+	nodes := []*node.Node{}
 
 	for _, resource := range *resource_map {
-		groupToAdd := commands[resource.Resource.Type].PostProcessIcon(resource, resource_map)
+		nodeToAdd := commands[resource.Resource.Type].PostProcessIcon(resource, resource_map)
 
-		if groupToAdd == nil {
+		if nodeToAdd == nil {
 			continue
 		}
 
-		groups = append(groups, groupToAdd)
+		nodes = append(nodes, nodeToAdd)
 	}
-	return groups
+
+	return nodes
 }
 
-func addDependencyArrows(resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	var nodes []*node.Arrow
+func addDependencies(resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+	var arrows []*node.Arrow
 
 	for _, resourceAndNode := range *resource_map {
 		resource := resourceAndNode.Resource
@@ -285,19 +284,19 @@ func addDependencyArrows(resource_map *map[string]*node.ResourceAndNode) []*node
 			return true
 		})
 
-		dependencyResources := list.Map(dependencyIds, func(dependency string) *models.Resource {
+		resources := list.Map(dependencyIds, func(dependency string) *models.Resource {
 			return (*resource_map)[dependency].Resource
 		})
 
-		arrows := f.DrawDependency(resource, dependencyResources, resource_map)
+		arrowsToAdd := f.DrawDependencies(resource, resources, resource_map)
 
-		nodes = append(nodes, arrows...)
+		arrows = append(arrows, arrowsToAdd...)
 	}
 
-	return nodes
+	return arrows
 }
 
-func addBoxes(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func groupResources(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	resources := []*models.Resource{}
 
 	for _, resourceAndNode := range *resource_map {

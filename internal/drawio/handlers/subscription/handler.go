@@ -41,7 +41,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 
 }
 
-func (*handler) DrawDependency(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
 }
 
@@ -71,7 +71,7 @@ func (*handler) GroupResources(resource *models.Resource, resources []*models.Re
 		Height: 0,
 	}, nil)
 
-	node.FillResourcesInBox(box, subscriptionResources, diagram.Padding)
+	node.FillResourcesInBox(box, subscriptionResources, diagram.Padding, false)
 
 	subscriptionNode.SetProperty("parent", box.Id())
 	subscriptionNode.ContainedIn = box

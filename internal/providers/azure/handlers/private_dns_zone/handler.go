@@ -6,6 +6,7 @@ import (
 	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
 	"context"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/privatedns/armprivatedns"
 )
@@ -16,7 +17,7 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
+func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
 	clientFactory, err := armprivatedns.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
@@ -94,19 +95,91 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 		}
 	}
 
+	/*
+		Microsoft.Network/privateDnsZones/A
+		Microsoft.Network/privateDnsZones/SOA
+		Microsoft.Network/privateDnsZones/CNAME
+	*/
+
+	// only A record contains IP addresses
+	blacklist := []string{"Microsoft.Network/privateDnsZones/SOA", "Microsoft.Network/privateDnsZones/CNAME"}
+
+	records = list.Filter(records, func(record *armprivatedns.RecordSet) bool {
+		return !list.Contains(blacklist, func(blacklistItem string) bool {
+			return *record.Type == blacklistItem
+		})
+	})
+
 	resources := list.Map(records, func(record *armprivatedns.RecordSet) *models.Resource {
 		return &models.Resource{
 			Id:        *record.ID,
 			Name:      *record.Name,
 			Type:      types.DNS_RECORD,
 			DependsOn: []string{dnsZoneId},
+			Properties: map[string]string{
+				"target": *record.Properties.ARecords[0].IPv4Address,
+			},
 		}
 	})
 
-	// dont show @ records
-	resources = list.Filter(resources, func(record *models.Resource) bool {
-		return record.Name != "@"
+	return resources, nil
+}
+
+func getRecordsInZone(dnsZoneId string, resources []*models.Resource) []*models.Resource {
+	dnsRecords := list.Filter(resources, func(resource *models.Resource) bool {
+		return resource.Type == types.DNS_RECORD
 	})
 
-	return resources, nil
+	dnsRecords = list.Filter(dnsRecords, func(dnsRecord *models.Resource) bool {
+		return list.Contains(dnsRecord.DependsOn, func(dependencyId string) bool {
+			return dependencyId == dnsZoneId
+		})
+	})
+
+	return dnsRecords
+}
+
+func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {
+	recordsInDnsZone := getRecordsInZone(resource.Id, resources)
+
+	for _, dnsRecord := range recordsInDnsZone {
+		target, ok := dnsRecord.Properties["target"]
+
+		if !ok {
+			return
+		}
+
+		// attempt to find the resource with the target IP
+		resourceWithIp := list.FirstOrDefault(resources, nil, func(nic *models.Resource) bool {
+			ip, ok := nic.Properties["ip"]
+
+			if !ok {
+				return false
+			}
+
+			return ip == target
+		})
+
+		if resourceWithIp == nil {
+			// unable to find matching IP
+			return
+		}
+
+		// the resource that has the IP is likely a NIC. Search the attachedTo property
+		attachedTo, ok := resourceWithIp.Properties["attachedTo"]
+
+		if !ok {
+			return
+		}
+
+		attachedToResource := list.FirstOrDefault(resources, nil, func(resource *models.Resource) bool {
+			return attachedTo == strings.ToLower(resource.Id)
+		})
+
+		if attachedToResource == nil {
+			return
+		}
+
+		dnsRecord.DependsOn = append(dnsRecord.DependsOn, attachedToResource.Id)
+	}
 }
