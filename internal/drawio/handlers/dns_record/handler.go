@@ -53,7 +53,13 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 	sourceNode := (*resource_map)[source.Id].Node
 
 	arrows := list.Fold(targetResources, []*node.Arrow{}, func(target *node.ResourceAndNode, acc []*node.Arrow) []*node.Arrow {
-		return append(acc, node.NewArrow(sourceNode.Id(), target.Node.Id(), nil))
+		targetNode := target.Node
+
+		if target.Resource.Type == types.PRIVATE_ENDPOINT {
+			targetNode = targetNode.ContainedIn
+		}
+
+		return append(acc, node.NewArrow(sourceNode.Id(), targetNode.Id(), nil))
 	})
 
 	return arrows
