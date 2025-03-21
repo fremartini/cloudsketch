@@ -127,7 +127,7 @@ func fetchResources(subscription *azContext.SubscriptionContext, ctx *azContext.
 		return nil, err
 	}
 
-	resourcesWithHandlers, resourcesWithoutHandlers := list.GroupBy(resources, func(resource *models.Resource) bool {
+	resourcesWithHandlers, resourcesWithoutHandlers := list.Split(resources, func(resource *models.Resource) bool {
 		_, ok := handlers[resource.Type]
 
 		return ok

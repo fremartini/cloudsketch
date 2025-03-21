@@ -49,23 +49,48 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 }
 
 func (*handler) GroupResources(dataFactory *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	nodes := []*node.Node{}
-
 	resourcesInDataFactory := getResourcesInDataFactory(resources, dataFactory.Id, resource_map)
 
+	// the resouces in the data factory can include its private endpoint, this needs to be handled differently
+	resourcesInDataFactory, attachedResources := list.Split(resourcesInDataFactory, func(ran *node.ResourceAndNode) bool {
+		if ran.Resource.Type != types.PRIVATE_ENDPOINT {
+			return true
+		}
+
+		attachedTo, ok := ran.Resource.Properties["attachedTo"]
+
+		if !ok || attachedTo != dataFactory.Id {
+			return true
+		}
+
+		return attachedTo != dataFactory.Id
+	})
+
 	dataFactoryNode := (*resource_map)[dataFactory.Id].Node
-	dataFactoryNodeGeometry := dataFactoryNode.GetGeometry()
+	dataFactoryGroup := dataFactoryNode.GetParentOrThis()
+	dataFactoryGroupGeometry := dataFactoryGroup.GetGeometry()
 
 	box := node.NewBox(&node.Geometry{
-		X:      dataFactoryNodeGeometry.X,
-		Y:      dataFactoryNodeGeometry.Y,
+		X:      dataFactoryGroupGeometry.X,
+		Y:      dataFactoryGroupGeometry.Y,
 		Width:  0,
 		Height: 0,
 	}, &STYLE)
 
-	dataFactoryNode.SetProperty("parent", box.Id())
-	dataFactoryNode.ContainedIn = box
-	dataFactoryNode.SetPosition(0, 0)
+	if len(attachedResources) > 0 {
+		dataFactoryNode.SetDimensions(dataFactoryNode.GetGeometry().Width/2, dataFactoryNode.GetGeometry().Height/2)
+
+		for _, attachedResource := range attachedResources {
+			attachedResource.Node.SetDimensions(attachedResource.Node.GetGeometry().Width/2, attachedResource.Node.GetGeometry().Height/2)
+			node.SetIconRelativeTo(attachedResource.Node, dataFactoryNode, node.TOP_RIGHT)
+		}
+	}
+
+	dataFactoryGroup.SetDimensions(dataFactoryGroupGeometry.Width/2, dataFactoryGroupGeometry.Height/2)
+
+	dataFactoryGroup.SetProperty("parent", box.Id())
+	dataFactoryGroup.ContainedIn = box
+	dataFactoryGroup.SetPosition(0, 0)
 
 	nodesToMove := list.Map(resourcesInDataFactory, func(r *node.ResourceAndNode) *node.Node {
 		return r.Node.GetParentOrThis()
@@ -73,13 +98,9 @@ func (*handler) GroupResources(dataFactory *models.Resource, resources []*models
 
 	// move all resources in the adf into the box
 	node.FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
+	node.SetIconRelativeTo(dataFactoryGroup, box, node.BOTTOM_LEFT)
 
-	dataFactoryNode.SetDimensions(dataFactoryNodeGeometry.Width/2, dataFactoryNodeGeometry.Height/2)
-	node.SetIconRelativeTo(dataFactoryNode, box, node.BOTTOM_LEFT)
-
-	nodes = append(nodes, box)
-
-	return nodes
+	return []*node.Node{box}
 }
 
 func getResourcesInDataFactory(resources []*models.Resource, adfId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {

@@ -64,7 +64,7 @@ func Fold[T, K any](v []T, acc K, f func(T, K) K) K {
 	return acc
 }
 
-func GroupBy[T any](v []T, f func(T) bool) ([]T, []T) {
+func Split[T any](v []T, f func(T) bool) ([]T, []T) {
 	bucketA := Filter(v, f)
 
 	bucketB := Filter(v, func(e T) bool {

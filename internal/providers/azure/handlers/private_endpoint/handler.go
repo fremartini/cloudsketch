@@ -48,6 +48,11 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		dependsOn = append(dependsOn, t)
 	}
 
+	for _, asg := range pe.Properties.ApplicationSecurityGroups {
+		t := strings.ToLower(*asg.ID)
+		dependsOn = append(dependsOn, t)
+	}
+
 	pe_subnet := pe.Properties.Subnet.ID
 
 	if pe_subnet != nil {

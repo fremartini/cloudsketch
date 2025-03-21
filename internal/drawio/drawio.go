@@ -156,7 +156,7 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 	}
 
 	// private endpoints, NICs, PIPs and NSGs are typically used as icons attached to other icons and should therefore be rendered in front of them
-	allResourcesThatShouldGoInFront, allResourcesThatShouldGoInBack := list.GroupBy(allResources, func(n *node.ResourceAndNode) bool {
+	allResourcesThatShouldGoInFront, allResourcesThatShouldGoInBack := list.Split(allResources, func(n *node.ResourceAndNode) bool {
 		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE || n.Resource.Type == types.PUBLIC_IP_ADDRESS || n.Resource.Type == types.NETWORK_SECURITY_GROUP
 	})
 
