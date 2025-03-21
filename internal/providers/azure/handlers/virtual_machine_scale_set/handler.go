@@ -32,6 +32,11 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	dependsOn := []string{}
 
+	for identity := range vmss.Identity.UserAssignedIdentities {
+		t := strings.ToLower(identity)
+		dependsOn = append(dependsOn, t)
+	}
+
 	subnet := strings.ToLower(*vmss.Properties.VirtualMachineProfile.NetworkProfile.NetworkInterfaceConfigurations[0].Properties.IPConfigurations[0].Properties.Subnet.ID)
 
 	dependsOn = append(dependsOn, subnet)

@@ -41,6 +41,7 @@ const (
 	STORAGE_ACCOUNT                       = "STORAGE_ACCOUNT"
 	SUBNET                                = "SUBNET"
 	SUBSCRIPTION                          = "SUBSCRIPTION"
+	USER_ASSIGNED_IDENTITY                = "USER_ASSIGNED_IDENTITY"
 	VIRTUAL_MACHINE                       = "VIRTUAL_MACHINE"
 	VIRTUAL_MACHINE_SCALE_SET             = "VIRTUAL_MACHINE_SCALE_SET"
 	VIRTUAL_NETWORK                       = "VIRTUAL_NETWORK"

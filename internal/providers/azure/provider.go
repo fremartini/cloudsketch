@@ -265,6 +265,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.STORAGE_ACCOUNT:                       domainTypes.STORAGE_ACCOUNT,
 		types.SUBNET:                                domainTypes.SUBNET,
 		types.SUBSCRIPTION:                          domainTypes.SUBSCRIPTION,
+		types.USER_ASSIGNED_IDENTITY:                domainTypes.USER_ASSIGNED_IDENTITY,
 		types.VIRTUAL_MACHINE:                       domainTypes.VIRTUAL_MACHINE,
 		types.VIRTUAL_MACHINE_SCALE_SET:             domainTypes.VIRTUAL_MACHINE_SCALE_SET,
 		types.VIRTUAL_NETWORK:                       domainTypes.VIRTUAL_NETWORK,

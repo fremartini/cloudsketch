@@ -46,6 +46,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/storage_account"
 	"cloudsketch/internal/drawio/handlers/subnet"
 	"cloudsketch/internal/drawio/handlers/subscription"
+	"cloudsketch/internal/drawio/handlers/user_assigned_identity"
 	"cloudsketch/internal/drawio/handlers/virtual_machine"
 	"cloudsketch/internal/drawio/handlers/virtual_machine_scale_set"
 	"cloudsketch/internal/drawio/handlers/virtual_network"
@@ -105,6 +106,7 @@ var (
 		storage_account.TYPE:                       storage_account.New(),
 		subnet.TYPE:                                subnet.New(),
 		subscription.TYPE:                          subscription.New(),
+		user_assigned_identity.TYPE:                user_assigned_identity.New(),
 		virtual_machine.TYPE:                       virtual_machine.New(),
 		virtual_machine_scale_set.TYPE:             virtual_machine_scale_set.New(),
 		virtual_network.TYPE:                       virtual_network.New(),
@@ -156,8 +158,11 @@ func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) err
 	}
 
 	// private endpoints, NICs, PIPs and NSGs are typically used as icons attached to other icons and should therefore be rendered in front of them
+	overlayResources := []string{types.PRIVATE_ENDPOINT, types.NETWORK_INTERFACE, types.PUBLIC_IP_ADDRESS, types.NETWORK_SECURITY_GROUP, types.ROUTE_TABLE}
 	allResourcesThatShouldGoInFront, allResourcesThatShouldGoInBack := list.Split(allResources, func(n *node.ResourceAndNode) bool {
-		return n.Resource.Type == types.PRIVATE_ENDPOINT || n.Resource.Type == types.NETWORK_INTERFACE || n.Resource.Type == types.PUBLIC_IP_ADDRESS || n.Resource.Type == types.NETWORK_SECURITY_GROUP
+		return list.Contains(overlayResources, func(typ string) bool {
+			return n.Resource.Type == typ
+		})
 	})
 
 	allResources = append(allResourcesThatShouldGoInBack, allResourcesThatShouldGoInFront...)

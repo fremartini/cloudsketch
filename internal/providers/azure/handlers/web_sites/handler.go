@@ -64,6 +64,11 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	dependsOn = append(dependsOn, resourceDependenciesInTags...)
 
+	for identity := range app.Identity.UserAssignedIdentities {
+		t := strings.ToLower(identity)
+		dependsOn = append(dependsOn, t)
+	}
+
 	properties := map[string]string{}
 
 	configValues := config.Properties.AzureStorageAccounts[ctx.ResourceName]

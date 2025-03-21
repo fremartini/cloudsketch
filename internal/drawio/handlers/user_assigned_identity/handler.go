@@ -1,4 +1,4 @@
-package route_table
+package user_assigned_identity
 
 import (
 	"cloudsketch/internal/drawio/handlers/node"
@@ -10,10 +10,10 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = types.ROUTE_TABLE
-	IMAGE  = images.ROUTE_TABLE
-	WIDTH  = 64
-	HEIGHT = 62
+	TYPE   = types.USER_ASSIGNED_IDENTITY
+	IMAGE  = images.USER_ASSIGNED_IDENTITY
+	WIDTH  = 68
+	HEIGHT = 66
 )
 
 func New() *handler {

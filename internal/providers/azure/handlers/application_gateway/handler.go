@@ -4,6 +4,7 @@ import (
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/models"
 	"context"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v6"
 )
@@ -35,6 +36,11 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	if publicIp := getPublicIpAddress(&agw); publicIp != nil {
 		dependsOn = append(dependsOn, *publicIp)
+	}
+
+	for identity := range agw.Identity.UserAssignedIdentities {
+		t := strings.ToLower(identity)
+		dependsOn = append(dependsOn, t)
 	}
 
 	resource := &models.Resource{
