@@ -242,6 +242,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
 		types.BASTION:                               domainTypes.BASTION,
+		types.CONNECTION:                            domainTypes.CONNECTION,
 		types.CONTAINER_REGISTRY:                    domainTypes.CONTAINER_REGISTRY,
 		types.COSMOS:                                domainTypes.COSMOS,
 		types.DATA_FACTORY:                          domainTypes.DATA_FACTORY,

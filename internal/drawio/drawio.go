@@ -11,6 +11,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/application_insights"
 	"cloudsketch/internal/drawio/handlers/application_security_group"
 	"cloudsketch/internal/drawio/handlers/bastion"
+	"cloudsketch/internal/drawio/handlers/connection"
 	"cloudsketch/internal/drawio/handlers/container_registry"
 	"cloudsketch/internal/drawio/handlers/cosmos"
 	"cloudsketch/internal/drawio/handlers/data_factory"
@@ -79,6 +80,7 @@ var (
 		application_insights.TYPE:                  application_insights.New(),
 		application_security_group.TYPE:            application_security_group.New(),
 		bastion.TYPE:                               bastion.New(),
+		connection.TYPE:                            connection.New(),
 		container_registry.TYPE:                    container_registry.New(),
 		cosmos.TYPE:                                cosmos.New(),
 		data_factory.TYPE:                          data_factory.New(),

@@ -1,6 +1,7 @@
 package virtual_network_gateway
 
 import (
+	"cloudsketch/internal/list"
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/models"
 	"context"
@@ -49,7 +50,47 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	resources := []*models.Resource{resource}
 
+	connections, err := getConnections(clientFactory, ctx, ctx.ResourceId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resources = append(resources, connections...)
+
 	return resources, nil
+}
+
+func getConnections(clientFactory *armnetwork.ClientFactory, ctx *azContext.Context, virtualNetworkGatewayId string) ([]*models.Resource, error) {
+	connectionsClient := clientFactory.NewVirtualNetworkGatewayConnectionsClient()
+
+	pager := connectionsClient.NewListPager(ctx.ResourceGroupName, nil)
+
+	var connections []*armnetwork.VirtualNetworkGatewayConnection
+	for pager.More() {
+		resp, err := pager.NextPage(context.Background())
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.VirtualNetworkGatewayConnectionListResult.Value != nil {
+			connections = append(connections, resp.VirtualNetworkGatewayConnectionListResult.Value...)
+		}
+	}
+
+	models := list.Map(connections, func(connection *armnetwork.VirtualNetworkGatewayConnection) *models.Resource {
+		return &models.Resource{
+			Id:   *connection.ID,
+			Name: *connection.Name,
+			Type: *connection.Type,
+			DependsOn: []string{
+				virtualNetworkGatewayId,
+				*connection.Properties.Peer.ID,
+			},
+		}
+	})
+
+	return models, nil
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {

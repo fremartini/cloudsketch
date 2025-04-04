@@ -8,6 +8,7 @@ const (
 	APPLICATION_INSIGHTS                  = "img/lib/azure2/devops/Application_Insights.svg"
 	APPLICATION_SECURITY_GROUP            = "img/lib/azure2/security/Application_Security_Groups.svg"
 	BASTION                               = "img/lib/azure2/networking/Bastions.svg"
+	CONNECTION                            = "img/lib/azure2/networking/Connections.svg"
 	CONTAINER_REGISTRY                    = "img/lib/azure2/containers/Container_Registries.svg"
 	COSMOS                                = "img/lib/azure2/databases/Azure_Cosmos_DB.svg"
 	DATA_FACTORY                          = "img/lib/azure2/databases/Data_Factory.svg"

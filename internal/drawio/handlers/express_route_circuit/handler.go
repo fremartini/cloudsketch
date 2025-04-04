@@ -58,12 +58,13 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 }
 
 func interfacesToString(interfaces any) []string {
-	s := make([]string, len(interfaces.([]any)))
+	size := len(interfaces.([]any))
+	ts := make([]string, size)
 	for i, v := range interfaces.([]any) {
-		s[i] = fmt.Sprint(v)
+		ts[i] = fmt.Sprint(v)
 	}
 
-	return s
+	return ts
 }
 
 func addDependencyToPeering(peering string, source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {

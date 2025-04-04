@@ -8,6 +8,7 @@ const (
 	APPLICATION_INSIGHTS                  = "APPLICATION_INSIGHTS"
 	APPLICATION_SECURITY_GROUP            = "APPLICATION_SECURITY_GROUP"
 	BASTION                               = "BASTION"
+	CONNECTION                            = "CONNECTION"
 	CONTAINER_REGISTRY                    = "CONTAINER_REGISTRY"
 	COSMOS                                = "COSMOS"
 	DATA_FACTORY                          = "DATA_FACTORY"

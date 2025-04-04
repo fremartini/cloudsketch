@@ -8,6 +8,7 @@ const (
 	APPLICATION_INSIGHTS                  = "Microsoft.Insights/components"
 	APPLICATION_SECURITY_GROUP            = "Microsoft.Network/applicationSecurityGroups"
 	BASTION                               = "Microsoft.Network/bastionHosts"
+	CONNECTION                            = "Microsoft.Network/connections"
 	CONTAINER_REGISTRY                    = "Microsoft.ContainerRegistry/registries"
 	COSMOS                                = "Microsoft.DocumentDB/databaseAccounts"
 	DATA_FACTORY                          = "Microsoft.DataFactory/factories"
