@@ -14,6 +14,9 @@ const (
 	DATA_FACTORY_INTEGRATION_RUNTIME      = VIRTUAL_MACHINE
 	DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT = PRIVATE_ENDPOINT
 	DATABRICKS_WORKSPACE                  = "img/lib/azure2/analytics/Azure_Databricks.svg"
+	DNS_RESOLVER                          = "img/lib/azure2/networking/DNS_Private_Resolver.svg"
+	EXPRESS_ROUTE_CIRCUIT                 = "img/lib/azure2/networking/ExpressRoute_Circuits.svg"
+	EXPRESS_ROUTE_GATEWAY                 = VIRTUAL_NETWORK_GATEWAY
 	FUNCTION_APP                          = "img/lib/azure2/compute/Function_Apps.svg"
 	KEY_VAULT                             = "img/lib/azure2/security/Key_Vaults.svg"
 	LOAD_BALANCER                         = "img/lib/azure2/networking/Load_Balancers.svg"
@@ -41,7 +44,10 @@ const (
 	SUBNET                                = "img/lib/azure2/networking/Subnet.svg"
 	SUBSCRIPTION                          = "img/lib/azure2/general/Subscriptions.svg"
 	USER_ASSIGNED_IDENTITY                = "img/lib/azure2/identity/Managed_Identities.svg"
+	VIRTUAL_HUB                           = "img/lib/azure2/networking/Virtual_WAN_Hub.svg"
 	VIRTUAL_MACHINE                       = "img/lib/azure2/compute/Virtual_Machine.svg"
 	VIRTUAL_MACHINE_SCALE_SET             = "img/lib/azure2/compute/VM_Scale_Sets.svg"
 	VIRTUAL_NETWORK                       = "img/lib/azure2/networking/Virtual_Networks.svg"
+	VIRTUAL_NETWORK_GATEWAY               = "img/lib/azure2/networking/Virtual_Network_Gateways.svg"
+	VIRTUAL_WAN                           = "img/lib/azure2/networking/Virtual_WANs.svg"
 )

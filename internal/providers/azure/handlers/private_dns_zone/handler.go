@@ -116,7 +116,7 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 			Name:      *record.Name,
 			Type:      types.DNS_RECORD,
 			DependsOn: []string{dnsZoneId},
-			Properties: map[string]string{
+			Properties: map[string]any{
 				"target": *record.Properties.ARecords[0].IPv4Address,
 			},
 		}

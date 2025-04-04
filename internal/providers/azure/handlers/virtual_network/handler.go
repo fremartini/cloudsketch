@@ -51,7 +51,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 func mapVirtualNetworkResource(vnet *armnetwork.VirtualNetworksClientGetResponse, ctx *azContext.Context) (*models.Resource, error) {
 	addressPrefixes := vnet.Properties.AddressSpace.AddressPrefixes
 
-	properties := map[string]string{}
+	properties := map[string]any{}
 
 	// virtual networks can have multiple address ranges. If this is the case hide the size
 	if len(addressPrefixes) == 1 {
@@ -88,7 +88,7 @@ func mapSubnetResources(subnets []*armnetwork.Subnet, vnetId string) ([]*models.
 
 		addressPrefix := strings.Split(*subnet.Properties.AddressPrefix, "/")[1]
 
-		properties := map[string]string{
+		properties := map[string]any{
 			"size": addressPrefix,
 		}
 

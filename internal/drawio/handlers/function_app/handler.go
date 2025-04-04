@@ -42,10 +42,21 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	arrows := node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
 
-	// add a dependency to the associated storage account.
+	arrows = append(arrows, addDependencyToAssociatedStorageAccount(source, resource_map)...)
+
+	arrows = append(arrows, addDependencyToOutboundSubnet(source, resource_map)...)
+
+	return arrows
+}
+
+func addDependencyToAssociatedStorageAccount(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	// this property only contains the name of the storage account
 	// so it has to be uniquely identified among all storage accounts
-	storageAccountName := source.Properties["storageAccountName"]
+	storageAccountName, ok := source.Properties["storageAccountName"].(string)
+
+	if !ok {
+		return []*node.Arrow{}
+	}
 
 	resources := []*node.ResourceAndNode{}
 	for _, r := range *resource_map {
@@ -58,16 +69,18 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 
 	sourceNode := (*resource_map)[source.Id].Node
 
-	arrows = append(arrows, node.NewArrow(sourceNode.Id(), resources[0].Node.Id(), nil))
+	return []*node.Arrow{node.NewArrow(sourceNode.Id(), resources[0].Node.Id(), nil)}
+}
 
-	// add a dependency to the outbound subnet
+func addDependencyToOutboundSubnet(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	dashed := "dashed=1"
 
-	outboundSubnet := source.Properties["outboundSubnet"]
+	outboundSubnet := source.Properties["outboundSubnet"].(string)
 	outboundSubnetNode := (*resource_map)[outboundSubnet].Node
-	arrows = append(arrows, node.NewArrow(sourceNode.Id(), outboundSubnetNode.Id(), &dashed))
 
-	return arrows
+	sourceNode := (*resource_map)[source.Id].Node
+
+	return []*node.Arrow{node.NewArrow(sourceNode.Id(), outboundSubnetNode.Id(), &dashed)}
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

@@ -36,7 +36,7 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 
 func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
 	// storage accounts might have multiple private endpoints attached to it
-	attachedTo, ok := (*resource_map)[privateEndpoint.Resource.Properties["attachedTo"]]
+	attachedTo, ok := (*resource_map)[privateEndpoint.Resource.Properties["attachedTo"].(string)]
 
 	// the attached resource was not rendered likely because its in another subscription
 	if !ok {

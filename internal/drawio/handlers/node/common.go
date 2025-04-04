@@ -89,7 +89,7 @@ func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int, set
 		fillResourcesInBoxSquare(box, resourcesInGrouping, padding)
 
 		return
-	} */
+	}*/
 
 	fillResourcesInBoxLine(box, resourcesInGrouping, padding, setResourceParent)
 }

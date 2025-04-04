@@ -35,7 +35,7 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(nic *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
-	attachedTo, ok := (*resource_map)[nic.Resource.Properties["attachedTo"]]
+	attachedTo, ok := (*resource_map)[nic.Resource.Properties["attachedTo"].(string)]
 
 	// dont draw NICs if they are attached to a blacklisted resource
 	if !ok || isBlacklistedResource(attachedTo.Resource.Type) {

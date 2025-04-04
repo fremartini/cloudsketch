@@ -1,4 +1,4 @@
-package logic_app
+package virtual_network_gateway
 
 import (
 	"cloudsketch/internal/drawio/handlers/node"
@@ -10,10 +10,10 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = types.LOGIC_APP
-	IMAGE  = images.LOGIC_APP
-	WIDTH  = 67
-	HEIGHT = 52
+	TYPE   = types.VIRTUAL_NETWORK_GATEWAY
+	IMAGE  = images.VIRTUAL_NETWORK_GATEWAY
+	WIDTH  = 52
+	HEIGHT = 69
 )
 
 func New() *handler {
@@ -38,22 +38,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	arrows := node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.SUBNET})
-
-	arrows = append(arrows, addDependencyToOutboundSubnet(source, resource_map)...)
-
-	return arrows
-}
-
-func addDependencyToOutboundSubnet(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	dashed := "dashed=1"
-
-	outboundSubnet := source.Properties["outboundSubnet"].(string)
-	outboundSubnetNode := (*resource_map)[outboundSubnet].Node
-
-	sourceNode := (*resource_map)[source.Id].Node
-
-	return []*node.Arrow{node.NewArrow(sourceNode.Id(), outboundSubnetNode.Id(), &dashed)}
+	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

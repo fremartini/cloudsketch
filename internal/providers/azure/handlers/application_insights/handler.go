@@ -28,8 +28,12 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	properties := map[string]string{}
-	dependsOn := []string{*ai.Properties.WorkspaceResourceID}
+	properties := map[string]any{}
+	dependsOn := []string{}
+
+	if ai.Properties.WorkspaceResourceID != nil {
+		dependsOn = append(dependsOn, *ai.Properties.WorkspaceResourceID)
+	}
 
 	resource := &models.Resource{
 		Id:         *ai.ID,

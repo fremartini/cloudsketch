@@ -69,7 +69,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		dependsOn = append(dependsOn, t)
 	}
 
-	properties := map[string]string{}
+	properties := map[string]any{}
 
 	configValues := config.Properties.AzureStorageAccounts[ctx.ResourceName]
 

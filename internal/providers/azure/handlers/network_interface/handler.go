@@ -30,7 +30,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	properties := map[string]string{}
+	properties := map[string]any{}
 
 	properties["ip"] = *nic.Properties.IPConfigurations[0].Properties.PrivateIPAddress
 
