@@ -14,7 +14,6 @@ const (
 	DATA_FACTORY_INTEGRATION_RUNTIME      = VIRTUAL_MACHINE
 	DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT = PRIVATE_ENDPOINT
 	DATABRICKS_WORKSPACE                  = "img/lib/azure2/analytics/Azure_Databricks.svg"
-	DNS_RESOLVER                          = "img/lib/azure2/networking/DNS_Private_Resolver.svg"
 	EXPRESS_ROUTE_CIRCUIT                 = "img/lib/azure2/networking/ExpressRoute_Circuits.svg"
 	EXPRESS_ROUTE_GATEWAY                 = VIRTUAL_NETWORK_GATEWAY
 	FUNCTION_APP                          = "img/lib/azure2/compute/Function_Apps.svg"
@@ -28,6 +27,7 @@ const (
 	NETWORK_INTERFACE                     = "img/lib/azure2/networking/Network_Interfaces.svg"
 	NETWORK_SECURITY_GROUP                = "img/lib/azure2/networking/Network_Security_Groups.svg"
 	POSTGRES_SQL_SERVER                   = "img/lib/azure2/databases/Azure_Database_PostgreSQL_Server.svg"
+	PRIVATE_DNS_RESOLVER                  = "img/lib/azure2/networking/DNS_Private_Resolver.svg"
 	PRIVATE_DNS_ZONE                      = "img/lib/azure2/networking/DNS_Zones.svg"
 	PRIVATE_ENDPOINT                      = "img/lib/azure2/other/Private_Endpoints.svg"
 	PRIVATE_LINK_SERVICE                  = "img/lib/azure2/networking/Private_Link_Service.svg"

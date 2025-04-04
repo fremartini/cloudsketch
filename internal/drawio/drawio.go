@@ -19,7 +19,6 @@ import (
 	"cloudsketch/internal/drawio/handlers/databricks_workspace"
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/dns_record"
-	"cloudsketch/internal/drawio/handlers/dns_resolver"
 	"cloudsketch/internal/drawio/handlers/express_route_circuit"
 	"cloudsketch/internal/drawio/handlers/express_route_gateway"
 	"cloudsketch/internal/drawio/handlers/function_app"
@@ -34,6 +33,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/network_security_group"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/handlers/postgres_sql_server"
+	"cloudsketch/internal/drawio/handlers/private_dns_resolver"
 	"cloudsketch/internal/drawio/handlers/private_dns_zone"
 	"cloudsketch/internal/drawio/handlers/private_endpoint"
 	"cloudsketch/internal/drawio/handlers/private_link_service"
@@ -86,7 +86,6 @@ var (
 		data_factory_managed_private_endpoint.TYPE: data_factory_managed_private_endpoint.New(),
 		databricks_workspace.TYPE:                  databricks_workspace.New(),
 		dns_record.TYPE:                            dns_record.New(),
-		dns_resolver.TYPE:                          dns_resolver.New(),
 		express_route_circuit.TYPE:                 express_route_circuit.New(),
 		express_route_gateway.TYPE:                 express_route_gateway.New(),
 		function_app.TYPE:                          function_app.New(),
@@ -100,6 +99,7 @@ var (
 		network_interface.TYPE:                     network_interface.New(),
 		network_security_group.TYPE:                network_security_group.New(),
 		postgres_sql_server.TYPE:                   postgres_sql_server.New(),
+		private_dns_resolver.TYPE:                  private_dns_resolver.New(),
 		private_dns_zone.TYPE:                      private_dns_zone.New(),
 		private_endpoint.TYPE:                      private_endpoint.New(),
 		private_link_service.TYPE:                  private_link_service.New(),

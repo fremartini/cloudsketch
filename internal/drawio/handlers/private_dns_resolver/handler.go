@@ -1,4 +1,4 @@
-package dns_resolver
+package private_dns_resolver
 
 import (
 	"cloudsketch/internal/drawio/handlers/node"
@@ -10,8 +10,8 @@ import (
 type handler struct{}
 
 const (
-	TYPE   = types.DNS_RESOLVER
-	IMAGE  = images.DNS_RESOLVER
+	TYPE   = types.PRIVATE_DNS_RESOLVER
+	IMAGE  = images.PRIVATE_DNS_RESOLVER
 	WIDTH  = 68
 	HEIGHT = 60
 )
