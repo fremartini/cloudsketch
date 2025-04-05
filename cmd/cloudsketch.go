@@ -38,7 +38,7 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 
 		outFile := strings.ReplaceAll(file, ".json", ".drawio")
 
-		return drawio.New().WriteDiagram(outFile, *resources)
+		return drawio.New(*resources).WriteDiagram(outFile)
 	}
 
 	// otherwise treat it as a subscription id
@@ -54,7 +54,7 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 
 	filename = fmt.Sprintf("%s.drawio", filename)
 
-	if err := drawio.New().WriteDiagram(filename, resources); err != nil {
+	if err := drawio.New(resources).WriteDiagram(filename); err != nil {
 		return err
 	}
 

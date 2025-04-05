@@ -2,7 +2,6 @@ package concurrency
 
 import (
 	"log"
-	"math"
 	"sync"
 )
 
@@ -20,7 +19,7 @@ func FanOut[T any](functions []func() ([]T, error)) ([]T, error) {
 	results := make(chan result[T], len(functions))
 	var wg sync.WaitGroup
 
-	workers := int(math.Max(math.Sqrt(float64(len(functions))), 1))
+	workers := 2
 
 	log.Printf("fetching resources using %v workers", workers)
 

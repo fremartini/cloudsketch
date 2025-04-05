@@ -10,18 +10,23 @@ import (
 	"cloudsketch/internal/providers/azure/handlers/application_insights"
 	"cloudsketch/internal/providers/azure/handlers/bastion"
 	"cloudsketch/internal/providers/azure/handlers/data_factory"
+	"cloudsketch/internal/providers/azure/handlers/express_route_circuit"
+	"cloudsketch/internal/providers/azure/handlers/express_route_gateway"
 	"cloudsketch/internal/providers/azure/handlers/key_vault"
 	"cloudsketch/internal/providers/azure/handlers/load_balancer"
 	"cloudsketch/internal/providers/azure/handlers/nat_gateway"
 	"cloudsketch/internal/providers/azure/handlers/network_interface"
+	"cloudsketch/internal/providers/azure/handlers/private_dns_resolver"
 	"cloudsketch/internal/providers/azure/handlers/private_dns_zone"
 	"cloudsketch/internal/providers/azure/handlers/private_endpoint"
 	"cloudsketch/internal/providers/azure/handlers/private_link_service"
 	"cloudsketch/internal/providers/azure/handlers/resource_group"
 	"cloudsketch/internal/providers/azure/handlers/subscription"
+	"cloudsketch/internal/providers/azure/handlers/virtual_hub"
 	"cloudsketch/internal/providers/azure/handlers/virtual_machine"
 	"cloudsketch/internal/providers/azure/handlers/virtual_machine_scale_set"
 	"cloudsketch/internal/providers/azure/handlers/virtual_network"
+	"cloudsketch/internal/providers/azure/handlers/virtual_network_gateway"
 	"cloudsketch/internal/providers/azure/handlers/web_sites"
 	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
@@ -45,17 +50,22 @@ var (
 		types.APPLICATION_GATEWAY:       application_gateway.New(),
 		types.APPLICATION_INSIGHTS:      application_insights.New(),
 		types.DATA_FACTORY:              data_factory.New(),
+		types.EXPRESS_ROUTE_CIRCUIT:     express_route_circuit.New(),
+		types.EXPRESS_ROUTE_GATEWAY:     express_route_gateway.New(),
 		types.BASTION:                   bastion.New(),
 		types.KEY_VAULT:                 key_vault.New(),
 		types.LOAD_BALANCER:             load_balancer.New(),
 		types.NAT_GATEWAY:               nat_gateway.New(),
 		types.NETWORK_INTERFACE:         network_interface.New(),
+		types.PRIVATE_DNS_RESOLVER:      private_dns_resolver.New(),
 		types.PRIVATE_DNS_ZONE:          private_dns_zone.New(),
 		types.PRIVATE_ENDPOINT:          private_endpoint.New(),
 		types.PRIVATE_LINK_SERVICE:      private_link_service.New(),
+		types.VIRTUAL_HUB:               virtual_hub.New(),
 		types.VIRTUAL_MACHINE:           virtual_machine.New(),
 		types.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New(),
 		types.VIRTUAL_NETWORK:           virtual_network.New(),
+		types.VIRTUAL_NETWORK_GATEWAY:   virtual_network_gateway.New(),
 		types.WEB_SITES:                 web_sites.New(),
 	}
 )
@@ -203,10 +213,11 @@ func mapToDomainResource(resource *models.Resource, tenantId string, unhandled_t
 	properties := resource.Properties
 
 	if properties == nil {
-		properties = map[string]string{}
+		properties = map[string][]string{}
 	}
 
-	properties["link"] = generateAzurePortalLink(resource, tenantId)
+	link := generateAzurePortalLink(resource, tenantId)
+	properties["link"] = []string{link}
 
 	// Azure is not consistent regarding casing. Ensure all id's are lowercase
 	return &domainModels.Resource{
@@ -232,6 +243,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
 		types.BASTION:                               domainTypes.BASTION,
+		types.CONNECTION:                            domainTypes.CONNECTION,
 		types.CONTAINER_REGISTRY:                    domainTypes.CONTAINER_REGISTRY,
 		types.COSMOS:                                domainTypes.COSMOS,
 		types.DATA_FACTORY:                          domainTypes.DATA_FACTORY,
@@ -239,6 +251,9 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT: domainTypes.DATA_FACTORY_MANAGED_PRIVATE_ENDPOINT,
 		types.DATABRICKS_WORKSPACE:                  domainTypes.DATABRICKS_WORKSPACE,
 		types.DNS_RECORD:                            domainTypes.DNS_RECORD,
+		types.PRIVATE_DNS_RESOLVER:                  domainTypes.PRIVATE_DNS_RESOLVER,
+		types.EXPRESS_ROUTE_CIRCUIT:                 domainTypes.EXPRESS_ROUTE_CIRCUIT,
+		types.EXPRESS_ROUTE_GATEWAY:                 domainTypes.EXPRESS_ROUTE_GATEWAY,
 		types.FUNCTION_APP:                          domainTypes.FUNCTION_APP,
 		types.KEY_VAULT:                             domainTypes.KEY_VAULT,
 		types.LOAD_BALANCER:                         domainTypes.LOAD_BALANCER,
@@ -266,9 +281,12 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.SUBNET:                                domainTypes.SUBNET,
 		types.SUBSCRIPTION:                          domainTypes.SUBSCRIPTION,
 		types.USER_ASSIGNED_IDENTITY:                domainTypes.USER_ASSIGNED_IDENTITY,
+		types.VIRTUAL_HUB:                           domainTypes.VIRTUAL_HUB,
 		types.VIRTUAL_MACHINE:                       domainTypes.VIRTUAL_MACHINE,
 		types.VIRTUAL_MACHINE_SCALE_SET:             domainTypes.VIRTUAL_MACHINE_SCALE_SET,
 		types.VIRTUAL_NETWORK:                       domainTypes.VIRTUAL_NETWORK,
+		types.VIRTUAL_NETWORK_GATEWAY:               domainTypes.VIRTUAL_NETWORK_GATEWAY,
+		types.VIRTUAL_WAN:                           domainTypes.VIRTUAL_WAN,
 	}
 
 	domainType, ok := domainTypes[azType]

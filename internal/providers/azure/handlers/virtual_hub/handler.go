@@ -1,4 +1,4 @@
-package nat_gateway
+package virtual_hub
 
 import (
 	azContext "cloudsketch/internal/providers/azure/context"
@@ -15,36 +15,30 @@ func New() *handler {
 }
 
 func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	client, err := armnetwork.NewNatGatewaysClient(ctx.SubscriptionId, ctx.Credentials, nil)
+	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	ngw, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	client := clientFactory.NewVirtualHubsClient()
+
+	vhub, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
 
 	if err != nil {
 		return nil, err
-	}
-
-	dependsOn := []string{}
-
-	for _, subnet := range ngw.Properties.Subnets {
-		dependsOn = append(dependsOn, *subnet.ID)
-	}
-
-	for _, pip := range ngw.Properties.PublicIPAddresses {
-		dependsOn = append(dependsOn, *pip.ID)
 	}
 
 	resource := &models.Resource{
-		Id:        *ngw.ID,
-		Name:      *ngw.Name,
-		Type:      *ngw.Type,
-		DependsOn: dependsOn,
+		Id:        ctx.ResourceId,
+		Name:      ctx.ResourceName,
+		Type:      *vhub.Type,
+		DependsOn: []string{*vhub.Properties.VirtualWan.ID},
 	}
 
-	return []*models.Resource{resource}, nil
+	resources := []*models.Resource{resource}
+
+	return resources, nil
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {

@@ -11,6 +11,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/application_insights"
 	"cloudsketch/internal/drawio/handlers/application_security_group"
 	"cloudsketch/internal/drawio/handlers/bastion"
+	"cloudsketch/internal/drawio/handlers/connection"
 	"cloudsketch/internal/drawio/handlers/container_registry"
 	"cloudsketch/internal/drawio/handlers/cosmos"
 	"cloudsketch/internal/drawio/handlers/data_factory"
@@ -19,6 +20,8 @@ import (
 	"cloudsketch/internal/drawio/handlers/databricks_workspace"
 	"cloudsketch/internal/drawio/handlers/diagram"
 	"cloudsketch/internal/drawio/handlers/dns_record"
+	"cloudsketch/internal/drawio/handlers/express_route_circuit"
+	"cloudsketch/internal/drawio/handlers/express_route_gateway"
 	"cloudsketch/internal/drawio/handlers/function_app"
 	"cloudsketch/internal/drawio/handlers/key_vault"
 	"cloudsketch/internal/drawio/handlers/load_balancer"
@@ -31,6 +34,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/network_security_group"
 	"cloudsketch/internal/drawio/handlers/node"
 	"cloudsketch/internal/drawio/handlers/postgres_sql_server"
+	"cloudsketch/internal/drawio/handlers/private_dns_resolver"
 	"cloudsketch/internal/drawio/handlers/private_dns_zone"
 	"cloudsketch/internal/drawio/handlers/private_endpoint"
 	"cloudsketch/internal/drawio/handlers/private_link_service"
@@ -47,9 +51,12 @@ import (
 	"cloudsketch/internal/drawio/handlers/subnet"
 	"cloudsketch/internal/drawio/handlers/subscription"
 	"cloudsketch/internal/drawio/handlers/user_assigned_identity"
+	"cloudsketch/internal/drawio/handlers/virtual_hub"
 	"cloudsketch/internal/drawio/handlers/virtual_machine"
 	"cloudsketch/internal/drawio/handlers/virtual_machine_scale_set"
 	"cloudsketch/internal/drawio/handlers/virtual_network"
+	"cloudsketch/internal/drawio/handlers/virtual_network_gateway"
+	"cloudsketch/internal/drawio/handlers/virtual_wan"
 	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
@@ -73,6 +80,7 @@ var (
 		application_insights.TYPE:                  application_insights.New(),
 		application_security_group.TYPE:            application_security_group.New(),
 		bastion.TYPE:                               bastion.New(),
+		connection.TYPE:                            connection.New(),
 		container_registry.TYPE:                    container_registry.New(),
 		cosmos.TYPE:                                cosmos.New(),
 		data_factory.TYPE:                          data_factory.New(),
@@ -80,6 +88,8 @@ var (
 		data_factory_managed_private_endpoint.TYPE: data_factory_managed_private_endpoint.New(),
 		databricks_workspace.TYPE:                  databricks_workspace.New(),
 		dns_record.TYPE:                            dns_record.New(),
+		express_route_circuit.TYPE:                 express_route_circuit.New(),
+		express_route_gateway.TYPE:                 express_route_gateway.New(),
 		function_app.TYPE:                          function_app.New(),
 		key_vault.TYPE:                             key_vault.New(),
 		load_balancer.TYPE:                         load_balancer.New(),
@@ -91,6 +101,7 @@ var (
 		network_interface.TYPE:                     network_interface.New(),
 		network_security_group.TYPE:                network_security_group.New(),
 		postgres_sql_server.TYPE:                   postgres_sql_server.New(),
+		private_dns_resolver.TYPE:                  private_dns_resolver.New(),
 		private_dns_zone.TYPE:                      private_dns_zone.New(),
 		private_endpoint.TYPE:                      private_endpoint.New(),
 		private_link_service.TYPE:                  private_link_service.New(),
@@ -107,17 +118,23 @@ var (
 		subnet.TYPE:                                subnet.New(),
 		subscription.TYPE:                          subscription.New(),
 		user_assigned_identity.TYPE:                user_assigned_identity.New(),
+		virtual_hub.TYPE:                           virtual_hub.New(),
 		virtual_machine.TYPE:                       virtual_machine.New(),
 		virtual_machine_scale_set.TYPE:             virtual_machine_scale_set.New(),
 		virtual_network.TYPE:                       virtual_network.New(),
+		virtual_network_gateway.TYPE:               virtual_network_gateway.New(),
+		virtual_wan.TYPE:                           virtual_wan.New(),
 	}
 )
 
 type drawio struct {
+	resources []*models.Resource
 }
 
-func New() *drawio {
-	return &drawio{}
+func New(resources []*models.Resource) *drawio {
+	return &drawio{
+		resources: resources,
+	}
 }
 
 func removeBlacklistedHandlers() {
@@ -133,11 +150,11 @@ func removeBlacklistedHandlers() {
 	}
 }
 
-func (d *drawio) WriteDiagram(filename string, resources []*models.Resource) error {
+func (d *drawio) WriteDiagram(filename string) error {
 	removeBlacklistedHandlers()
 
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
-	resource_map, err := populateResourceMap(resources)
+	resource_map, err := populateResourceMap(d.resources)
 
 	if err != nil {
 		return err

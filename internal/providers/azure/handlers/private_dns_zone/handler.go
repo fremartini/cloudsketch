@@ -116,8 +116,8 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 			Name:      *record.Name,
 			Type:      types.DNS_RECORD,
 			DependsOn: []string{dnsZoneId},
-			Properties: map[string]string{
-				"target": *record.Properties.ARecords[0].IPv4Address,
+			Properties: map[string][]string{
+				"target": {*record.Properties.ARecords[0].IPv4Address},
 			},
 		}
 	})
@@ -157,7 +157,7 @@ func (h *handler) PostProcess(resource *models.Resource, resources []*models.Res
 				return false
 			}
 
-			return ip == target
+			return ip[0] == target[0]
 		})
 
 		if resourceWithIp == nil {
@@ -173,7 +173,7 @@ func (h *handler) PostProcess(resource *models.Resource, resources []*models.Res
 		}
 
 		attachedToResource := list.FirstOrDefault(resources, nil, func(resource *models.Resource) bool {
-			return attachedTo == strings.ToLower(resource.Id)
+			return attachedTo[0] == strings.ToLower(resource.Id)
 		})
 
 		if attachedToResource == nil {
