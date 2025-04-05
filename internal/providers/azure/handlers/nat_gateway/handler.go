@@ -27,7 +27,6 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	properties := map[string]any{}
 	dependsOn := []string{}
 
 	for _, subnet := range ngw.Properties.Subnets {
@@ -39,11 +38,10 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 	}
 
 	resource := &models.Resource{
-		Id:         *ngw.ID,
-		Name:       *ngw.Name,
-		Type:       *ngw.Type,
-		DependsOn:  dependsOn,
-		Properties: properties,
+		Id:        *ngw.ID,
+		Name:      *ngw.Name,
+		Type:      *ngw.Type,
+		DependsOn: dependsOn,
 	}
 
 	return []*models.Resource{resource}, nil

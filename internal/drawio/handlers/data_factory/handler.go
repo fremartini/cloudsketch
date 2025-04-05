@@ -59,11 +59,11 @@ func (*handler) GroupResources(dataFactory *models.Resource, resources []*models
 
 		attachedTo, ok := ran.Resource.Properties["attachedTo"]
 
-		if !ok || attachedTo != dataFactory.Id {
+		if !ok || attachedTo[0] != dataFactory.Id {
 			return true
 		}
 
-		return attachedTo != dataFactory.Id
+		return attachedTo[0] != dataFactory.Id
 	})
 
 	dataFactoryNode := (*resource_map)[dataFactory.Id].Node

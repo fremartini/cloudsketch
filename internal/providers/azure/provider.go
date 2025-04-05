@@ -213,10 +213,11 @@ func mapToDomainResource(resource *models.Resource, tenantId string, unhandled_t
 	properties := resource.Properties
 
 	if properties == nil {
-		properties = map[string]any{}
+		properties = map[string][]string{}
 	}
 
-	properties["link"] = generateAzurePortalLink(resource, tenantId)
+	link := generateAzurePortalLink(resource, tenantId)
+	properties["link"] = []string{link}
 
 	// Azure is not consistent regarding casing. Ensure all id's are lowercase
 	return &domainModels.Resource{

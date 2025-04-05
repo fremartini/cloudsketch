@@ -69,19 +69,19 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		dependsOn = append(dependsOn, t)
 	}
 
-	properties := map[string]any{}
+	properties := map[string][]string{}
 
 	configValues := config.Properties.AzureStorageAccounts[ctx.ResourceName]
 
 	if configValues != nil {
-		properties["storageAccountName"] = strings.ToLower(*configValues.AccountName)
+		properties["storageAccountName"] = []string{strings.ToLower(*configValues.AccountName)}
 	}
 
 	// Microsoft.Web/sites has multiple subcategories. Use these instead
 	subType := WEBSITES_KIND_MAP[*app.Kind]
 
 	outboundSubnetId := app.Properties.VirtualNetworkSubnetID
-	properties["outboundSubnet"] = strings.ToLower(*outboundSubnetId)
+	properties["outboundSubnet"] = []string{strings.ToLower(*outboundSubnetId)}
 
 	planId := app.Properties.ServerFarmID
 	dependsOn = append(dependsOn, *planId)

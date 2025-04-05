@@ -32,7 +32,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	vhub := gateway.Properties.VirtualHub.ID
 
-	properties := map[string]any{
+	properties := map[string][]string{
 		"peerings": list.Map(gateway.Properties.ExpressRouteConnections, func(connection *armnetwork.ExpressRouteConnection) string {
 			return *connection.Properties.ExpressRouteCircuitPeering.ID
 		}),

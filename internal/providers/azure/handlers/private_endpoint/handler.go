@@ -30,7 +30,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	properties := map[string]any{}
+	properties := map[string][]string{}
 	dependsOn := []string{}
 
 	if len(pe.Properties.PrivateLinkServiceConnections) > 0 {
@@ -38,7 +38,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 		if pe_target != nil {
 			t := strings.ToLower(*pe_target)
-			properties["attachedTo"] = t
+			properties["attachedTo"] = []string{t}
 			dependsOn = append(dependsOn, t)
 		}
 	}

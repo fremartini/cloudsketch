@@ -6,7 +6,6 @@ import (
 	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
-	"fmt"
 )
 
 type handler struct{}
@@ -48,23 +47,11 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 		return arrows
 	}
 
-	peeringsStr := interfacesToString(peerings)
-
-	for _, peering := range peeringsStr {
-		arrows = append(arrows, addDependencyToPeering(peering, source, resource_map)...)
-	}
+	arrows = list.Fold(peerings, arrows, func(peering string, acc []*node.Arrow) []*node.Arrow {
+		return addDependencyToPeering(peering, source, resource_map)
+	})
 
 	return arrows
-}
-
-func interfacesToString(interfaces any) []string {
-	size := len(interfaces.([]any))
-	ts := make([]string, size)
-	for i, v := range interfaces.([]any) {
-		ts[i] = fmt.Sprint(v)
-	}
-
-	return ts
 }
 
 func addDependencyToPeering(peering string, source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
@@ -78,13 +65,11 @@ func addDependencyToPeering(peering string, source *models.Resource, resource_ma
 			return false
 		}
 
-		gatewayPeeringsStr, ok := ran.Resource.Properties["peerings"]
+		gatewayPeerings, ok := ran.Resource.Properties["peerings"]
 
 		if !ok {
 			return false
 		}
-
-		gatewayPeerings := interfacesToString(gatewayPeeringsStr)
 
 		return list.Contains(gatewayPeerings, func(gatewayPeering string) bool {
 			return gatewayPeering == peering

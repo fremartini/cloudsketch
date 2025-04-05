@@ -30,7 +30,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	properties := map[string]any{
+	properties := map[string][]string{
 		"peerings": list.Map(circuit.Properties.Peerings, func(peering *armnetwork.ExpressRouteCircuitPeering) string {
 			return *peering.ID
 		}),

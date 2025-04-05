@@ -48,8 +48,13 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 func addDependencyToOutboundSubnet(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	dashed := "dashed=1"
 
-	outboundSubnet := source.Properties["outboundSubnet"].(string)
-	outboundSubnetNode := (*resource_map)[outboundSubnet].Node
+	outboundSubnet, ok := source.Properties["outboundSubnet"]
+
+	if !ok {
+		return []*node.Arrow{}
+	}
+
+	outboundSubnetNode := (*resource_map)[outboundSubnet[0]].Node
 
 	sourceNode := (*resource_map)[source.Id].Node
 

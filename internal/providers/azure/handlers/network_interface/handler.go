@@ -30,15 +30,15 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	properties := map[string]any{}
+	properties := map[string][]string{}
 
-	properties["ip"] = *nic.Properties.IPConfigurations[0].Properties.PrivateIPAddress
+	properties["ip"] = []string{*nic.Properties.IPConfigurations[0].Properties.PrivateIPAddress}
 
 	target := getAttachedResource(nic.Properties)
 
 	if target != nil {
 		t := strings.ToLower(*target)
-		properties["attachedTo"] = t
+		properties["attachedTo"] = []string{t}
 	}
 
 	dependsOn := []string{}

@@ -52,7 +52,7 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 func addDependencyToAssociatedStorageAccount(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	// this property only contains the name of the storage account
 	// so it has to be uniquely identified among all storage accounts
-	storageAccountName, ok := source.Properties["storageAccountName"].(string)
+	storageAccountName, ok := source.Properties["storageAccountName"]
 
 	if !ok {
 		return []*node.Arrow{}
@@ -64,7 +64,7 @@ func addDependencyToAssociatedStorageAccount(source *models.Resource, resource_m
 	}
 
 	resources = list.Filter(resources, func(ran *node.ResourceAndNode) bool {
-		return ran.Resource.Type == types.STORAGE_ACCOUNT && strings.Contains(ran.Resource.Name, storageAccountName)
+		return ran.Resource.Type == types.STORAGE_ACCOUNT && strings.Contains(ran.Resource.Name, storageAccountName[0])
 	})
 
 	sourceNode := (*resource_map)[source.Id].Node
@@ -75,8 +75,13 @@ func addDependencyToAssociatedStorageAccount(source *models.Resource, resource_m
 func addDependencyToOutboundSubnet(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	dashed := "dashed=1"
 
-	outboundSubnet := source.Properties["outboundSubnet"].(string)
-	outboundSubnetNode := (*resource_map)[outboundSubnet].Node
+	outboundSubnet, ok := source.Properties["outboundSubnet"]
+
+	if !ok {
+		return []*node.Arrow{}
+	}
+
+	outboundSubnetNode := (*resource_map)[outboundSubnet[0]].Node
 
 	sourceNode := (*resource_map)[source.Id].Node
 
