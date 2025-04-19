@@ -36,7 +36,7 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 		Height: HEIGHT,
 	}
 
-	subnetSize := resource.Properties["size"]
+	subnetSize := resource.Properties["size"][0]
 
 	name := fmt.Sprintf("%s/%s", resource.Name, subnetSize)
 

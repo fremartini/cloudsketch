@@ -85,25 +85,13 @@ func SetIconRelativeTo(iconToMove *Node, relativeTo *Node, position int) {
 }
 
 func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int, setResourceParent bool) {
-	/*if len(resourcesInGrouping) > 3 {
-		fillResourcesInBoxSquare(box, resourcesInGrouping, padding)
+	if len(resourcesInGrouping) < 3 {
+		fillResourcesInBoxLine(box, resourcesInGrouping, padding, setResourceParent)
 
 		return
-	}*/
+	}
 
-	fillResourcesInBoxLine(box, resourcesInGrouping, padding, setResourceParent)
-}
-
-func tallestNode(resourcesInGrouping []*Node) int {
-	heightValues := list.Map(resourcesInGrouping, func(r *Node) int {
-		return r.GetGeometry().Height
-	})
-
-	tallest := list.Fold(heightValues, 0, func(acc, height int) int {
-		return int(math.Max(float64(acc), float64(height)))
-	})
-
-	return tallest
+	fillResourcesInBoxSquare(box, resourcesInGrouping, padding, setResourceParent)
 }
 
 func fillResourcesInBoxLine(box *Node, nodes []*Node, padding int, setResourceParent bool) {
@@ -133,8 +121,7 @@ func fillResourcesInBoxLine(box *Node, nodes []*Node, padding int, setResourcePa
 	boxGeometry.Width += padding
 }
 
-func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int) {
-
+func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResourceParent bool) {
 	// sort by volume
 	sort.Slice(nodes, func(i, j int) bool {
 		volumeA := nodes[i].GetGeometry().Height + nodes[i].GetGeometry().Width
@@ -144,54 +131,69 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int) {
 	})
 
 	// number of rows and columns is the square root of the elements in the group
-	maxRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(nodes)))))
+	numRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(nodes)))))
 
-	currIndx := 0
+	currentResource := 0
 
 	nextX := padding
 	nextY := padding
 
 	boxGeometry := box.GetGeometry()
 
-	for row := 0; row < maxRowsAndColumns; row++ {
-		for column := 0; column < maxRowsAndColumns; column++ {
-			if currIndx > len(nodes)-1 {
+	for row := 0; row < numRowsAndColumns; row++ {
+		for column := 0; column < numRowsAndColumns; column++ {
+			if currentResource > len(nodes)-1 {
 				// no more elements
 				break
 			}
 
-			nodeToPlace := nodes[currIndx]
+			nodeToPlace := nodes[currentResource]
 			nodeToPlaceGeometry := nodeToPlace.GetGeometry()
 
 			if nodeToPlace.ContainedIn != nil {
 				nodeToPlaceGeometry = nodeToPlace.ContainedIn.geometry
 			}
 
-			nodeToPlace.SetProperty("parent", box.Id())
-			nodeToPlace.ContainedIn = box
+			if setResourceParent {
+				nodeToPlace.SetProperty("parent", box.Id())
+				nodeToPlace.ContainedIn = box
+			}
+
 			nodeToPlace.SetPosition(nextX, nextY)
 
 			nextX += nodeToPlaceGeometry.Width + padding
 
-			// width is only determined during the fist iteration
-			if row == 0 {
-				boxGeometry.Width += nodeToPlaceGeometry.Width + padding
-			}
-
-			currIndx++
+			boxGeometry.Width = maxInt32(boxGeometry.Width, nextX)
 
 			// last element, skip to new row
-			if column == maxRowsAndColumns-1 {
+			if column == numRowsAndColumns-1 {
 				nextX = padding
 				nextY += nodeToPlaceGeometry.Height + padding
-				boxGeometry.Height += nodeToPlaceGeometry.Height + padding
 			}
-		}
-	}
 
-	// off by one error
-	boxGeometry.Height += nodes[len(nodes)-1].GetGeometry().Height + padding
-	boxGeometry.Width += padding
+			boxGeometry.Height = maxInt32(boxGeometry.Height, nextY)
+
+			currentResource++
+		}
+
+		boxGeometry.Height += padding
+	}
+}
+
+func tallestNode(resourcesInGrouping []*Node) int {
+	heightValues := list.Map(resourcesInGrouping, func(r *Node) int {
+		return r.GetGeometry().Height
+	})
+
+	tallest := list.Fold(heightValues, 0, func(acc, height int) int {
+		return maxInt32(acc, height)
+	})
+
+	return tallest
+}
+
+func maxInt32(x, y int) int {
+	return int(math.Max(float64(x), float64(y)))
 }
 
 func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
