@@ -7,11 +7,13 @@ import (
 	"cloudsketch/internal/marshall"
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/handlers/application_gateway"
+	"cloudsketch/internal/providers/azure/handlers/application_group"
 	"cloudsketch/internal/providers/azure/handlers/application_insights"
 	"cloudsketch/internal/providers/azure/handlers/bastion"
 	"cloudsketch/internal/providers/azure/handlers/data_factory"
 	"cloudsketch/internal/providers/azure/handlers/express_route_circuit"
 	"cloudsketch/internal/providers/azure/handlers/express_route_gateway"
+	"cloudsketch/internal/providers/azure/handlers/host_pool"
 	"cloudsketch/internal/providers/azure/handlers/key_vault"
 	"cloudsketch/internal/providers/azure/handlers/load_balancer"
 	"cloudsketch/internal/providers/azure/handlers/nat_gateway"
@@ -34,8 +36,8 @@ import (
 	"log"
 	"strings"
 
-	domainModels "cloudsketch/internal/drawio/models"
-	domainTypes "cloudsketch/internal/drawio/types"
+	domainModels "cloudsketch/internal/frontends/drawio/models"
+	domainTypes "cloudsketch/internal/frontends/drawio/types"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 )
@@ -48,10 +50,12 @@ type handler interface {
 var (
 	handlers map[string]handler = map[string]handler{
 		types.APPLICATION_GATEWAY:       application_gateway.New(),
+		types.APPLICATION_GROUP:         application_group.New(),
 		types.APPLICATION_INSIGHTS:      application_insights.New(),
 		types.DATA_FACTORY:              data_factory.New(),
 		types.EXPRESS_ROUTE_CIRCUIT:     express_route_circuit.New(),
 		types.EXPRESS_ROUTE_GATEWAY:     express_route_gateway.New(),
+		types.HOST_POOL:                 host_pool.New(),
 		types.BASTION:                   bastion.New(),
 		types.KEY_VAULT:                 key_vault.New(),
 		types.LOAD_BALANCER:             load_balancer.New(),
@@ -240,6 +244,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
 		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE_PLAN,
 		types.APPLICATION_GATEWAY:                   domainTypes.APPLICATION_GATEWAY,
+		types.APPLICATION_GROUP:                     domainTypes.APPLICATION_GROUP,
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
 		types.BASTION:                               domainTypes.BASTION,
@@ -255,6 +260,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.EXPRESS_ROUTE_CIRCUIT:                 domainTypes.EXPRESS_ROUTE_CIRCUIT,
 		types.EXPRESS_ROUTE_GATEWAY:                 domainTypes.EXPRESS_ROUTE_GATEWAY,
 		types.FUNCTION_APP:                          domainTypes.FUNCTION_APP,
+		types.HOST_POOL:                             domainTypes.HOST_POOL,
 		types.KEY_VAULT:                             domainTypes.KEY_VAULT,
 		types.LOAD_BALANCER:                         domainTypes.LOAD_BALANCER,
 		types.LOAD_BALANCER_FRONTEND:                domainTypes.LOAD_BALANCER_FRONTEND,
@@ -287,6 +293,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.VIRTUAL_NETWORK:                       domainTypes.VIRTUAL_NETWORK,
 		types.VIRTUAL_NETWORK_GATEWAY:               domainTypes.VIRTUAL_NETWORK_GATEWAY,
 		types.VIRTUAL_WAN:                           domainTypes.VIRTUAL_WAN,
+		types.WORKSPACE:                             domainTypes.WORKSPACE,
 	}
 
 	domainType, ok := domainTypes[azType]

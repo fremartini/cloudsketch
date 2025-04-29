@@ -2,6 +2,7 @@
 *.drawio*
 *.json
 *.exe
+*.dot
 !example/example.json
 !example/example.drawio
 .cloudsketch

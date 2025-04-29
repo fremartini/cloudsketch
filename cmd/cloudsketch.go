@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"cloudsketch/internal/drawio"
-	"cloudsketch/internal/drawio/models"
+	"cloudsketch/internal/frontends/drawio"
+	"cloudsketch/internal/frontends/drawio/models"
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers/azure"
 	"context"
@@ -51,6 +51,12 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 	if err != nil {
 		return err
 	}
+	/*
+		filename = fmt.Sprintf("%s.dot", filename)
+
+		if err := dot.New(resources).WriteDiagram(filename); err != nil {
+			return err
+		}*/
 
 	filename = fmt.Sprintf("%s.drawio", filename)
 
