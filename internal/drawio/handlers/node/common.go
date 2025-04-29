@@ -85,12 +85,12 @@ func SetIconRelativeTo(iconToMove *Node, relativeTo *Node, position int) {
 }
 
 func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int, setResourceParent bool) {
-	if len(resourcesInGrouping) < 3 {
-		fillResourcesInBoxLine(box, resourcesInGrouping, padding, setResourceParent)
+	/*	if len(resourcesInGrouping) < 3 {
+			fillResourcesInBoxLine(box, resourcesInGrouping, padding, setResourceParent)
 
-		return
-	}
-
+			return
+		}
+	*/
 	fillResourcesInBoxSquare(box, resourcesInGrouping, padding, setResourceParent)
 }
 
@@ -130,6 +130,8 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 		return volumeA < volumeB
 	})
 
+	padding = 0
+
 	// number of rows and columns is the square root of the elements in the group
 	numRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(nodes)))))
 
@@ -140,12 +142,19 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 
 	boxGeometry := box.GetGeometry()
 
-	currentResourceIndex := 0
+	currentResourceIndex := -1
 	for row := 0; row < numRowsAndColumns; row++ {
+		tallestNodeThisRow := 0
+
 		for column := 0; column < numRowsAndColumns; column++ {
+			currentResourceIndex++
+
 			if currentResourceIndex > len(nodes)-1 {
+				nextY += tallestNodeThisRow + padding
+				boxGeometry.Height += nextY
+
 				// no more elements
-				break
+				return
 			}
 
 			nodeToPlace := nodes[currentResourceIndex]
@@ -169,28 +178,13 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 			// last element, skip to new row
 			if column == numRowsAndColumns-1 {
 				nextX = startX
-				nextY += nodeToPlaceGeometry.Height + padding
-				boxGeometry.Height = nextY
 			}
 
-			boxGeometry.Height = maxInt32(boxGeometry.Height, nodeToPlaceGeometry.Height+padding)
-
-			currentResourceIndex++
+			tallestNodeThisRow = maxInt32(tallestNodeThisRow, nodeToPlaceGeometry.Height)
 		}
 
-		if currentResourceIndex > len(nodes)-1 {
-			// no more elements
-			break
-		}
-
-		nodeToPlace := nodes[currentResourceIndex]
-		nodeToPlaceGeometry := nodeToPlace.GetGeometry()
-
-		if nodeToPlace.ContainedIn != nil {
-			nodeToPlaceGeometry = nodeToPlace.ContainedIn.geometry
-		}
-
-		boxGeometry.Height += nodeToPlaceGeometry.Height + padding
+		nextY += tallestNodeThisRow + padding
+		boxGeometry.Height += nextY
 	}
 }
 
