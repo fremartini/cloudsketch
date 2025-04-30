@@ -11,13 +11,10 @@ import (
 )
 
 type dot struct {
-	resources []*models.Resource
 }
 
-func New(resources []*models.Resource) *dot {
-	return &dot{
-		resources: resources,
-	}
+func New() *dot {
+	return &dot{}
 }
 
 func removeChars(s string) string {
@@ -30,8 +27,8 @@ func removeChars(s string) string {
 	return s
 }
 
-func (d *dot) WriteDiagram(filename string) error {
-	tasks := list.Map(d.resources, func(r *models.Resource) *build_graph.Task {
+func (d *dot) WriteDiagram(resources []*models.Resource, filename string) error {
+	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
 		return build_graph.NewTask(r.Name, r.DependsOn, []string{}, []string{}, func() {})
 	})
 

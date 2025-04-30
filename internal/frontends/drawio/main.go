@@ -135,13 +135,10 @@ var (
 )
 
 type drawio struct {
-	resources []*models.Resource
 }
 
-func New(resources []*models.Resource) *drawio {
-	return &drawio{
-		resources: resources,
-	}
+func New() *drawio {
+	return &drawio{}
 }
 
 func removeBlacklistedHandlers() {
@@ -157,11 +154,11 @@ func removeBlacklistedHandlers() {
 	}
 }
 
-func (d *drawio) WriteDiagram(filename string) error {
+func (d *drawio) WriteDiagram(resources []*models.Resource, filename string) error {
 	removeBlacklistedHandlers()
 
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
-	resource_map, err := populateResourceMap(d.resources)
+	resource_map, err := populateResourceMap(resources)
 
 	if err != nil {
 		return err

@@ -16,7 +16,7 @@
 			"/subscriptions/00000000-0000-0000-0000-000000000000"
 		],
 		"Properties": {
-			"size": "21"
+			"size": ["21"]
 		}
 	},
 	{
@@ -29,7 +29,7 @@
 			"/subscriptions/00000000-0000-0000-0000-000000000000"
 		],
 		"Properties": {
-			"size": "22"
+			"size": ["22"]
 		}
 	},
 	{
@@ -53,7 +53,7 @@
 			"/subscriptions/00000000-0000-0000-0000-000000000000"
 		],
 		"Properties": {
-			"attachedTo": "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.compute/virtualmachines/example-vm"
+			"attachedTo": ["/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/example-resource-group/providers/microsoft.compute/virtualmachines/example-vm"]
 		}
 	},
 	{

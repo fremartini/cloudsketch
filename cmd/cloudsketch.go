@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"cloudsketch/internal/frontends"
+	"cloudsketch/internal/frontends/dot"
 	"cloudsketch/internal/frontends/drawio"
 	"cloudsketch/internal/frontends/drawio/models"
 	"cloudsketch/internal/marshall"
+	"cloudsketch/internal/providers"
 	"cloudsketch/internal/providers/azure"
 	"context"
 	"errors"
@@ -14,6 +17,16 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+var (
+	frontendmap map[string]frontends.Frontend = map[string]frontends.Frontend{
+		"drawio": drawio.New(),
+		"dot":    dot.New(),
+	}
+	providermap map[string]providers.Provider = map[string]providers.Provider{
+		"azure": azure.NewProvider(),
+	}
+)
+
 func newCloudsketch(_ context.Context, command *cli.Command) error {
 	args := command.Args().Slice()
 
@@ -22,6 +35,13 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 	}
 
 	fileOrSubscriptionId := args[0]
+
+	f := command.String("frontend")
+
+	p := command.String("provider")
+
+	log.Printf("target frontend is %s\n", f)
+	log.Printf("target provider is %s\n", p)
 
 	// command can either be a subscription id or a file name
 	if strings.HasSuffix(fileOrSubscriptionId, ".json") {
@@ -38,29 +58,25 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 
 		outFile := strings.ReplaceAll(file, ".json", ".drawio")
 
-		return drawio.New(*resources).WriteDiagram(outFile)
+		return drawio.New().WriteDiagram(*resources, outFile)
 	}
 
 	// otherwise treat it as a subscription id
 	subscriptionId := fileOrSubscriptionId
 
-	provider := azure.NewProvider()
+	provider := providermap[p]
 
 	resources, filename, err := provider.FetchResources(subscriptionId)
 
 	if err != nil {
 		return err
 	}
-	/*
-		filename = fmt.Sprintf("%s.dot", filename)
 
-		if err := dot.New(resources).WriteDiagram(filename); err != nil {
-			return err
-		}*/
+	frontend := frontendmap[f]
 
-	filename = fmt.Sprintf("%s.drawio", filename)
+	filename = fmt.Sprintf("%s.%s", filename, f)
 
-	if err := drawio.New(resources).WriteDiagram(filename); err != nil {
+	if err := frontend.WriteDiagram(resources, filename); err != nil {
 		return err
 	}
 
