@@ -36,35 +36,48 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 
 	fileOrSubscriptionId := args[0]
 
-	f := command.String("frontend")
+	frontendString := command.String("frontend")
 
-	p := command.String("provider")
+	frontend := frontendmap[frontendString]
 
-	log.Printf("target frontend is %s\n", f)
-	log.Printf("target provider is %s\n", p)
+	providerString := command.String("provider")
+
+	log.Printf("target frontend is %s\n", frontendString)
+	log.Printf("target provider is %s\n", providerString)
 
 	// command can either be a subscription id or a file name
 	if strings.HasSuffix(fileOrSubscriptionId, ".json") {
 		// if the file ends in .json, assume its a valid json file that contains previously populated Azure resources
-		file := fileOrSubscriptionId
-
-		log.Printf("using existing file %s\n", file)
-
-		resources, err := marshall.UnmarshallResources[[]*models.Resource](file)
-
-		if err != nil {
-			return err
-		}
-
-		outFile := strings.ReplaceAll(file, ".json", ".drawio")
-
-		return drawio.New().WriteDiagram(*resources, outFile)
+		return useExistingFile(fileOrSubscriptionId, frontendString, frontend)
 	}
 
 	// otherwise treat it as a subscription id
-	subscriptionId := fileOrSubscriptionId
+	return createNewFile(fileOrSubscriptionId, providerString, frontendString, frontend)
+}
 
-	provider := providermap[p]
+func useExistingFile(file, frontendString string, frontend frontends.Frontend) error {
+	log.Printf("using existing file %s\n", file)
+
+	resources, err := marshall.UnmarshallResources[[]*models.Resource](file)
+
+	if err != nil {
+		return err
+	}
+
+	outFile := strings.ReplaceAll(file, ".json", fmt.Sprintf(".%s", frontendString))
+
+	if err := frontend.WriteDiagram(*resources, outFile); err != nil {
+		return err
+	}
+
+	// execution succesful. Print the output file name
+	log.Print(outFile)
+
+	return nil
+}
+
+func createNewFile(subscriptionId, providerString, frontendString string, frontend frontends.Frontend) error {
+	provider := providermap[providerString]
 
 	resources, filename, err := provider.FetchResources(subscriptionId)
 
@@ -72,9 +85,7 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 		return err
 	}
 
-	frontend := frontendmap[f]
-
-	filename = fmt.Sprintf("%s.%s", filename, f)
+	filename = fmt.Sprintf("%s.%s", filename, frontendString)
 
 	if err := frontend.WriteDiagram(resources, filename); err != nil {
 		return err

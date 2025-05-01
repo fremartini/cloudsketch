@@ -11,11 +11,7 @@
             "mode": "auto",
             "program": "main.go",
             "args": [
-                "${input:subscriptionId}",
-                "--frontend",
-                "drawio",
-                "--provider",
-                "azure"
+                "${input:subscriptionId}"
             ]
         }
     ],

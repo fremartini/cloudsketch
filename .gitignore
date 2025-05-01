@@ -5,4 +5,5 @@
 *.dot
 !example/example.json
 !example/example.drawio
+!example/example.dot
 .cloudsketch

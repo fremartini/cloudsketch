@@ -29,7 +29,7 @@ func removeChars(s string) string {
 
 func (d *dot) WriteDiagram(resources []*models.Resource, filename string) error {
 	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
-		return build_graph.NewTask(r.Name, r.DependsOn, []string{}, []string{}, func() {})
+		return build_graph.NewTask(r.Id, r.DependsOn, []string{}, []string{}, func() {})
 	})
 
 	tasks = list.Map(tasks, func(task *build_graph.Task) *build_graph.Task {
