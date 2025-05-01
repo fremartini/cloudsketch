@@ -4,7 +4,7 @@ import (
 	"cloudsketch/internal/frontends"
 	"cloudsketch/internal/frontends/dot"
 	"cloudsketch/internal/frontends/drawio"
-	"cloudsketch/internal/frontends/drawio/models"
+	"cloudsketch/internal/frontends/models"
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers"
 	"cloudsketch/internal/providers/azure"

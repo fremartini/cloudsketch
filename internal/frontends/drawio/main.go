@@ -60,8 +60,8 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_network_gateway"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_wan"
 	"cloudsketch/internal/frontends/drawio/handlers/workspace"
-	"cloudsketch/internal/frontends/drawio/models"
-	"cloudsketch/internal/frontends/drawio/types"
+	"cloudsketch/internal/frontends/models"
+	"cloudsketch/internal/frontends/types"
 
 	"cloudsketch/internal/list"
 	"fmt"

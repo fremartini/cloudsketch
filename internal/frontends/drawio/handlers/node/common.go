@@ -1,8 +1,8 @@
 package node
 
 import (
-	"cloudsketch/internal/frontends/drawio/models"
-	"cloudsketch/internal/frontends/drawio/types"
+	"cloudsketch/internal/frontends/models"
+	"cloudsketch/internal/frontends/types"
 	"cloudsketch/internal/list"
 	"log"
 	"math"

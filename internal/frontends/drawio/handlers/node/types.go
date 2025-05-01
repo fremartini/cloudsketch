@@ -1,6 +1,6 @@
 package node
 
-import "cloudsketch/internal/frontends/drawio/models"
+import "cloudsketch/internal/frontends/models"
 
 type Geometry struct {
 	X, Y, Width, Height int

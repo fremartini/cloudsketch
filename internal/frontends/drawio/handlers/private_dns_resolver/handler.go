@@ -3,8 +3,8 @@ package private_dns_resolver
 import (
 	"cloudsketch/internal/frontends/drawio/handlers/node"
 	"cloudsketch/internal/frontends/drawio/images"
-	"cloudsketch/internal/frontends/drawio/models"
-	"cloudsketch/internal/frontends/drawio/types"
+	"cloudsketch/internal/frontends/models"
+	"cloudsketch/internal/frontends/types"
 )
 
 type handler struct{}

@@ -36,8 +36,8 @@ import (
 	"log"
 	"strings"
 
-	domainModels "cloudsketch/internal/frontends/drawio/models"
-	domainTypes "cloudsketch/internal/frontends/drawio/types"
+	domainModels "cloudsketch/internal/frontends/models"
+	domainTypes "cloudsketch/internal/frontends/types"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 )

@@ -5,8 +5,8 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/diagram"
 	"cloudsketch/internal/frontends/drawio/handlers/node"
 	"cloudsketch/internal/frontends/drawio/images"
-	"cloudsketch/internal/frontends/drawio/models"
-	"cloudsketch/internal/frontends/drawio/types"
+	"cloudsketch/internal/frontends/models"
+	"cloudsketch/internal/frontends/types"
 	"cloudsketch/internal/list"
 	"fmt"
 )

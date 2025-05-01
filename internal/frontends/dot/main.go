@@ -3,7 +3,7 @@ package dot
 import (
 	"bytes"
 	"cloudsketch/internal/datastructures/build_graph"
-	"cloudsketch/internal/frontends/drawio/models"
+	"cloudsketch/internal/frontends/models"
 	"cloudsketch/internal/list"
 	"fmt"
 	"os"
