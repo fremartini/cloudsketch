@@ -238,7 +238,7 @@ func populateResourceMap(resources []*models.Resource) (*map[string]*node.Resour
 	}
 
 	for _, task := range tasks {
-		bg.Resolve(task)
+		bg.ResolveInverse(task)
 	}
 
 	return resource_map, nil

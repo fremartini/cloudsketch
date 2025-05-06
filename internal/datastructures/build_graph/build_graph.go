@@ -9,8 +9,8 @@ import (
 
 type Build_graph struct {
 	Tasks         []*Task
-	Graph         map[*Task][]*Task
-	Inverse_graph map[*Task][]*Task
+	Graph         map[string][]*Task
+	Inverse_graph map[string][]*Task
 }
 
 func NewGraph(tasks []*Task) (*Build_graph, error) {
@@ -45,9 +45,9 @@ func NewTask(label string, references, inputs, outputs []string, action func()) 
 	}
 }
 
-func buildGraph(tasks []*Task) (map[*Task][]*Task, map[*Task][]*Task, error) {
-	graph := map[*Task][]*Task{}
-	inverse_graph := map[*Task][]*Task{}
+func buildGraph(tasks []*Task) (map[string][]*Task, map[string][]*Task, error) {
+	graph := map[string][]*Task{}
+	inverse_graph := map[string][]*Task{}
 
 	// sort tasks lowest amount of dependencies first
 	sort.Slice(tasks, func(i, j int) bool {
@@ -60,9 +60,9 @@ func buildGraph(tasks []*Task) (map[*Task][]*Task, map[*Task][]*Task, error) {
 	}
 
 	for _, task := range tasks {
-		_, ok := graph[task]
+		_, ok := graph[task.Label]
 		if !ok {
-			graph[task] = []*Task{}
+			graph[task.Label] = []*Task{}
 		}
 
 		for _, reference := range task.References {
@@ -74,22 +74,36 @@ func buildGraph(tasks []*Task) (map[*Task][]*Task, map[*Task][]*Task, error) {
 				return nil, nil, fmt.Errorf("an unknown task was referenced %s", reference)
 			}
 
-			graph[task] = append(graph[task], dependentTask)
+			graph[task.Label] = append(graph[task.Label], dependentTask)
 
-			_, ok := inverse_graph[task]
+			_, ok := inverse_graph[task.Label]
 			if !ok {
-				inverse_graph[task] = []*Task{}
+				inverse_graph[task.Label] = []*Task{}
 			}
 
-			inverse_graph[dependentTask] = append(inverse_graph[dependentTask], task)
+			inverse_graph[dependentTask.Label] = append(inverse_graph[dependentTask.Label], task)
 		}
 	}
 
 	return graph, inverse_graph, nil
 }
 
+func (g *Build_graph) ResolveInverse(t *Task) {
+	e := g.Inverse_graph[t.Label]
+
+	for _, ref := range e {
+		// recursively resolve the tasks dependencies
+		g.ResolveInverse(ref)
+	}
+
+	// when the task has no dependencies it can be resolved
+	t.Action()
+}
+
 func (g *Build_graph) Resolve(t *Task) {
-	for _, ref := range g.Inverse_graph[t] {
+	e := g.Graph[t.Label]
+
+	for _, ref := range e {
 		// recursively resolve the tasks dependencies
 		g.Resolve(ref)
 	}

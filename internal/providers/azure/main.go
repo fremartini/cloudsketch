@@ -121,6 +121,11 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 
 	addDependencyToSubscriptions(resources, subscription)
 
+	resources = normalize(resources)
+
+	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
+	resources = filterUnknownDependencies(resources)
+
 	domainModels, err := mapToDomainModels(resources, ctx)
 
 	if err != nil {
@@ -135,6 +140,18 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	}
 
 	return domainModels, filename, nil
+}
+
+func normalize(resources []*models.Resource) []*models.Resource {
+	return list.Map(resources, func(resource *models.Resource) *models.Resource {
+		return &models.Resource{
+			Id:         strings.ToLower(resource.Id), // Azure is not consistent regarding casing. Ensure all id's are lowercase
+			Type:       resource.Type,
+			Name:       resource.Name,
+			DependsOn:  list.Map(resource.DependsOn, strings.ToLower),
+			Properties: resource.Properties,
+		}
+	})
 }
 
 func addDependencyToSubscriptions(resources []*models.Resource, subscription *azContext.SubscriptionContext) {
@@ -225,13 +242,10 @@ func filterUnknownDependencies(resources []*models.Resource) []*models.Resource 
 
 func mapToDomainModels(resources []*models.Resource, ctx *azContext.Context) ([]*domainModels.Resource, error) {
 	unhandled_types := set.New[string]()
-	resource_map := &map[string]*models.Resource{}
-
-	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
-	resources = filterUnknownDependencies(resources)
+	resource_map := &map[string]*domainModels.Resource{}
 
 	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
-		return build_graph.NewTask(r.Id, r.DependsOn, []string{}, []string{}, func() { drawResource(r, resource_map) })
+		return build_graph.NewTask(r.Id, list.Map(r.DependsOn, strings.ToLower), []string{}, []string{}, func() { mapToDomainResource(r, ctx.TenantId, unhandled_types, resource_map) })
 	})
 
 	bg, err := build_graph.NewGraph(tasks)
@@ -244,22 +258,20 @@ func mapToDomainModels(resources []*models.Resource, ctx *azContext.Context) ([]
 		bg.Resolve(task)
 	}
 
-	domainResources := list.Map(resources, func(r *models.Resource) *domainModels.Resource {
-		return mapToDomainResource(r, ctx.TenantId, unhandled_types, resources, resource_map)
-	})
+	domainResources := []*domainModels.Resource{}
+	for _, v := range *resource_map {
+		domainResources = append(domainResources, v)
+	}
 
 	return domainResources, nil
 }
 
-func drawResource(resource *models.Resource, resource_map *map[string]*models.Resource) {
+func mapToDomainResource(resource *models.Resource, tenantId string, unhandled_types *set.Set[string], resource_map *map[string]*domainModels.Resource) {
 	if (*resource_map)[resource.Id] != nil {
 		// resource already registered
 		return
 	}
-	(*resource_map)[resource.Id] = resource
-}
 
-func mapToDomainResource(resource *models.Resource, tenantId string, unhandled_types *set.Set[string], resources []*models.Resource, resource_map *map[string]*models.Resource) *domainModels.Resource {
 	properties := resource.Properties
 
 	if properties == nil {
@@ -269,15 +281,22 @@ func mapToDomainResource(resource *models.Resource, tenantId string, unhandled_t
 	link := generateAzurePortalLink(resource, tenantId)
 	properties["link"] = []string{link}
 
-	//TODO: do something clever with the BG
+	dependencies := list.Map(resource.DependsOn, func(d string) *domainModels.Resource {
+		return (*resource_map)[d]
+	})
 
-	// Azure is not consistent regarding casing. Ensure all id's are lowercase
-	return &domainModels.Resource{
-		Id:         strings.ToLower(resource.Id),
+	if list.Contains(dependencies, func(d *domainModels.Resource) bool {
+		return d == nil
+	}) {
+		panic("dependency was nil")
+	}
+
+	(*resource_map)[resource.Id] = &domainModels.Resource{
+		Id:         resource.Id,
 		Type:       mapTypeToDomainType(resource.Type, unhandled_types),
 		Name:       resource.Name,
-		DependsOn:  []*domainModels.Resource{}, //list.Map(resource.DependsOn, strings.ToLower),
-		Properties: properties,
+		DependsOn:  dependencies,
+		Properties: resource.Properties,
 	}
 }
 
