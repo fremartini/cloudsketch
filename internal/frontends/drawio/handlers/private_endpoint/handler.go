@@ -88,7 +88,7 @@ func (*handler) PostProcessIcon(privateEndpoint *node.ResourceAndNode, resource_
 func getPrivateEndpointSubnet(resource *models.Resource, resources []*models.Resource) *string {
 	for _, dependency := range resource.DependsOn {
 		resource := list.FirstOrDefault(resources, nil, func(resource *models.Resource) bool {
-			return resource.Id == dependency
+			return resource.Id == dependency.Id
 		})
 
 		if resource == nil {
@@ -108,7 +108,7 @@ func addImplicitDependencyToFunctionApp(privateEndpoint, functionApp *models.Res
 	// resources inside the plan. If the resource this Private Endpoint is attached to, is a function app
 	// an implicit dependency is added to the App Service to reference
 	for _, dependency := range privateEndpoint.DependsOn {
-		dependentResource := (*resource_map)[dependency]
+		dependentResource := (*resource_map)[dependency.Id]
 
 		if dependentResource == nil {
 			continue

@@ -35,8 +35,8 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
-	publicIps := list.Filter(resource.Resource.DependsOn, func(dependency string) bool {
-		r, ok := (*resource_map)[dependency]
+	publicIps := list.Filter(resource.Resource.DependsOn, func(dependency *models.Resource) bool {
+		r, ok := (*resource_map)[dependency.Id]
 
 		if !ok {
 			return false
@@ -46,7 +46,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	})
 
 	if len(publicIps) == 1 {
-		pipResource := (*resource_map)[publicIps[0]]
+		pipResource := (*resource_map)[publicIps[0].Id]
 		return node.GroupIconsAndSetPosition(resource.Node, pipResource.Node, node.TOP_RIGHT)
 	}
 

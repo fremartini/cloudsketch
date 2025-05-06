@@ -45,9 +45,9 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 	return node.NewIcon(IMAGE, name, &geometry, link)
 }
 
-func getResourcseOfType(resource *models.Resource, resource_map *map[string]*node.ResourceAndNode, typ string) []string {
-	return list.Filter(resource.DependsOn, func(dependency string) bool {
-		r, ok := (*resource_map)[dependency]
+func getResourcseOfType(resource *models.Resource, resource_map *map[string]*node.ResourceAndNode, typ string) []*models.Resource {
+	return list.Filter(resource.DependsOn, func(dependency *models.Resource) bool {
+		r, ok := (*resource_map)[dependency.Id]
 
 		if !ok {
 			return false
@@ -62,7 +62,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 
 	routeTables := getResourcseOfType(resource.Resource, resource_map, types.ROUTE_TABLE)
 	if len(routeTables) == 1 {
-		routeTable := (*resource_map)[routeTables[0]]
+		routeTable := (*resource_map)[routeTables[0].Id]
 
 		parentGroup = node.GroupIconsAndSetPosition(resource.Node, routeTable.Node, node.TOP_LEFT)
 	}
@@ -70,7 +70,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	networkSecurityGroups := getResourcseOfType(resource.Resource, resource_map, types.NETWORK_SECURITY_GROUP)
 
 	if len(networkSecurityGroups) == 1 {
-		networkSecurityGroup := (*resource_map)[networkSecurityGroups[0]]
+		networkSecurityGroup := (*resource_map)[networkSecurityGroups[0].Id]
 
 		// other subnets might point to the same NSG. If they do, ignore the merging
 		if snets := resourcesWithReferencesTo(resource_map, networkSecurityGroup.Resource.Id); snets != 1 {
@@ -100,8 +100,8 @@ func resourcesWithReferencesTo(resource_map *map[string]*node.ResourceAndNode, r
 	count := 0
 
 	for _, v := range *resource_map {
-		if list.Contains(v.Resource.DependsOn, func(d string) bool {
-			return d == resourceId
+		if list.Contains(v.Resource.DependsOn, func(d *models.Resource) bool {
+			return d.Id == resourceId
 		}) {
 			count++
 		}
@@ -158,7 +158,7 @@ func (*handler) GroupResources(subnet *models.Resource, resources []*models.Reso
 
 func getResourcesInSubnet(resources []*models.Resource, subnetId string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	azResourcesInSubnet := list.Filter(resources, func(resource *models.Resource) bool {
-		return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == subnetId })
+		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool { return dependency.Id == subnetId })
 	})
 	resourcesInSubnet := list.Map(azResourcesInSubnet, func(resource *models.Resource) *node.Node {
 		return (*resource_map)[resource.Id].Node.GetParentOrThis()

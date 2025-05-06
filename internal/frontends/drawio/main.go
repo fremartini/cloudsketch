@@ -208,9 +208,9 @@ func (d *drawio) WriteDiagram(resources []*models.Resource, filename string) err
 
 func filterUnknownDependencies(resources []*models.Resource) []*models.Resource {
 	for _, resource := range resources {
-		resource.DependsOn = list.Filter(resource.DependsOn, func(d string) bool {
+		resource.DependsOn = list.Filter(resource.DependsOn, func(d *models.Resource) bool {
 			dependency := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
-				return r.Id == d
+				return r.Id == d.Id
 			})
 
 			return dependency != nil
@@ -228,7 +228,7 @@ func populateResourceMap(resources []*models.Resource) (*map[string]*node.Resour
 	resources = filterUnknownDependencies(resources)
 
 	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
-		return build_graph.NewTask(r.Id, r.DependsOn, []string{}, []string{}, func() { drawResource(r, unhandled_resources, resource_map) })
+		return build_graph.NewTask(r.Id, list.Map(r.DependsOn, func(m *models.Resource) string { return m.Id }), []string{}, []string{}, func() { drawResource(r, unhandled_resources, resource_map) })
 	})
 
 	bg, err := build_graph.NewGraph(tasks)
@@ -300,18 +300,18 @@ func addDependencies(resource_map *map[string]*node.ResourceAndNode) []*node.Arr
 			log.Fatalf("type %s has not been registered for rendering", resource.Type)
 		}
 
-		dependencyIds := list.Filter(resource.DependsOn, func(dependency string) bool {
-			targetMissing := (*resource_map)[dependency] == nil || (*resource_map)[dependency].Node == nil
+		dependencyIds := list.Filter(resource.DependsOn, func(dependency *models.Resource) bool {
+			targetMissing := (*resource_map)[dependency.Id] == nil || (*resource_map)[dependency.Id].Node == nil
 			if targetMissing {
-				log.Printf("target %s was not drawn, skipping", dependency)
+				log.Printf("target %s was not drawn, skipping", dependency.Id)
 				return false
 			}
 
 			return true
 		})
 
-		resources := list.Map(dependencyIds, func(dependency string) *models.Resource {
-			return (*resource_map)[dependency].Resource
+		resources := list.Map(dependencyIds, func(dependency *models.Resource) *models.Resource {
+			return (*resource_map)[dependency.Id].Resource
 		})
 
 		arrowsToAdd := f.DrawDependencies(resource, resources, resource_map)

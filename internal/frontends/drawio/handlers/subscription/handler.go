@@ -82,8 +82,8 @@ func (*handler) GroupResources(resource *models.Resource, resources []*models.Re
 
 func getAllResourcesInSubscription(resourceId string, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	subscriptionResources := list.Filter(resources, func(r *models.Resource) bool {
-		return list.Contains(r.DependsOn, func(dependency string) bool {
-			return dependency == resourceId
+		return list.Contains(r.DependsOn, func(dependency *models.Resource) bool {
+			return dependency.Id == resourceId
 		})
 	})
 

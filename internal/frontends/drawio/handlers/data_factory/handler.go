@@ -105,7 +105,7 @@ func (*handler) GroupResources(dataFactory *models.Resource, resources []*models
 
 func getResourcesInDataFactory(resources []*models.Resource, adfId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
 	azResourcesInAsp := list.Filter(resources, func(resource *models.Resource) bool {
-		return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == adfId })
+		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool { return dependency.Id == adfId })
 	})
 	resourcesInAsp := list.Map(azResourcesInAsp, func(resource *models.Resource) *node.ResourceAndNode {
 		return (*resource_map)[resource.Id]

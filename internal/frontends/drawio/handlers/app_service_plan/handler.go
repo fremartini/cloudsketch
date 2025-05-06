@@ -68,7 +68,7 @@ func (*handler) GroupResources(appServicePlan *models.Resource, resources []*mod
 	allAppServicesInSameSubnet := list.Fold(resourcesInAppServicePlan[1:], true, func(resource *node.ResourceAndNode, matches bool) bool {
 		appServiceSubnet := getAppServiceSubnet(resource.Resource, resources)
 
-		return matches && appServiceSubnet == firstAppServiceSubnet
+		return matches && appServiceSubnet.Id == firstAppServiceSubnet.Id
 	})
 
 	if !allAppServicesInSameSubnet {
@@ -115,14 +115,14 @@ func (*handler) GroupResources(appServicePlan *models.Resource, resources []*mod
 	node.SetIconRelativeTo(appServicePlanNode, box, node.BOTTOM_LEFT)
 
 	// add an explicit dependency to the subnet
-	appServicePlan.DependsOn = append(appServicePlan.DependsOn, *firstAppServiceSubnet)
+	appServicePlan.DependsOn = append(appServicePlan.DependsOn, firstAppServiceSubnet)
 
 	return []*node.Node{box}
 }
 
 func getResourcesInAppServicePlan(resources []*models.Resource, aspId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
 	azResourcesInAsp := list.Filter(resources, func(resource *models.Resource) bool {
-		return list.Contains(resource.DependsOn, func(dependency string) bool { return dependency == aspId })
+		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool { return dependency.Id == aspId })
 	})
 	resourcesInAsp := list.Map(azResourcesInAsp, func(resource *models.Resource) *node.ResourceAndNode {
 		return (*resource_map)[resource.Id]
@@ -130,14 +130,14 @@ func getResourcesInAppServicePlan(resources []*models.Resource, aspId string, re
 	return resourcesInAsp
 }
 
-func getAppServiceSubnet(appService *models.Resource, resources []*models.Resource) *string {
+func getAppServiceSubnet(appService *models.Resource, resources []*models.Resource) *models.Resource {
 	for _, dependency := range appService.DependsOn {
 		resource := list.First(resources, func(resource *models.Resource) bool {
-			return resource.Id == dependency
+			return resource.Id == dependency.Id
 		})
 
 		if resource.Type == types.SUBNET {
-			return &resource.Id
+			return resource
 		}
 	}
 

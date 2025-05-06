@@ -2,7 +2,7 @@ package models
 
 type Resource struct {
 	Id, Type, Name string
-	DependsOn      []string
+	DependsOn      []*Resource
 	Properties     map[string][]string
 }
 
