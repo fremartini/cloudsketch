@@ -29,7 +29,7 @@ func removeChars(s string) string {
 
 func (d *dot) WriteDiagram(resources []*models.Resource, filename string) error {
 	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
-		return build_graph.NewTask(r.Id, list.Map(r.DependsOn, func(r *models.Resource) string { return r.Id }), []string{}, []string{}, func() {})
+		return build_graph.NewTask(r.Name, list.Map(r.DependsOn, func(r *models.Resource) string { return r.Name }), []string{}, []string{}, func() {})
 	})
 
 	tasks = list.Map(tasks, func(task *build_graph.Task) *build_graph.Task {
@@ -48,6 +48,13 @@ func (d *dot) WriteDiagram(resources []*models.Resource, filename string) error 
 	}
 
 	graphName := removeChars(strings.ReplaceAll(filename, ".dot", ""))
+
+	// directory
+	if strings.Contains("/", graphName) {
+		s := strings.Split(graphName, "/")
+		graphName = s[len(s)-1]
+	}
+
 	content := ToDotFile(bg, graphName)
 
 	f, err := os.Create(filename)

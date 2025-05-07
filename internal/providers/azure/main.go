@@ -2,10 +2,10 @@ package azure
 
 import (
 	"cloudsketch/internal/concurrency"
-	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
+	"cloudsketch/internal/providers"
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/handlers/application_gateway"
 	"cloudsketch/internal/providers/azure/handlers/application_group"
@@ -37,7 +37,6 @@ import (
 	"log"
 	"strings"
 
-	domainModels "cloudsketch/internal/frontends/models"
 	domainTypes "cloudsketch/internal/frontends/types"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -81,7 +80,7 @@ func NewProvider() *azureProvider {
 	return &azureProvider{}
 }
 
-func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.Resource, string, error) {
+func (h *azureProvider) FetchResources(subscriptionId string) ([]*providers.Resource, string, error) {
 	credentials, err := azidentity.NewDefaultAzureCredential(nil)
 
 	if err != nil {
@@ -103,12 +102,12 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 	filename := fmt.Sprintf("%s_%s", subscription.Name, subscription.Id)
 	filenameWithSuffix := fmt.Sprintf("%s.json", filename)
 
-	cachedResources, ok := marshall.UnmarshalIfExists[[]*domainModels.Resource](filenameWithSuffix)
+	cachedResources, ok := marshall.UnmarshalIfExists[[]*models.Resource](filenameWithSuffix)
 
 	if ok {
 		log.Printf("using existing file %s\n", filenameWithSuffix)
 
-		return *cachedResources, filename, nil
+		return mapToProviderModel(*cachedResources), filename, nil
 	}
 
 	resources, err := fetchResources(subscription, ctx)
@@ -121,37 +120,49 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*domainModels.R
 
 	addDependencyToSubscriptions(resources, subscription)
 
-	resources = normalize(resources)
+	resources = normalize(resources, ctx.TenantId, set.New[string]())
 
 	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
 	resources = filterUnknownDependencies(resources)
 
-	domainModels, err := mapToDomainModels(resources, ctx)
-
-	if err != nil {
-		return nil, "", err
-	}
-
-	// cache resources for next run
-	err = marshall.MarshallResources(filenameWithSuffix, domainModels)
-
-	if err != nil {
-		return nil, "", err
-	}
-
-	return domainModels, filename, nil
+	return mapToProviderModel(resources), filename, nil
 }
 
-func normalize(resources []*models.Resource) []*models.Resource {
+func mapToProviderModel(resources []*models.Resource) []*providers.Resource {
+	return list.Map(resources, func(m *models.Resource) *providers.Resource {
+		return &providers.Resource{
+			Id:         m.Id,
+			Name:       m.Name,
+			Type:       m.Type,
+			DependsOn:  m.DependsOn,
+			Properties: m.Properties,
+		}
+	})
+}
+
+func normalize(resources []*models.Resource, tenantId string, unhandled_types *set.Set[string]) []*models.Resource {
 	return list.Map(resources, func(resource *models.Resource) *models.Resource {
 		return &models.Resource{
 			Id:         strings.ToLower(resource.Id), // Azure is not consistent regarding casing. Ensure all id's are lowercase
-			Type:       resource.Type,
+			Type:       mapTypeToDomainType(resource.Type, unhandled_types),
 			Name:       resource.Name,
 			DependsOn:  list.Map(resource.DependsOn, strings.ToLower),
-			Properties: resource.Properties,
+			Properties: linkOrDefault(resource, tenantId),
 		}
 	})
+}
+
+func linkOrDefault(resource *models.Resource, tenantId string) map[string][]string {
+	properties := resource.Properties
+
+	if properties == nil {
+		properties = map[string][]string{}
+	}
+
+	link := generateAzurePortalLink(resource, tenantId)
+	properties["link"] = []string{link}
+
+	return properties
 }
 
 func addDependencyToSubscriptions(resources []*models.Resource, subscription *azContext.SubscriptionContext) {
@@ -223,80 +234,6 @@ func postProcess(resources []*models.Resource) {
 		}
 
 		handler.PostProcess(resource, resources)
-	}
-}
-
-func filterUnknownDependencies(resources []*models.Resource) []*models.Resource {
-	for _, resource := range resources {
-		resource.DependsOn = list.Filter(resource.DependsOn, func(d string) bool {
-			dependency := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
-				return r.Id == d
-			})
-
-			return dependency != nil
-		})
-	}
-
-	return resources
-}
-
-func mapToDomainModels(resources []*models.Resource, ctx *azContext.Context) ([]*domainModels.Resource, error) {
-	unhandled_types := set.New[string]()
-	resource_map := &map[string]*domainModels.Resource{}
-
-	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
-		return build_graph.NewTask(r.Id, list.Map(r.DependsOn, strings.ToLower), []string{}, []string{}, func() { mapToDomainResource(r, ctx.TenantId, unhandled_types, resource_map) })
-	})
-
-	bg, err := build_graph.NewGraph(tasks)
-
-	if err != nil {
-		return nil, fmt.Errorf("error during construction of dependency graph: %+v", err)
-	}
-
-	for _, task := range tasks {
-		bg.Resolve(task)
-	}
-
-	domainResources := []*domainModels.Resource{}
-	for _, v := range *resource_map {
-		domainResources = append(domainResources, v)
-	}
-
-	return domainResources, nil
-}
-
-func mapToDomainResource(resource *models.Resource, tenantId string, unhandled_types *set.Set[string], resource_map *map[string]*domainModels.Resource) {
-	if (*resource_map)[resource.Id] != nil {
-		// resource already registered
-		return
-	}
-
-	properties := resource.Properties
-
-	if properties == nil {
-		properties = map[string][]string{}
-	}
-
-	link := generateAzurePortalLink(resource, tenantId)
-	properties["link"] = []string{link}
-
-	dependencies := list.Map(resource.DependsOn, func(d string) *domainModels.Resource {
-		return (*resource_map)[d]
-	})
-
-	if list.Contains(dependencies, func(d *domainModels.Resource) bool {
-		return d == nil
-	}) {
-		panic("dependency was nil")
-	}
-
-	(*resource_map)[resource.Id] = &domainModels.Resource{
-		Id:         resource.Id,
-		Type:       mapTypeToDomainType(resource.Type, unhandled_types),
-		Name:       resource.Name,
-		DependsOn:  dependencies,
-		Properties: resource.Properties,
 	}
 }
 
@@ -378,4 +315,18 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 	}
 
 	return domainType
+}
+
+func filterUnknownDependencies(resources []*models.Resource) []*models.Resource {
+	for _, resource := range resources {
+		resource.DependsOn = list.Filter(resource.DependsOn, func(d string) bool {
+			dependency := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
+				return r.Id == d
+			})
+
+			return dependency != nil
+		})
+	}
+
+	return resources
 }
