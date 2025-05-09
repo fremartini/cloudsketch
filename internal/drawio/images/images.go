@@ -5,6 +5,7 @@ const (
 	APP_SERVICE                           = "img/lib/azure2/app_services/App_Services.svg"
 	APP_SERVICE_PLAN                      = "img/lib/azure2/app_services/App_Service_Plans.svg"
 	APPLICATION_GATEWAY                   = "img/lib/azure2/networking/Application_Gateways.svg"
+	APPLICATION_GROUP                     = "img/lib/azure2/compute/Application_Group.svg"
 	APPLICATION_INSIGHTS                  = "img/lib/azure2/devops/Application_Insights.svg"
 	APPLICATION_SECURITY_GROUP            = "img/lib/azure2/security/Application_Security_Groups.svg"
 	BASTION                               = "img/lib/azure2/networking/Bastions.svg"
@@ -18,6 +19,7 @@ const (
 	EXPRESS_ROUTE_CIRCUIT                 = "img/lib/azure2/networking/ExpressRoute_Circuits.svg"
 	EXPRESS_ROUTE_GATEWAY                 = VIRTUAL_NETWORK_GATEWAY
 	FUNCTION_APP                          = "img/lib/azure2/compute/Function_Apps.svg"
+	HOST_POOL                             = "img/lib/azure2/compute/Host_Pools.svg"
 	KEY_VAULT                             = "img/lib/azure2/security/Key_Vaults.svg"
 	LOAD_BALANCER                         = "img/lib/azure2/networking/Load_Balancers.svg"
 	LOAD_BALANCER_FRONTEND                = PUBLIC_IP_ADDRESS
@@ -51,4 +53,5 @@ const (
 	VIRTUAL_NETWORK                       = "img/lib/azure2/networking/Virtual_Networks.svg"
 	VIRTUAL_NETWORK_GATEWAY               = "img/lib/azure2/networking/Virtual_Network_Gateways.svg"
 	VIRTUAL_WAN                           = "img/lib/azure2/networking/Virtual_WANs.svg"
+	WORKSPACE                             = "img/lib/azure2/compute/Workspaces2.svg"
 )

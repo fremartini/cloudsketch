@@ -8,6 +8,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/app_service"
 	"cloudsketch/internal/drawio/handlers/app_service_plan"
 	"cloudsketch/internal/drawio/handlers/application_gateway"
+	"cloudsketch/internal/drawio/handlers/application_group"
 	"cloudsketch/internal/drawio/handlers/application_insights"
 	"cloudsketch/internal/drawio/handlers/application_security_group"
 	"cloudsketch/internal/drawio/handlers/bastion"
@@ -23,6 +24,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/express_route_circuit"
 	"cloudsketch/internal/drawio/handlers/express_route_gateway"
 	"cloudsketch/internal/drawio/handlers/function_app"
+	"cloudsketch/internal/drawio/handlers/host_pool"
 	"cloudsketch/internal/drawio/handlers/key_vault"
 	"cloudsketch/internal/drawio/handlers/load_balancer"
 	"cloudsketch/internal/drawio/handlers/load_balancer_frontend"
@@ -57,6 +59,7 @@ import (
 	"cloudsketch/internal/drawio/handlers/virtual_network"
 	"cloudsketch/internal/drawio/handlers/virtual_network_gateway"
 	"cloudsketch/internal/drawio/handlers/virtual_wan"
+	"cloudsketch/internal/drawio/handlers/workspace"
 	"cloudsketch/internal/drawio/models"
 	"cloudsketch/internal/drawio/types"
 	"cloudsketch/internal/list"
@@ -77,6 +80,7 @@ var (
 		app_service.TYPE:                           app_service.New(),
 		app_service_plan.TYPE:                      app_service_plan.New(),
 		application_gateway.TYPE:                   application_gateway.New(),
+		application_group.TYPE:                     application_group.New(),
 		application_insights.TYPE:                  application_insights.New(),
 		application_security_group.TYPE:            application_security_group.New(),
 		bastion.TYPE:                               bastion.New(),
@@ -91,6 +95,7 @@ var (
 		express_route_circuit.TYPE:                 express_route_circuit.New(),
 		express_route_gateway.TYPE:                 express_route_gateway.New(),
 		function_app.TYPE:                          function_app.New(),
+		host_pool.TYPE:                             host_pool.New(),
 		key_vault.TYPE:                             key_vault.New(),
 		load_balancer.TYPE:                         load_balancer.New(),
 		load_balancer_frontend.TYPE:                load_balancer_frontend.New(),
@@ -124,6 +129,7 @@ var (
 		virtual_network.TYPE:                       virtual_network.New(),
 		virtual_network_gateway.TYPE:               virtual_network_gateway.New(),
 		virtual_wan.TYPE:                           virtual_wan.New(),
+		workspace.TYPE:                             workspace.New(),
 	}
 )
 
