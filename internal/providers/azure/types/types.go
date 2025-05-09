@@ -5,6 +5,7 @@ const (
 	APP_SERVICE                           = "Cloudsketch/appservice"
 	APP_SERVICE_PLAN                      = "Microsoft.Web/serverFarms"
 	APPLICATION_GATEWAY                   = "Microsoft.Network/applicationGateways"
+	APPLICATION_GROUP                     = "APPLICATION_GROUP"
 	APPLICATION_INSIGHTS                  = "Microsoft.Insights/components"
 	APPLICATION_SECURITY_GROUP            = "Microsoft.Network/applicationSecurityGroups"
 	BASTION                               = "Microsoft.Network/bastionHosts"
@@ -19,6 +20,7 @@ const (
 	EXPRESS_ROUTE_CIRCUIT                 = "Microsoft.Network/expressRouteCircuits"
 	EXPRESS_ROUTE_GATEWAY                 = "Microsoft.Network/expressRouteGateways"
 	FUNCTION_APP                          = "Cloudsketch/functionapp"
+	HOST_POOL                             = "HOST_POOL"
 	KEY_VAULT                             = "Microsoft.KeyVault/vaults"
 	LOAD_BALANCER                         = "Microsoft.Network/loadBalancers"
 	LOAD_BALANCER_FRONTEND                = "Microsoft.Network/loadBalancers/frontendIPConfigurations"
@@ -53,4 +55,5 @@ const (
 	VIRTUAL_NETWORK_GATEWAY               = "Microsoft.Network/virtualNetworkGateways"
 	VIRTUAL_WAN                           = "Microsoft.Network/virtualWans"
 	WEB_SITES                             = "Microsoft.Web/sites"
+	WORKSPACE                             = "WORKSPACE"
 )

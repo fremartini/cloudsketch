@@ -5,6 +5,7 @@ const (
 	APP_SERVICE                           = "APP_SERVICE"
 	APP_SERVICE_PLAN                      = "APP_SERVICE_PLAN"
 	APPLICATION_GATEWAY                   = "APPLICATION_GATEWAY"
+	APPLICATION_GROUP                     = "APPLICATION_GROUP"
 	APPLICATION_INSIGHTS                  = "APPLICATION_INSIGHTS"
 	APPLICATION_SECURITY_GROUP            = "APPLICATION_SECURITY_GROUP"
 	BASTION                               = "BASTION"
@@ -19,6 +20,7 @@ const (
 	EXPRESS_ROUTE_CIRCUIT                 = "EXPRESS_ROUTE_CIRCUIT"
 	EXPRESS_ROUTE_GATEWAY                 = "EXPRESS_ROUTE_GATEWAY"
 	FUNCTION_APP                          = "FUNCTION_APP"
+	HOST_POOL                             = "HOST_POOL"
 	KEY_VAULT                             = "KEY_VAULT"
 	LOAD_BALANCER                         = "LOAD_BALANCER"
 	LOAD_BALANCER_FRONTEND                = "LOAD_BALANCER_FRONTEND"
@@ -52,4 +54,5 @@ const (
 	VIRTUAL_NETWORK                       = "VIRTUAL_NETWORK"
 	VIRTUAL_NETWORK_GATEWAY               = "VIRTUAL_NETWORK_GATEWAY"
 	VIRTUAL_WAN                           = "VIRTUAL_WAN"
+	WORKSPACE                             = "WORKSPACE"
 )
