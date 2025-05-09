@@ -18,6 +18,7 @@ func New() *dot {
 }
 
 func removeChars(s string) string {
+	// dot format does not allow certain characters
 	r := []string{"-", "_", "/", "."}
 
 	for _, c := range r {
@@ -47,7 +48,7 @@ func (d *dot) WriteDiagram(resources []*models.Resource, filename string) error 
 		return err
 	}
 
-	graphName := removeChars(strings.ReplaceAll(filename, ".dot", ""))
+	graphName := graphName(filename)
 
 	// directory
 	if strings.Contains("/", graphName) {
@@ -68,6 +69,18 @@ func (d *dot) WriteDiagram(resources []*models.Resource, filename string) error 
 	_, err = f.WriteString(content)
 
 	return err
+}
+
+func graphName(filename string) string {
+	graphName := removeChars(strings.ReplaceAll(filename, ".dot", ""))
+
+	// directory
+	if strings.Contains("/", graphName) {
+		s := strings.Split(graphName, "/")
+		graphName = s[len(s)-1]
+	}
+
+	return graphName
 }
 
 func ToDotFile(g *build_graph.Build_graph, name string) string {

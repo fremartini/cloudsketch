@@ -23,36 +23,16 @@ func Execute() {
 				Name:  "frontend",
 				Usage: "visualization target",
 				Value: "drawio",
-				Validator: func(s string) error {
-					validFrontends := []string{"drawio", "dot"}
-
-					valid := list.Contains(validFrontends, func(validFrontend string) bool {
-						return s == validFrontend
-					})
-
-					if !valid {
-						return fmt.Errorf("%s is not a valid frontend. Valid target are %s", s, strings.Join(validFrontends, ","))
-					}
-
-					return nil
+				Validator: func(frontend string) error {
+					return isValidInput([]string{"drawio", "dot"}, frontend)
 				},
 			},
 			&cli.StringFlag{
 				Name:  "provider",
 				Usage: "resource source",
 				Value: "azure",
-				Validator: func(s string) error {
-					validProviders := []string{"azure"}
-
-					valid := list.Contains(validProviders, func(validProvider string) bool {
-						return s == validProvider
-					})
-
-					if !valid {
-						return fmt.Errorf("%s is not a valid provider. Valid target are %s", s, strings.Join(validProviders, ","))
-					}
-
-					return nil
+				Validator: func(provider string) error {
+					return isValidInput([]string{"azure"}, provider)
 				},
 			},
 		},
@@ -65,4 +45,16 @@ func Execute() {
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func isValidInput(validInputs []string, input string) error {
+	valid := list.Contains(validInputs, func(validProvider string) bool {
+		return input == validProvider
+	})
+
+	if !valid {
+		return fmt.Errorf("%s is not a valid value. Valid target are %s", input, strings.Join(validInputs, ","))
+	}
+
+	return nil
 }

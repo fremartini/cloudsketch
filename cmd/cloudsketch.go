@@ -40,9 +40,19 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 
 	frontendString := command.String("frontend")
 
-	frontend := frontendmap[frontendString]
+	frontend, ok := frontendmap[frontendString]
+
+	if !ok {
+		return fmt.Errorf("unknown frontend %s", frontendString)
+	}
 
 	providerString := command.String("provider")
+
+	provider, ok := providermap[providerString]
+
+	if !ok {
+		return fmt.Errorf("unknown frontend %s", frontendString)
+	}
 
 	log.Printf("target frontend is %s\n", frontendString)
 	log.Printf("target provider is %s\n", providerString)
@@ -63,7 +73,7 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 		filename = existingFilename
 	} else {
 		// otherwise treat it as a subscription id
-		existingResources, existingFilename, err := createNewFile(fileOrSubscriptionId, providerString, frontendString)
+		existingResources, existingFilename, err := createNewFile(fileOrSubscriptionId, frontendString, provider)
 
 		if err != nil {
 			return err
@@ -103,9 +113,7 @@ func useExistingFile(file, frontendString string) ([]*providers.Resource, string
 	return *resources, outFile, nil
 }
 
-func createNewFile(subscriptionId, providerString, frontendString string) ([]*providers.Resource, string, error) {
-	provider := providermap[providerString]
-
+func createNewFile(subscriptionId, frontendString string, provider providers.Provider) ([]*providers.Resource, string, error) {
 	resources, filename, err := provider.FetchResources(subscriptionId)
 
 	if err != nil {

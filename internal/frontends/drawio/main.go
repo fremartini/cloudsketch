@@ -220,6 +220,7 @@ func populateResourceMap(resources []*models.Resource) (*map[string]*node.Resour
 		return nil, fmt.Errorf("error during construction of dependency graph: %+v", err)
 	}
 
+	// ensure all resources that depend on this have been draw
 	for _, task := range tasks {
 		bg.ResolveInverse(task)
 	}
