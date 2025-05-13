@@ -251,6 +251,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.APPLICATION_GROUP:                     domainTypes.APPLICATION_GROUP,
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
+		types.BACKEND_ADDRESS_POOL:                  domainTypes.BACKEND_ADDRESS_POOL,
 		types.BASTION:                               domainTypes.BASTION,
 		types.CONNECTION:                            domainTypes.CONNECTION,
 		types.CONTAINER_REGISTRY:                    domainTypes.CONTAINER_REGISTRY,
@@ -294,6 +295,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.VIRTUAL_HUB:                           domainTypes.VIRTUAL_HUB,
 		types.VIRTUAL_MACHINE:                       domainTypes.VIRTUAL_MACHINE,
 		types.VIRTUAL_MACHINE_SCALE_SET:             domainTypes.VIRTUAL_MACHINE_SCALE_SET,
+		types.VIRTUAL_MACHINE_SCALE_SET_INSTANCE:    domainTypes.VIRTUAL_MACHINE_SCALE_SET_INSTANCE,
 		types.VIRTUAL_NETWORK:                       domainTypes.VIRTUAL_NETWORK,
 		types.VIRTUAL_NETWORK_GATEWAY:               domainTypes.VIRTUAL_NETWORK_GATEWAY,
 		types.VIRTUAL_WAN:                           domainTypes.VIRTUAL_WAN,
@@ -324,7 +326,12 @@ func filterUnknownDependencies(resources []*models.Resource) []*models.Resource 
 				return r.Id == d
 			})
 
-			return dependency != nil
+			if dependency == nil {
+				log.Printf("removed unknown resource %s\n", d)
+				return false
+			}
+
+			return true
 		})
 	}
 

@@ -8,6 +8,7 @@ const (
 	APPLICATION_GROUP                     = "img/lib/azure2/compute/Application_Group.svg"
 	APPLICATION_INSIGHTS                  = "img/lib/azure2/devops/Application_Insights.svg"
 	APPLICATION_SECURITY_GROUP            = "img/lib/azure2/security/Application_Security_Groups.svg"
+	BACKEND_ADDRESS_POOL                  = "img/lib/azure2/compute/Availability_Sets.svg"
 	BASTION                               = "img/lib/azure2/networking/Bastions.svg"
 	CONNECTION                            = "img/lib/azure2/networking/Connections.svg"
 	CONTAINER_REGISTRY                    = "img/lib/azure2/containers/Container_Registries.svg"
@@ -50,6 +51,7 @@ const (
 	VIRTUAL_HUB                           = "img/lib/azure2/networking/Virtual_WAN_Hub.svg"
 	VIRTUAL_MACHINE                       = "img/lib/azure2/compute/Virtual_Machine.svg"
 	VIRTUAL_MACHINE_SCALE_SET             = "img/lib/azure2/compute/VM_Scale_Sets.svg"
+	VIRTUAL_MACHINE_SCALE_SET_INSTANCE    = VIRTUAL_MACHINE
 	VIRTUAL_NETWORK                       = "img/lib/azure2/networking/Virtual_Networks.svg"
 	VIRTUAL_NETWORK_GATEWAY               = "img/lib/azure2/networking/Virtual_Network_Gateways.svg"
 	VIRTUAL_WAN                           = "img/lib/azure2/networking/Virtual_WANs.svg"

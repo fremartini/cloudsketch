@@ -11,6 +11,7 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/application_group"
 	"cloudsketch/internal/frontends/drawio/handlers/application_insights"
 	"cloudsketch/internal/frontends/drawio/handlers/application_security_group"
+	"cloudsketch/internal/frontends/drawio/handlers/backend_address_pool"
 	"cloudsketch/internal/frontends/drawio/handlers/bastion"
 	"cloudsketch/internal/frontends/drawio/handlers/connection"
 	"cloudsketch/internal/frontends/drawio/handlers/container_registry"
@@ -56,6 +57,7 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_hub"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_machine"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_machine_scale_set"
+	"cloudsketch/internal/frontends/drawio/handlers/virtual_machine_scale_set_instance"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_network"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_network_gateway"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_wan"
@@ -84,6 +86,7 @@ var (
 		application_group.TYPE:                     application_group.New(),
 		application_insights.TYPE:                  application_insights.New(),
 		application_security_group.TYPE:            application_security_group.New(),
+		backend_address_pool.TYPE:                  backend_address_pool.New(),
 		bastion.TYPE:                               bastion.New(),
 		connection.TYPE:                            connection.New(),
 		container_registry.TYPE:                    container_registry.New(),
@@ -127,6 +130,7 @@ var (
 		virtual_hub.TYPE:                           virtual_hub.New(),
 		virtual_machine.TYPE:                       virtual_machine.New(),
 		virtual_machine_scale_set.TYPE:             virtual_machine_scale_set.New(),
+		virtual_machine_scale_set_instance.TYPE:    virtual_machine_scale_set_instance.New(),
 		virtual_network.TYPE:                       virtual_network.New(),
 		virtual_network_gateway.TYPE:               virtual_network_gateway.New(),
 		virtual_wan.TYPE:                           virtual_wan.New(),
