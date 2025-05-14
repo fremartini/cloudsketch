@@ -245,6 +245,7 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string {
 	domainTypes := map[string]string{
 		types.AI_SERVICES:                           domainTypes.AI_SERVICES,
+		types.APP_CONFIGURATION:                     domainTypes.APP_CONFIGURATION,
 		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
 		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE_PLAN,
 		types.APPLICATION_GATEWAY:                   domainTypes.APPLICATION_GATEWAY,

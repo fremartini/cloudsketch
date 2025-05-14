@@ -2,6 +2,7 @@ package types
 
 const (
 	AI_SERVICES                           = "AI_SERVICES"
+	APP_CONFIGURATION                     = "APP_CONFIGURATION"
 	APP_SERVICE                           = "APP_SERVICE"
 	APP_SERVICE_PLAN                      = "APP_SERVICE_PLAN"
 	APPLICATION_GATEWAY                   = "APPLICATION_GATEWAY"

@@ -2,6 +2,7 @@ package images
 
 const (
 	AI_SERVICES                           = "img/lib/azure2/ai_machine_learning/AI_Studio.svg"
+	APP_CONFIGURATION                     = "img/lib/azure2/integration/App_Configuration.svg"
 	APP_SERVICE                           = "img/lib/azure2/app_services/App_Services.svg"
 	APP_SERVICE_PLAN                      = "img/lib/azure2/app_services/App_Service_Plans.svg"
 	APPLICATION_GATEWAY                   = "img/lib/azure2/networking/Application_Gateways.svg"

@@ -2,6 +2,7 @@ package types
 
 const (
 	AI_SERVICES                           = "Microsoft.CognitiveServices/accounts"
+	APP_CONFIGURATION                     = "Microsoft.AppConfiguration/configurationStores"
 	APP_SERVICE                           = "Cloudsketch/appservice"
 	APP_SERVICE_PLAN                      = "Microsoft.Web/serverFarms"
 	APPLICATION_GATEWAY                   = "Microsoft.Network/applicationGateways"
