@@ -7,6 +7,7 @@ import (
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/handlers/api_management_service"
 	"cloudsketch/internal/providers/azure/handlers/application_gateway"
 	"cloudsketch/internal/providers/azure/handlers/application_group"
 	"cloudsketch/internal/providers/azure/handlers/application_insights"
@@ -51,6 +52,7 @@ type handler interface {
 
 var (
 	handlers map[string]handler = map[string]handler{
+		types.API_MANAGEMENT_SERVICE:     api_management_service.New(),
 		types.APPLICATION_GATEWAY:        application_gateway.New(),
 		types.APPLICATION_GROUP:          application_group.New(),
 		types.APPLICATION_INSIGHTS:       application_insights.New(),
@@ -249,6 +251,7 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string {
 	domainTypes := map[string]string{
 		types.AI_SERVICES:                           domainTypes.AI_SERVICES,
+		types.API_MANAGEMENT_API:                    domainTypes.API_MANAGEMENT_API,
 		types.API_MANAGEMENT_SERVICE:                domainTypes.API_MANAGEMENT_SERVICE,
 		types.APP_CONFIGURATION:                     domainTypes.APP_CONFIGURATION,
 		types.APP_SERVICE:                           domainTypes.APP_SERVICE,

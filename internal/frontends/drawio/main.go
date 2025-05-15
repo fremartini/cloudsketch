@@ -5,6 +5,7 @@ import (
 	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/frontends/drawio/handlers/ai_services"
+	"cloudsketch/internal/frontends/drawio/handlers/api_management_api"
 	"cloudsketch/internal/frontends/drawio/handlers/api_management_service"
 	"cloudsketch/internal/frontends/drawio/handlers/app_configuration"
 	"cloudsketch/internal/frontends/drawio/handlers/app_service"
@@ -84,6 +85,7 @@ type handler interface {
 var (
 	commands map[string]handler = map[string]handler{
 		ai_services.TYPE:                           ai_services.New(),
+		api_management_api.TYPE:                    api_management_api.New(),
 		api_management_service.TYPE:                api_management_service.New(),
 		app_configuration.TYPE:                     app_configuration.New(),
 		app_service.TYPE:                           app_service.New(),
