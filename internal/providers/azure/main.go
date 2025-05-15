@@ -7,10 +7,13 @@ import (
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers"
 	azContext "cloudsketch/internal/providers/azure/context"
+	"cloudsketch/internal/providers/azure/handlers/api_management_service"
 	"cloudsketch/internal/providers/azure/handlers/application_gateway"
 	"cloudsketch/internal/providers/azure/handlers/application_group"
 	"cloudsketch/internal/providers/azure/handlers/application_insights"
 	"cloudsketch/internal/providers/azure/handlers/bastion"
+	"cloudsketch/internal/providers/azure/handlers/container_app"
+	"cloudsketch/internal/providers/azure/handlers/container_apps_environment"
 	"cloudsketch/internal/providers/azure/handlers/data_factory"
 	"cloudsketch/internal/providers/azure/handlers/express_route_circuit"
 	"cloudsketch/internal/providers/azure/handlers/express_route_gateway"
@@ -49,28 +52,31 @@ type handler interface {
 
 var (
 	handlers map[string]handler = map[string]handler{
-		types.APPLICATION_GATEWAY:       application_gateway.New(),
-		types.APPLICATION_GROUP:         application_group.New(),
-		types.APPLICATION_INSIGHTS:      application_insights.New(),
-		types.DATA_FACTORY:              data_factory.New(),
-		types.EXPRESS_ROUTE_CIRCUIT:     express_route_circuit.New(),
-		types.EXPRESS_ROUTE_GATEWAY:     express_route_gateway.New(),
-		types.HOST_POOL:                 host_pool.New(),
-		types.BASTION:                   bastion.New(),
-		types.KEY_VAULT:                 key_vault.New(),
-		types.LOAD_BALANCER:             load_balancer.New(),
-		types.NAT_GATEWAY:               nat_gateway.New(),
-		types.NETWORK_INTERFACE:         network_interface.New(),
-		types.PRIVATE_DNS_RESOLVER:      private_dns_resolver.New(),
-		types.PRIVATE_DNS_ZONE:          private_dns_zone.New(),
-		types.PRIVATE_ENDPOINT:          private_endpoint.New(),
-		types.PRIVATE_LINK_SERVICE:      private_link_service.New(),
-		types.VIRTUAL_HUB:               virtual_hub.New(),
-		types.VIRTUAL_MACHINE:           virtual_machine.New(),
-		types.VIRTUAL_MACHINE_SCALE_SET: virtual_machine_scale_set.New(),
-		types.VIRTUAL_NETWORK:           virtual_network.New(),
-		types.VIRTUAL_NETWORK_GATEWAY:   virtual_network_gateway.New(),
-		types.WEB_SITES:                 web_sites.New(),
+		types.API_MANAGEMENT_SERVICE:     api_management_service.New(),
+		types.APPLICATION_GATEWAY:        application_gateway.New(),
+		types.APPLICATION_GROUP:          application_group.New(),
+		types.APPLICATION_INSIGHTS:       application_insights.New(),
+		types.DATA_FACTORY:               data_factory.New(),
+		types.EXPRESS_ROUTE_CIRCUIT:      express_route_circuit.New(),
+		types.EXPRESS_ROUTE_GATEWAY:      express_route_gateway.New(),
+		types.HOST_POOL:                  host_pool.New(),
+		types.BASTION:                    bastion.New(),
+		types.CONTAINER_APP:              container_app.New(),
+		types.CONTAINER_APPS_ENVIRONMENT: container_apps_environment.New(),
+		types.KEY_VAULT:                  key_vault.New(),
+		types.LOAD_BALANCER:              load_balancer.New(),
+		types.NAT_GATEWAY:                nat_gateway.New(),
+		types.NETWORK_INTERFACE:          network_interface.New(),
+		types.PRIVATE_DNS_RESOLVER:       private_dns_resolver.New(),
+		types.PRIVATE_DNS_ZONE:           private_dns_zone.New(),
+		types.PRIVATE_ENDPOINT:           private_endpoint.New(),
+		types.PRIVATE_LINK_SERVICE:       private_link_service.New(),
+		types.VIRTUAL_HUB:                virtual_hub.New(),
+		types.VIRTUAL_MACHINE:            virtual_machine.New(),
+		types.VIRTUAL_MACHINE_SCALE_SET:  virtual_machine_scale_set.New(),
+		types.VIRTUAL_NETWORK:            virtual_network.New(),
+		types.VIRTUAL_NETWORK_GATEWAY:    virtual_network_gateway.New(),
+		types.WEB_SITES:                  web_sites.New(),
 	}
 )
 
@@ -245,13 +251,19 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string {
 	domainTypes := map[string]string{
 		types.AI_SERVICES:                           domainTypes.AI_SERVICES,
+		types.API_MANAGEMENT_API:                    domainTypes.API_MANAGEMENT_API,
+		types.API_MANAGEMENT_SERVICE:                domainTypes.API_MANAGEMENT_SERVICE,
+		types.APP_CONFIGURATION:                     domainTypes.APP_CONFIGURATION,
 		types.APP_SERVICE:                           domainTypes.APP_SERVICE,
 		types.APP_SERVICE_PLAN:                      domainTypes.APP_SERVICE_PLAN,
 		types.APPLICATION_GATEWAY:                   domainTypes.APPLICATION_GATEWAY,
 		types.APPLICATION_GROUP:                     domainTypes.APPLICATION_GROUP,
 		types.APPLICATION_INSIGHTS:                  domainTypes.APPLICATION_INSIGHTS,
 		types.APPLICATION_SECURITY_GROUP:            domainTypes.APPLICATION_SECURITY_GROUP,
+		types.BACKEND_ADDRESS_POOL:                  domainTypes.BACKEND_ADDRESS_POOL,
 		types.BASTION:                               domainTypes.BASTION,
+		types.CONTAINER_APP:                         domainTypes.CONTAINER_APP,
+		types.CONTAINER_APPS_ENVIRONMENT:            domainTypes.CONTAINER_APPS_ENVIRONMENT,
 		types.CONNECTION:                            domainTypes.CONNECTION,
 		types.CONTAINER_REGISTRY:                    domainTypes.CONTAINER_REGISTRY,
 		types.COSMOS:                                domainTypes.COSMOS,
@@ -294,6 +306,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.VIRTUAL_HUB:                           domainTypes.VIRTUAL_HUB,
 		types.VIRTUAL_MACHINE:                       domainTypes.VIRTUAL_MACHINE,
 		types.VIRTUAL_MACHINE_SCALE_SET:             domainTypes.VIRTUAL_MACHINE_SCALE_SET,
+		types.VIRTUAL_MACHINE_SCALE_SET_INSTANCE:    domainTypes.VIRTUAL_MACHINE_SCALE_SET_INSTANCE,
 		types.VIRTUAL_NETWORK:                       domainTypes.VIRTUAL_NETWORK,
 		types.VIRTUAL_NETWORK_GATEWAY:               domainTypes.VIRTUAL_NETWORK_GATEWAY,
 		types.VIRTUAL_WAN:                           domainTypes.VIRTUAL_WAN,
@@ -324,7 +337,12 @@ func filterUnknownDependencies(resources []*models.Resource) []*models.Resource 
 				return r.Id == d
 			})
 
-			return dependency != nil
+			if dependency == nil {
+				log.Printf("removed unknown resource %s\n", d)
+				return false
+			}
+
+			return true
 		})
 	}
 

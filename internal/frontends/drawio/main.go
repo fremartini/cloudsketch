@@ -5,14 +5,20 @@ import (
 	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/frontends/drawio/handlers/ai_services"
+	"cloudsketch/internal/frontends/drawio/handlers/api_management_api"
+	"cloudsketch/internal/frontends/drawio/handlers/api_management_service"
+	"cloudsketch/internal/frontends/drawio/handlers/app_configuration"
 	"cloudsketch/internal/frontends/drawio/handlers/app_service"
 	"cloudsketch/internal/frontends/drawio/handlers/app_service_plan"
 	"cloudsketch/internal/frontends/drawio/handlers/application_gateway"
 	"cloudsketch/internal/frontends/drawio/handlers/application_group"
 	"cloudsketch/internal/frontends/drawio/handlers/application_insights"
 	"cloudsketch/internal/frontends/drawio/handlers/application_security_group"
+	"cloudsketch/internal/frontends/drawio/handlers/backend_address_pool"
 	"cloudsketch/internal/frontends/drawio/handlers/bastion"
 	"cloudsketch/internal/frontends/drawio/handlers/connection"
+	"cloudsketch/internal/frontends/drawio/handlers/container_app"
+	"cloudsketch/internal/frontends/drawio/handlers/container_apps_environment"
 	"cloudsketch/internal/frontends/drawio/handlers/container_registry"
 	"cloudsketch/internal/frontends/drawio/handlers/cosmos"
 	"cloudsketch/internal/frontends/drawio/handlers/data_factory"
@@ -56,6 +62,7 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_hub"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_machine"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_machine_scale_set"
+	"cloudsketch/internal/frontends/drawio/handlers/virtual_machine_scale_set_instance"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_network"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_network_gateway"
 	"cloudsketch/internal/frontends/drawio/handlers/virtual_wan"
@@ -78,14 +85,20 @@ type handler interface {
 var (
 	commands map[string]handler = map[string]handler{
 		ai_services.TYPE:                           ai_services.New(),
+		api_management_api.TYPE:                    api_management_api.New(),
+		api_management_service.TYPE:                api_management_service.New(),
+		app_configuration.TYPE:                     app_configuration.New(),
 		app_service.TYPE:                           app_service.New(),
 		app_service_plan.TYPE:                      app_service_plan.New(),
 		application_gateway.TYPE:                   application_gateway.New(),
 		application_group.TYPE:                     application_group.New(),
 		application_insights.TYPE:                  application_insights.New(),
 		application_security_group.TYPE:            application_security_group.New(),
+		backend_address_pool.TYPE:                  backend_address_pool.New(),
 		bastion.TYPE:                               bastion.New(),
 		connection.TYPE:                            connection.New(),
+		container_app.TYPE:                         container_app.New(),
+		container_apps_environment.TYPE:            container_apps_environment.New(),
 		container_registry.TYPE:                    container_registry.New(),
 		cosmos.TYPE:                                cosmos.New(),
 		data_factory.TYPE:                          data_factory.New(),
@@ -127,6 +140,7 @@ var (
 		virtual_hub.TYPE:                           virtual_hub.New(),
 		virtual_machine.TYPE:                       virtual_machine.New(),
 		virtual_machine_scale_set.TYPE:             virtual_machine_scale_set.New(),
+		virtual_machine_scale_set_instance.TYPE:    virtual_machine_scale_set_instance.New(),
 		virtual_network.TYPE:                       virtual_network.New(),
 		virtual_network_gateway.TYPE:               virtual_network_gateway.New(),
 		virtual_wan.TYPE:                           virtual_wan.New(),
