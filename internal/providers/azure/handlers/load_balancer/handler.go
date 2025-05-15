@@ -52,8 +52,6 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	//nics, err := getNicsForPool(clientFactory, ctx)
-
 	resources = append(resources, backendPools...)
 	resources = append(resources, frontends...)
 
@@ -128,33 +126,6 @@ func getBackendPools(clientFactory *armnetwork.ClientFactory, ctx *azContext.Con
 	resources = append(resources, backendPoolsResources...)
 
 	return resources, nil
-}
-
-func getNicsForPool(clientFactory *armnetwork.ClientFactory, ctx *azContext.Context) ([]*models.Resource, error) {
-	client := clientFactory.NewLoadBalancerNetworkInterfacesClient()
-
-	pager := client.NewListPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
-
-	var nics []*armnetwork.Interface
-	for pager.More() {
-		resp, err := pager.NextPage(context.Background())
-		if err != nil {
-			return nil, err
-		}
-
-		if resp.InterfaceListResult.Value != nil {
-			nics = append(nics, resp.InterfaceListResult.Value...)
-		}
-	}
-
-	return list.Map(nics, func(nic *armnetwork.Interface) *models.Resource {
-		return &models.Resource{
-			Id:        *nic.ID,
-			Name:      *nic.Name,
-			Type:      *nic.Type,
-			DependsOn: []string{},
-		}
-	}), nil
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {
