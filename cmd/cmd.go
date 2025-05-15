@@ -35,11 +35,6 @@ func Execute() {
 					return isValidInput([]string{"azure"}, provider)
 				},
 			},
-			&cli.BoolFlag{
-				Name:  "forceRefresh",
-				Usage: "force fetch resources from provider",
-				Value: false,
-			},
 		},
 		Commands: []*cli.Command{
 			newVersion(),
