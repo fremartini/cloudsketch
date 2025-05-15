@@ -2,6 +2,7 @@ package types
 
 const (
 	AI_SERVICES                           = "Microsoft.CognitiveServices/accounts"
+	API_MANAGEMENT_SERVICE                = "Microsoft.ApiManagement/service"
 	APP_CONFIGURATION                     = "Microsoft.AppConfiguration/configurationStores"
 	APP_SERVICE                           = "Cloudsketch/appservice"
 	APP_SERVICE_PLAN                      = "Microsoft.Web/serverFarms"
@@ -12,6 +13,8 @@ const (
 	BACKEND_ADDRESS_POOL                  = "Microsoft.Network/loadBalancers/backendAddressPools"
 	BASTION                               = "Microsoft.Network/bastionHosts"
 	CONNECTION                            = "Microsoft.Network/connections"
+	CONTAINER_APP                         = "Microsoft.App/containerApps"
+	CONTAINER_APPS_ENVIRONMENT            = "Microsoft.App/managedEnvironments"
 	CONTAINER_REGISTRY                    = "Microsoft.ContainerRegistry/registries"
 	COSMOS                                = "Microsoft.DocumentDB/databaseAccounts"
 	DATA_FACTORY                          = "Microsoft.DataFactory/factories"

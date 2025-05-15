@@ -11,7 +11,8 @@
             "mode": "auto",
             "program": "main.go",
             "args": [
-                "${input:subscriptionId}"
+                "${input:subscriptionId}",
+                "--forceRefresh"
             ]
         }
     ],

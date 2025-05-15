@@ -5,6 +5,7 @@ import (
 	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/frontends/drawio/handlers/ai_services"
+	"cloudsketch/internal/frontends/drawio/handlers/api_management_service"
 	"cloudsketch/internal/frontends/drawio/handlers/app_configuration"
 	"cloudsketch/internal/frontends/drawio/handlers/app_service"
 	"cloudsketch/internal/frontends/drawio/handlers/app_service_plan"
@@ -15,6 +16,8 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/backend_address_pool"
 	"cloudsketch/internal/frontends/drawio/handlers/bastion"
 	"cloudsketch/internal/frontends/drawio/handlers/connection"
+	"cloudsketch/internal/frontends/drawio/handlers/container_app"
+	"cloudsketch/internal/frontends/drawio/handlers/container_apps_environment"
 	"cloudsketch/internal/frontends/drawio/handlers/container_registry"
 	"cloudsketch/internal/frontends/drawio/handlers/cosmos"
 	"cloudsketch/internal/frontends/drawio/handlers/data_factory"
@@ -81,6 +84,7 @@ type handler interface {
 var (
 	commands map[string]handler = map[string]handler{
 		ai_services.TYPE:                           ai_services.New(),
+		api_management_service.TYPE:                api_management_service.New(),
 		app_configuration.TYPE:                     app_configuration.New(),
 		app_service.TYPE:                           app_service.New(),
 		app_service_plan.TYPE:                      app_service_plan.New(),
@@ -91,6 +95,8 @@ var (
 		backend_address_pool.TYPE:                  backend_address_pool.New(),
 		bastion.TYPE:                               bastion.New(),
 		connection.TYPE:                            connection.New(),
+		container_app.TYPE:                         container_app.New(),
+		container_apps_environment.TYPE:            container_apps_environment.New(),
 		container_registry.TYPE:                    container_registry.New(),
 		cosmos.TYPE:                                cosmos.New(),
 		data_factory.TYPE:                          data_factory.New(),

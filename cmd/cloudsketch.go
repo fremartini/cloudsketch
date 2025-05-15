@@ -57,6 +57,10 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 	log.Printf("target frontend is %s\n", frontendString)
 	log.Printf("target provider is %s\n", providerString)
 
+	forceRefresh := command.Bool("forceRefresh")
+
+	fmt.Println(forceRefresh)
+
 	var resources []*providers.Resource
 	var filename string
 

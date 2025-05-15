@@ -80,9 +80,11 @@ func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Contex
 	return list.Map(frontendConfiguration, func(nic *armnetwork.FrontendIPConfiguration) *models.Resource {
 		dependsOn := []string{ctx.ResourceId}
 
-		subnet := strings.ToLower(*nic.Properties.Subnet.ID)
+		if nic.Properties.Subnet != nil {
+			subnet := strings.ToLower(*nic.Properties.Subnet.ID)
 
-		dependsOn = append(dependsOn, subnet)
+			dependsOn = append(dependsOn, subnet)
+		}
 
 		return &models.Resource{
 			Id:        *nic.ID,

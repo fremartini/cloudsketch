@@ -2,6 +2,7 @@ package images
 
 const (
 	AI_SERVICES                           = "img/lib/azure2/ai_machine_learning/AI_Studio.svg"
+	API_MANAGEMENT_SERVICE                = "img/lib/azure2/integration/API_Management_Services.svg"
 	APP_CONFIGURATION                     = "img/lib/azure2/integration/App_Configuration.svg"
 	APP_SERVICE                           = "img/lib/azure2/app_services/App_Services.svg"
 	APP_SERVICE_PLAN                      = "img/lib/azure2/app_services/App_Service_Plans.svg"
@@ -12,6 +13,8 @@ const (
 	BACKEND_ADDRESS_POOL                  = "img/lib/azure2/compute/Availability_Sets.svg"
 	BASTION                               = "img/lib/azure2/networking/Bastions.svg"
 	CONNECTION                            = "img/lib/azure2/networking/Connections.svg"
+	CONTAINER_APP                         = "img/lib/azure2/other/Worker_Container_App.svg"
+	CONTAINER_APPS_ENVIRONMENT            = "img/lib/azure2/other/Container_App_Environments.svg"
 	CONTAINER_REGISTRY                    = "img/lib/azure2/containers/Container_Registries.svg"
 	COSMOS                                = "img/lib/azure2/databases/Azure_Cosmos_DB.svg"
 	DATA_FACTORY                          = "img/lib/azure2/databases/Data_Factory.svg"

@@ -2,6 +2,7 @@ package types
 
 const (
 	AI_SERVICES                           = "AI_SERVICES"
+	API_MANAGEMENT_SERVICE                = "API_MANAGEMENT_SERVICE"
 	APP_CONFIGURATION                     = "APP_CONFIGURATION"
 	APP_SERVICE                           = "APP_SERVICE"
 	APP_SERVICE_PLAN                      = "APP_SERVICE_PLAN"
@@ -12,6 +13,8 @@ const (
 	BACKEND_ADDRESS_POOL                  = "BACKEND_ADDRESS_POOL"
 	BASTION                               = "BASTION"
 	CONNECTION                            = "CONNECTION"
+	CONTAINER_APP                         = "CONTAINER_APP"
+	CONTAINER_APPS_ENVIRONMENT            = "CONTAINER_APP_ENVIRONMENT"
 	CONTAINER_REGISTRY                    = "CONTAINER_REGISTRY"
 	COSMOS                                = "COSMOS"
 	DATA_FACTORY                          = "DATA_FACTORY"
