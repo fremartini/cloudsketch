@@ -12,11 +12,13 @@ cloudsketch <subscription_id>
 
 ## Filtering unwanted resources
 
-To remove unwanted resources from the final diagram, it is possible to provide a configuration file that must be placed in the same directory as the Cloudsketch executable. This configuration file must be called `.cloudsketch.json` and should be structured as follows:
+To remove unwanted resources from the final diagram, it is possible to provide a configuration file that must be placed in the same directory as the Cloudsketch executable. This configuration file must be called `.cloudsketch.json` and should be structured as follows, replacing unwanted resources as appropriate:
 
 ```json
 {
-    "blacklist": []
+    "blacklist": [
+        "APPLICATION_SECURITY_GROUP"
+    ]
 }
 ```
 

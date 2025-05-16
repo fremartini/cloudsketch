@@ -1,7 +1,6 @@
 package drawio
 
 import (
-	"cloudsketch/internal/config"
 	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/frontends/drawio/handlers/ai_services"
@@ -155,22 +154,7 @@ func New() *drawio {
 	return &drawio{}
 }
 
-func removeBlacklistedHandlers() {
-	config, ok := config.Read()
-
-	if !ok {
-		return
-	}
-
-	// remove entries on the blacklist
-	for _, blacklistedItem := range config.Blacklist {
-		delete(commands, blacklistedItem)
-	}
-}
-
 func (d *drawio) WriteDiagram(resources []*models.Resource, filename string) error {
-	removeBlacklistedHandlers()
-
 	// at this point only the Azure resources are known - this function adds the corresponding DrawIO icons
 	resource_map, err := populateResourceMap(resources)
 
@@ -301,7 +285,7 @@ func addDependencies(resource_map *map[string]*node.ResourceAndNode) []*node.Arr
 		dependencyIds := list.Filter(resource.DependsOn, func(dependency *models.Resource) bool {
 			targetMissing := (*resource_map)[dependency.Id] == nil || (*resource_map)[dependency.Id].Node == nil
 			if targetMissing {
-				log.Printf("target %s was not drawn, skipping", dependency.Id)
+				log.Printf("target %s was not drawn", dependency.Id)
 				return false
 			}
 
