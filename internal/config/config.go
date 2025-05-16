@@ -1,6 +1,11 @@
 package config
 
-import "cloudsketch/internal/marshall"
+import (
+	"cloudsketch/internal/marshall"
+	"os"
+	"path"
+	"path/filepath"
+)
 
 const (
 	CONFIG_FILE = ".cloudsketch.json"
@@ -11,5 +16,14 @@ type config struct {
 }
 
 func Read() (*config, bool) {
-	return marshall.UnmarshalIfExists[config](CONFIG_FILE)
+	executable, err := os.Executable()
+
+	if err != nil {
+		panic(err)
+	}
+
+	executablePath := filepath.Dir(executable)
+	configFilePath := path.Join(executablePath, CONFIG_FILE)
+
+	return marshall.UnmarshalIfExists[config](configFilePath)
 }
