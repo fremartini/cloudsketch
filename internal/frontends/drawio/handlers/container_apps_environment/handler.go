@@ -49,7 +49,7 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 }
 
 func (*handler) GroupResources(containerEnvironment *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	resourcesInContainerEnvironment := getResourcesInContainerEnvironment(resources, containerEnvironment.Id, resource_map)
+	resourcesInContainerEnvironment := node.GetChildResourcesOfType(resources, containerEnvironment.Id, types.CONTAINER_APP, resource_map)
 
 	if len(resourcesInContainerEnvironment) == 0 {
 		return []*node.Node{}
@@ -95,17 +95,4 @@ func (*handler) GroupResources(containerEnvironment *models.Resource, resources 
 	node.SetIconRelativeTo(containerEnvironmentNode, box, node.BOTTOM_LEFT)
 
 	return []*node.Node{box}
-}
-
-func getResourcesInContainerEnvironment(resources []*models.Resource, aceId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
-	azResourcesInAce := list.Filter(resources, func(resource *models.Resource) bool {
-		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool { return dependency.Id == aceId })
-	})
-	azResourcesInAce = list.Filter(azResourcesInAce, func(resource *models.Resource) bool {
-		return resource.Type == types.CONTAINER_APP
-	})
-	resourcesInAce := list.Map(azResourcesInAce, func(resource *models.Resource) *node.ResourceAndNode {
-		return (*resource_map)[resource.Id]
-	})
-	return resourcesInAce
 }

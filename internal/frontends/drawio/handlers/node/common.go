@@ -194,6 +194,34 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int) {
 	boxGeometry.Width += padding
 }
 
+func GetChildResourcesOfType(resources []*models.Resource, parentId, childType string, resource_map *map[string]*ResourceAndNode) []*ResourceAndNode {
+	return getChildResources(resources, parentId, &childType, resource_map)
+}
+
+func GetChildResources(resources []*models.Resource, parentId string, resource_map *map[string]*ResourceAndNode) []*ResourceAndNode {
+	return getChildResources(resources, parentId, nil, resource_map)
+}
+
+func getChildResources(resources []*models.Resource, parentId string, childType *string, resource_map *map[string]*ResourceAndNode) []*ResourceAndNode {
+	azResources := list.Filter(resources, func(resource *models.Resource) bool {
+		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool {
+			return dependency.Id == parentId
+		})
+	})
+
+	if childType != nil {
+		azResources = list.Filter(azResources, func(r *models.Resource) bool {
+			return r.Type == *childType
+		})
+	}
+
+	childResources := list.Map(azResources, func(resource *models.Resource) *ResourceAndNode {
+		return (*resource_map)[resource.Id]
+	})
+
+	return childResources
+}
+
 func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
 	// don't draw arrows to subscriptions
 	typeBlacklist = append(typeBlacklist, types.SUBSCRIPTION)

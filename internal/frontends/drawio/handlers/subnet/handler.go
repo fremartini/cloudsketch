@@ -115,17 +115,21 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 }
 
 func (*handler) GroupResources(subnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	resourcesInSubnet := getResourcesInSubnet(resources, subnet.Id, resource_map)
+	resourcesInSubnet := node.GetChildResources(resources, subnet.Id, resource_map)
 
 	if len(resourcesInSubnet) == 0 {
 		return nil
 	}
 
+	nodes := list.Map(resourcesInSubnet, func(ran *node.ResourceAndNode) *node.Node {
+		return ran.Node.GetParentOrThis()
+	})
+
 	// a subnet can contain resources that belong to the same group, these needs to be filtered to
 	// avoid moving the same group multiple times
 	seenGroups := set.New[string]()
 
-	resourcesInSubnet = list.Filter(resourcesInSubnet, func(n *node.Node) bool {
+	nodes = list.Filter(nodes, func(n *node.Node) bool {
 		if seenGroups.Contains(n.Id()) {
 			return false
 		}
@@ -151,17 +155,7 @@ func (*handler) GroupResources(subnet *models.Resource, resources []*models.Reso
 	subnetNode.ContainedIn = box
 	node.SetIconRelativeTo(subnetNode, box, node.TOP_LEFT)
 
-	node.FillResourcesInBox(box, resourcesInSubnet, diagram.Padding, true)
+	node.FillResourcesInBox(box, nodes, diagram.Padding, true)
 
 	return []*node.Node{box}
-}
-
-func getResourcesInSubnet(resources []*models.Resource, subnetId string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	azResourcesInSubnet := list.Filter(resources, func(resource *models.Resource) bool {
-		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool { return dependency.Id == subnetId })
-	})
-	resourcesInSubnet := list.Map(azResourcesInSubnet, func(resource *models.Resource) *node.Node {
-		return (*resource_map)[resource.Id].Node.GetParentOrThis()
-	})
-	return resourcesInSubnet
 }

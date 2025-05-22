@@ -48,7 +48,7 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 }
 
 func (*handler) GroupResources(privateDNSZone *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	resourcesInPrivateDNSZone := getResourcesInPrivateDNSZone(resources, privateDNSZone.Id, resource_map)
+	resourcesInPrivateDNSZone := node.GetChildResourcesOfType(resources, privateDNSZone.Id, types.DNS_RECORD, resource_map)
 
 	if len(resourcesInPrivateDNSZone) == 0 {
 		return []*node.Node{}
@@ -79,14 +79,4 @@ func (*handler) GroupResources(privateDNSZone *models.Resource, resources []*mod
 	node.SetIconRelativeTo(privateDNSZoneNode, box, node.BOTTOM_LEFT)
 
 	return []*node.Node{box}
-}
-
-func getResourcesInPrivateDNSZone(resources []*models.Resource, adfId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
-	azResourcesInAsp := list.Filter(resources, func(resource *models.Resource) bool {
-		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool { return dependency.Id == adfId })
-	})
-	resourcesInAsp := list.Map(azResourcesInAsp, func(resource *models.Resource) *node.ResourceAndNode {
-		return (*resource_map)[resource.Id]
-	})
-	return resourcesInAsp
 }

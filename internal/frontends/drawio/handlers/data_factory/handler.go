@@ -49,7 +49,7 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 }
 
 func (*handler) GroupResources(dataFactory *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	resourcesInDataFactory := getResourcesInDataFactory(resources, dataFactory.Id, resource_map)
+	resourcesInDataFactory := node.GetChildResources(resources, dataFactory.Id, resource_map)
 
 	// the resouces in the data factory can include its private endpoint, this needs to be handled differently
 	resourcesInDataFactory, attachedResources := list.Split(resourcesInDataFactory, func(ran *node.ResourceAndNode) bool {
@@ -101,14 +101,4 @@ func (*handler) GroupResources(dataFactory *models.Resource, resources []*models
 	node.SetIconRelativeTo(dataFactoryGroup, box, node.BOTTOM_LEFT)
 
 	return []*node.Node{box}
-}
-
-func getResourcesInDataFactory(resources []*models.Resource, adfId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
-	azResourcesInAsp := list.Filter(resources, func(resource *models.Resource) bool {
-		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool { return dependency.Id == adfId })
-	})
-	resourcesInAsp := list.Map(azResourcesInAsp, func(resource *models.Resource) *node.ResourceAndNode {
-		return (*resource_map)[resource.Id]
-	})
-	return resourcesInAsp
 }
