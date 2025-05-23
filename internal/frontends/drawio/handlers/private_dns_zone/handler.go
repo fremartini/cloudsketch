@@ -1,12 +1,10 @@
 package private_dns_zone
 
 import (
-	"cloudsketch/internal/frontends/drawio/handlers/diagram"
 	"cloudsketch/internal/frontends/drawio/handlers/node"
 	"cloudsketch/internal/frontends/drawio/images"
 	"cloudsketch/internal/frontends/models"
 	"cloudsketch/internal/frontends/types"
-	"cloudsketch/internal/list"
 )
 
 type handler struct{}
@@ -16,10 +14,6 @@ const (
 	IMAGE  = images.PRIVATE_DNS_ZONE
 	WIDTH  = 64
 	HEIGHT = 64
-)
-
-var (
-	STYLE = "rounded=0;whiteSpace=wrap;html=1;dashed=1;opacity=50;"
 )
 
 func New() *handler {
@@ -55,28 +49,8 @@ func (*handler) GroupResources(privateDNSZone *models.Resource, resources []*mod
 	}
 
 	privateDNSZoneNode := (*resource_map)[privateDNSZone.Id].Node
-	privateDNSZoneNodeGeometry := privateDNSZoneNode.GetGeometry()
 
-	box := node.NewBox(&node.Geometry{
-		X:      privateDNSZoneNodeGeometry.X,
-		Y:      privateDNSZoneNodeGeometry.Y,
-		Width:  0,
-		Height: 0,
-	}, &STYLE)
-
-	privateDNSZoneNode.SetProperty("parent", box.Id())
-	privateDNSZoneNode.ContainedIn = box
-	privateDNSZoneNode.SetPosition(0, 0)
-
-	nodesToMove := list.Map(resourcesInPrivateDNSZone, func(r *node.ResourceAndNode) *node.Node {
-		return r.Node.GetParentOrThis()
-	})
-
-	// move all resources in the private dns zone into the box
-	node.FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
-
-	privateDNSZoneNode.SetDimensions(privateDNSZoneNodeGeometry.Width/2, privateDNSZoneNodeGeometry.Height/2)
-	node.SetIconRelativeTo(privateDNSZoneNode, box, node.BOTTOM_LEFT)
+	box := node.BoxResources(privateDNSZoneNode, resourcesInPrivateDNSZone)
 
 	return []*node.Node{box}
 }

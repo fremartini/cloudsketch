@@ -2,7 +2,6 @@ package app_service_plan
 
 import (
 	"cloudsketch/internal/datastructures/set"
-	"cloudsketch/internal/frontends/drawio/handlers/diagram"
 	"cloudsketch/internal/frontends/drawio/handlers/node"
 	"cloudsketch/internal/frontends/drawio/images"
 	"cloudsketch/internal/frontends/models"
@@ -18,10 +17,6 @@ const (
 	IMAGE  = images.APP_SERVICE_PLAN
 	WIDTH  = 64
 	HEIGHT = 64
-)
-
-var (
-	STYLE = "rounded=0;whiteSpace=wrap;html=1;dashed=1;opacity=50;"
 )
 
 func New() *handler {
@@ -75,21 +70,6 @@ func (*handler) GroupResources(appServicePlan *models.Resource, resources []*mod
 		return []*node.Node{}
 	}
 
-	// draw the box
-	appServicePlanNode := (*resource_map)[appServicePlan.Id].Node
-	appServicePlanNodeGeometry := appServicePlanNode.GetGeometry()
-
-	box := node.NewBox(&node.Geometry{
-		X:      appServicePlanNodeGeometry.X,
-		Y:      appServicePlanNodeGeometry.Y,
-		Width:  0,
-		Height: 0,
-	}, &STYLE)
-
-	appServicePlanNode.SetProperty("parent", box.Id())
-	appServicePlanNode.ContainedIn = box
-	appServicePlanNode.SetPosition(0, 0)
-
 	seenGroups := set.New[string]()
 
 	resourcesInAppServicePlan = list.Filter(resourcesInAppServicePlan, func(r *node.ResourceAndNode) bool {
@@ -104,15 +84,9 @@ func (*handler) GroupResources(appServicePlan *models.Resource, resources []*mod
 		return true
 	})
 
-	nodesToMove := list.Map(resourcesInAppServicePlan, func(r *node.ResourceAndNode) *node.Node {
-		return r.Node.GetParentOrThis()
-	})
+	appServicePlanNode := (*resource_map)[appServicePlan.Id].Node
 
-	// move all resources in the app service plan into the box
-	node.FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
-
-	appServicePlanNode.SetDimensions(appServicePlanNodeGeometry.Width/2, appServicePlanNodeGeometry.Height/2)
-	node.SetIconRelativeTo(appServicePlanNode, box, node.BOTTOM_LEFT)
+	box := node.BoxResources(appServicePlanNode, resourcesInAppServicePlan)
 
 	// add an explicit dependency to the subnet
 	appServicePlan.DependsOn = append(appServicePlan.DependsOn, firstAppServiceSubnet)

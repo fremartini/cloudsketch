@@ -1,6 +1,7 @@
 package node
 
 import (
+	"cloudsketch/internal/frontends/drawio/handlers/diagram"
 	"cloudsketch/internal/frontends/models"
 	"cloudsketch/internal/frontends/types"
 	"cloudsketch/internal/list"
@@ -14,6 +15,10 @@ const (
 	TOP_RIGHT    = 1
 	BOTTOM_LEFT  = 2
 	BOTTOM_RIGHT = 3
+)
+
+var (
+	STYLE = "rounded=0;whiteSpace=wrap;html=1;dashed=1;opacity=50;"
 )
 
 func GroupIconsAndSetPosition(centerIcon, cornerIcon *Node, position int) *Node {
@@ -220,6 +225,33 @@ func getChildResources(resources []*models.Resource, parentId string, childType 
 	})
 
 	return childResources
+}
+
+func BoxResources(parent *Node, children []*ResourceAndNode) *Node {
+	parentGeometry := parent.GetGeometry()
+
+	box := NewBox(&Geometry{
+		X:      parentGeometry.X,
+		Y:      parentGeometry.Y,
+		Width:  0,
+		Height: 0,
+	}, &STYLE)
+
+	parent.SetProperty("parent", box.Id())
+	parent.ContainedIn = box
+	parent.SetPosition(0, 0)
+
+	nodesToMove := list.Map(children, func(r *ResourceAndNode) *Node {
+		return r.Node.GetParentOrThis()
+	})
+
+	// move all children into the box
+	FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
+
+	parent.SetDimensions(parentGeometry.Width/2, parentGeometry.Height/2)
+	SetIconRelativeTo(parent, box, BOTTOM_LEFT)
+
+	return box
 }
 
 func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {

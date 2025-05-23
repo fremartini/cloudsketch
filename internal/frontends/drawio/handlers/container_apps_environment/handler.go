@@ -2,7 +2,6 @@ package container_apps_environment
 
 import (
 	"cloudsketch/internal/datastructures/set"
-	"cloudsketch/internal/frontends/drawio/handlers/diagram"
 	"cloudsketch/internal/frontends/drawio/handlers/node"
 	"cloudsketch/internal/frontends/drawio/images"
 	"cloudsketch/internal/frontends/models"
@@ -55,21 +54,6 @@ func (*handler) GroupResources(containerEnvironment *models.Resource, resources 
 		return []*node.Node{}
 	}
 
-	// draw the box
-	containerEnvironmentNode := (*resource_map)[containerEnvironment.Id].Node
-	containerEnvironmentNodeGeometry := containerEnvironmentNode.GetGeometry()
-
-	box := node.NewBox(&node.Geometry{
-		X:      containerEnvironmentNodeGeometry.X,
-		Y:      containerEnvironmentNodeGeometry.Y,
-		Width:  0,
-		Height: 0,
-	}, &STYLE)
-
-	containerEnvironmentNode.SetProperty("parent", box.Id())
-	containerEnvironmentNode.ContainedIn = box
-	containerEnvironmentNode.SetPosition(0, 0)
-
 	seenGroups := set.New[string]()
 
 	resourcesInContainerEnvironment = list.Filter(resourcesInContainerEnvironment, func(r *node.ResourceAndNode) bool {
@@ -84,15 +68,9 @@ func (*handler) GroupResources(containerEnvironment *models.Resource, resources 
 		return true
 	})
 
-	nodesToMove := list.Map(resourcesInContainerEnvironment, func(r *node.ResourceAndNode) *node.Node {
-		return r.Node.GetParentOrThis()
-	})
+	containerEnvironmentNode := (*resource_map)[containerEnvironment.Id].Node
 
-	// move all resources in the app service plan into the box
-	node.FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
-
-	containerEnvironmentNode.SetDimensions(containerEnvironmentNodeGeometry.Width/2, containerEnvironmentNodeGeometry.Height/2)
-	node.SetIconRelativeTo(containerEnvironmentNode, box, node.BOTTOM_LEFT)
+	box := node.BoxResources(containerEnvironmentNode, resourcesInContainerEnvironment)
 
 	return []*node.Node{box}
 }
