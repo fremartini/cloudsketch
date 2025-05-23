@@ -35,9 +35,14 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	dependsOn := []string{
-		strings.ToLower(*pfsql.Properties.Network.DelegatedSubnetResourceID),
-		strings.ToLower(*pfsql.Properties.Network.PrivateDNSZoneArmResourceID),
+	dependsOn := []string{}
+
+	if pfsql.Properties.Network.DelegatedSubnetResourceID != nil {
+		dependsOn = append(dependsOn, strings.ToLower(*pfsql.Properties.Network.DelegatedSubnetResourceID))
+	}
+
+	if pfsql.Properties.Network.PrivateDNSZoneArmResourceID != nil {
+		dependsOn = append(dependsOn, strings.ToLower(*pfsql.Properties.Network.PrivateDNSZoneArmResourceID))
 	}
 
 	resource := &models.Resource{

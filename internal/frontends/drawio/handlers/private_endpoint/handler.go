@@ -5,6 +5,7 @@ import (
 	"cloudsketch/internal/frontends/drawio/images"
 	"cloudsketch/internal/frontends/models"
 	"cloudsketch/internal/frontends/types"
+	"cloudsketch/internal/list"
 )
 
 type handler struct{}
@@ -38,21 +39,27 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	sourceSubnet := getSubnet(source)
+	// don't draw arrows to the resource this private endpoint is attached to unless they are in different subnets
+	attachedToIds, ok := source.Properties["attachedTo"]
 
-	attachedToId := source.Properties["attachedTo"]
+	if ok {
+		sourceSubnet := getSubnet(source)
+		attachedToId := attachedToIds[0]
 
-	attachedTo := (*resource_map)[attachedToId[0]]
+		targets = list.Filter(targets, func(dependency *models.Resource) bool {
+			if dependency.Id != attachedToId {
+				return true
+			}
 
-	attachedToSubnet := getSubnet(attachedTo.Resource)
+			attachedTo := (*resource_map)[attachedToId]
 
-	sourceNode := (*resource_map)[source.Id]
+			attachedToSubnet := getSubnet(attachedTo.Resource)
 
-	if attachedToSubnet != nil && sourceSubnet != attachedToSubnet {
-		return []*node.Arrow{node.NewArrow(sourceNode.Node.Id(), attachedTo.Node.Id(), nil)}
+			return attachedToSubnet != nil && sourceSubnet != attachedToSubnet
+		})
 	}
 
-	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.SUBNET})
+	return node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{types.SUBNET})
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

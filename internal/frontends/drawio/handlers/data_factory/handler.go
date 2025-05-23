@@ -45,7 +45,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
+	return node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{})
 }
 
 func (*handler) GroupResources(dataFactory *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

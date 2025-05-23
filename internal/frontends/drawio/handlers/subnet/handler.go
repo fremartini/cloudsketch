@@ -111,7 +111,18 @@ func resourcesWithReferencesTo(resource_map *map[string]*node.ResourceAndNode, r
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.VIRTUAL_NETWORK})
+	// if the subnet has a NSG attached that only points to this subnet, don't draw an arrow
+	targets = list.Filter(targets, func(target *models.Resource) bool {
+		if target.Type != types.NETWORK_SECURITY_GROUP {
+			return true
+		}
+
+		nsgSubnetReferences := resourcesWithReferencesTo(resource_map, target.Id)
+
+		return nsgSubnetReferences != 1
+	})
+
+	return node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{types.VIRTUAL_NETWORK})
 }
 
 func (*handler) GroupResources(subnet *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

@@ -254,33 +254,22 @@ func BoxResources(parent *Node, children []*ResourceAndNode) *Node {
 	return box
 }
 
-func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
+func DrawDependencyArrowsToTargets(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
 	// don't draw arrows to subscriptions
-	typeBlacklist = append(typeBlacklist, types.SUBSCRIPTION)
+	typeBlacklist = append(typeBlacklist, types.SUBSCRIPTION, types.VIRTUAL_NETWORK, types.SUBNET)
+
+	// remove entries from the blacklist
+	targets = list.Filter(targets, func(target *models.Resource) bool {
+		return !list.Contains(typeBlacklist, func(t string) bool {
+			return target.Type == t
+		})
+	})
 
 	targetResources := list.Map(targets, func(target *models.Resource) *ResourceAndNode {
 		return (*resource_map)[target.Id]
 	})
 
-	// remove entries from the blacklist
-	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
-		return !list.Contains(typeBlacklist, func(t string) bool {
-			return target.Resource.Type == t
-		})
-	})
-
 	sourceNode := (*resource_map)[source.Id].Node
-
-	// remove entries that are in the same group
-	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
-		if sourceNode.ContainedIn == nil || target.Node.ContainedIn == nil {
-			return true
-		}
-
-		hasSameGroup := sourceNode.GetParentOrThis() == target.Node.GetParentOrThis()
-
-		return !hasSameGroup
-	})
 
 	arrows := list.Fold(targetResources, []*Arrow{}, func(target *ResourceAndNode, acc []*Arrow) []*Arrow {
 		return append(acc, NewArrow(sourceNode.Id(), target.Node.Id(), nil))
