@@ -288,3 +288,91 @@ func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Res
 
 	return arrows
 }
+
+func HandlePrivateEndpoint(resource *ResourceAndNode, resource_map *map[string]*ResourceAndNode) *Node {
+	privateEndpoints := getPrivateEndpointPointingToResource(resource_map, resource.Resource)
+
+	if len(privateEndpoints) == 0 {
+		return nil
+	}
+
+	if len(privateEndpoints) > 1 {
+		// multiple private endpoints point to this resource. If they all
+		// belong to the same subnet they can be merged
+		resources := []*models.Resource{}
+		for _, e := range *resource_map {
+			resources = append(resources, e.Resource)
+		}
+
+		firstSubnet := getPrivateEndpointSubnet(privateEndpoints[0].Resource, resources)
+
+		allPrivateEndpointsInSameSubnet := list.Fold(privateEndpoints, true, func(resource *ResourceAndNode, matches bool) bool {
+			privateEndpointSubnet := getPrivateEndpointSubnet(resource.Resource, resources)
+
+			return matches && privateEndpointSubnet == firstSubnet
+		})
+
+		if !allPrivateEndpointsInSameSubnet {
+			return nil
+		}
+
+		// delete unneeded private endpoint icons
+		for _, pe := range privateEndpoints {
+			if pe.Resource.Id == privateEndpoints[0].Resource.Id {
+				continue
+			}
+
+			delete(*resource_map, pe.Resource.Id)
+		}
+	}
+
+	// one private endpoint exists, "merge" the two icons
+	return GroupIconsAndSetPosition(resource.Node, privateEndpoints[0].Node, TOP_RIGHT)
+}
+
+func getPrivateEndpointSubnet(resource *models.Resource, resources []*models.Resource) *string {
+	for _, dependency := range resource.DependsOn {
+		resource := list.FirstOrDefault(resources, nil, func(resource *models.Resource) bool {
+			return resource.Id == dependency.Id
+		})
+
+		if resource == nil {
+			continue
+		}
+
+		if resource.Type == types.SUBNET {
+			return &resource.Id
+		}
+	}
+
+	return nil
+}
+
+func getPrivateEndpointPointingToResource(resource_map *map[string]*ResourceAndNode, attachedResource *models.Resource) []*ResourceAndNode {
+	privateEndpoints := []*ResourceAndNode{}
+
+	// figure out how many private endpoints are pointing to the storage account
+	for _, v := range *resource_map {
+		// filter out the private endpoints
+		if v.Resource.Type != types.PRIVATE_ENDPOINT {
+			continue
+		}
+
+		attachedToIds, ok := v.Resource.Properties["attachedTo"]
+
+		if !ok {
+			continue
+		}
+
+		if attachedToIds[0] != attachedResource.Id {
+			continue
+		}
+
+		// another private endpoints point to the same resource
+		if (*resource_map)[v.Resource.Id].Node != nil {
+			privateEndpoints = append(privateEndpoints, v)
+		}
+	}
+
+	return privateEndpoints
+}
