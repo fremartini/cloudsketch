@@ -98,7 +98,7 @@ func getNICsPointingToResource(resource_map *map[string]*node.ResourceAndNode, a
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.SUBNET})
+	return node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{types.SUBNET})
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

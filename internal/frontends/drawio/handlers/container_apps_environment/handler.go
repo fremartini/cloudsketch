@@ -2,7 +2,6 @@ package container_apps_environment
 
 import (
 	"cloudsketch/internal/datastructures/set"
-	"cloudsketch/internal/frontends/drawio/handlers/diagram"
 	"cloudsketch/internal/frontends/drawio/handlers/node"
 	"cloudsketch/internal/frontends/drawio/images"
 	"cloudsketch/internal/frontends/models"
@@ -45,30 +44,15 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
+	return node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{})
 }
 
 func (*handler) GroupResources(containerEnvironment *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	resourcesInContainerEnvironment := getResourcesInContainerEnvironment(resources, containerEnvironment.Id, resource_map)
+	resourcesInContainerEnvironment := node.GetChildResourcesOfType(resources, containerEnvironment.Id, types.CONTAINER_APP, resource_map)
 
 	if len(resourcesInContainerEnvironment) == 0 {
 		return []*node.Node{}
 	}
-
-	// draw the box
-	containerEnvironmentNode := (*resource_map)[containerEnvironment.Id].Node
-	containerEnvironmentNodeGeometry := containerEnvironmentNode.GetGeometry()
-
-	box := node.NewBox(&node.Geometry{
-		X:      containerEnvironmentNodeGeometry.X,
-		Y:      containerEnvironmentNodeGeometry.Y,
-		Width:  0,
-		Height: 0,
-	}, &STYLE)
-
-	containerEnvironmentNode.SetProperty("parent", box.Id())
-	containerEnvironmentNode.ContainedIn = box
-	containerEnvironmentNode.SetPosition(0, 0)
 
 	seenGroups := set.New[string]()
 
@@ -84,28 +68,9 @@ func (*handler) GroupResources(containerEnvironment *models.Resource, resources 
 		return true
 	})
 
-	nodesToMove := list.Map(resourcesInContainerEnvironment, func(r *node.ResourceAndNode) *node.Node {
-		return r.Node.GetParentOrThis()
-	})
+	containerEnvironmentNode := (*resource_map)[containerEnvironment.Id].Node
 
-	// move all resources in the app service plan into the box
-	node.FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
-
-	containerEnvironmentNode.SetDimensions(containerEnvironmentNodeGeometry.Width/2, containerEnvironmentNodeGeometry.Height/2)
-	node.SetIconRelativeTo(containerEnvironmentNode, box, node.BOTTOM_LEFT)
+	box := node.BoxResources(containerEnvironmentNode, resourcesInContainerEnvironment)
 
 	return []*node.Node{box}
-}
-
-func getResourcesInContainerEnvironment(resources []*models.Resource, aceId string, resource_map *map[string]*node.ResourceAndNode) []*node.ResourceAndNode {
-	azResourcesInAce := list.Filter(resources, func(resource *models.Resource) bool {
-		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool { return dependency.Id == aceId })
-	})
-	azResourcesInAce = list.Filter(azResourcesInAce, func(resource *models.Resource) bool {
-		return resource.Type == types.CONTAINER_APP
-	})
-	resourcesInAce := list.Map(azResourcesInAce, func(resource *models.Resource) *node.ResourceAndNode {
-		return (*resource_map)[resource.Id]
-	})
-	return resourcesInAce
 }

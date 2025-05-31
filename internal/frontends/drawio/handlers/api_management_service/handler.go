@@ -38,9 +38,19 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
+	return node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{})
 }
 
-func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	return []*node.Node{}
+func (*handler) GroupResources(resource *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+	resourcesInAPIM := node.GetChildResourcesOfType(resources, resource.Id, types.API_MANAGEMENT_API, resource_map)
+
+	if len(resourcesInAPIM) == 0 {
+		return []*node.Node{}
+	}
+
+	apimNode := (*resource_map)[resource.Id].Node
+
+	box := node.BoxResources(apimNode, resourcesInAPIM)
+
+	return []*node.Node{box}
 }

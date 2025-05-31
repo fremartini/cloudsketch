@@ -36,15 +36,23 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
+	outboundSubnet, ok := resource.Resource.Properties["outboundSubnet"]
+
+	if !ok {
+		return nil
+	}
+
+	outboundSubnetResource := (*resource_map)[outboundSubnet[0]]
+
+	resource.Resource.DependsOn = append(resource.Resource.DependsOn, outboundSubnetResource.Resource)
+
 	return nil
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	arrows := node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{})
+	arrows := node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{})
 
 	arrows = append(arrows, addDependencyToAssociatedStorageAccount(source, resource_map)...)
-
-	arrows = append(arrows, addDependencyToOutboundSubnet(source, resource_map)...)
 
 	return arrows
 }
@@ -70,22 +78,6 @@ func addDependencyToAssociatedStorageAccount(source *models.Resource, resource_m
 	sourceNode := (*resource_map)[source.Id].Node
 
 	return []*node.Arrow{node.NewArrow(sourceNode.Id(), resources[0].Node.Id(), nil)}
-}
-
-func addDependencyToOutboundSubnet(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	dashed := "dashed=1"
-
-	outboundSubnet, ok := source.Properties["outboundSubnet"]
-
-	if !ok {
-		return []*node.Arrow{}
-	}
-
-	outboundSubnetNode := (*resource_map)[outboundSubnet[0]].Node
-
-	sourceNode := (*resource_map)[source.Id].Node
-
-	return []*node.Arrow{node.NewArrow(sourceNode.Id(), outboundSubnetNode.Id(), &dashed)}
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

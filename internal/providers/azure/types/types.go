@@ -36,6 +36,7 @@ const (
 	NAT_GATEWAY                           = "Microsoft.Network/natGateways"
 	NETWORK_INTERFACE                     = "Microsoft.Network/networkInterfaces"
 	NETWORK_SECURITY_GROUP                = "Microsoft.Network/networkSecurityGroups"
+	POSTGRES_FLEXIBLE_SERVER              = "Microsoft.DBforPostgreSQL/flexibleServers"
 	POSTGRES_SQL_SERVER                   = "Microsoft.DBforPostgreSQL/servers"
 	PRIVATE_DNS_RESOLVER                  = "Microsoft.Network/dnsResolvers"
 	PRIVATE_DNS_ZONE                      = "Microsoft.Network/privateDnsZones"

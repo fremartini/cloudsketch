@@ -22,6 +22,7 @@ import (
 	"cloudsketch/internal/providers/azure/handlers/load_balancer"
 	"cloudsketch/internal/providers/azure/handlers/nat_gateway"
 	"cloudsketch/internal/providers/azure/handlers/network_interface"
+	"cloudsketch/internal/providers/azure/handlers/postgres_flexible_server"
 	"cloudsketch/internal/providers/azure/handlers/private_dns_resolver"
 	"cloudsketch/internal/providers/azure/handlers/private_dns_zone"
 	"cloudsketch/internal/providers/azure/handlers/private_endpoint"
@@ -67,6 +68,7 @@ var (
 		types.LOAD_BALANCER:              load_balancer.New(),
 		types.NAT_GATEWAY:                nat_gateway.New(),
 		types.NETWORK_INTERFACE:          network_interface.New(),
+		types.POSTGRES_FLEXIBLE_SERVER:   postgres_flexible_server.New(),
 		types.PRIVATE_DNS_RESOLVER:       private_dns_resolver.New(),
 		types.PRIVATE_DNS_ZONE:           private_dns_zone.New(),
 		types.PRIVATE_ENDPOINT:           private_endpoint.New(),
@@ -286,6 +288,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.NAT_GATEWAY:                           domainTypes.NAT_GATEWAY,
 		types.NETWORK_INTERFACE:                     domainTypes.NETWORK_INTERFACE,
 		types.NETWORK_SECURITY_GROUP:                domainTypes.NETWORK_SECURITY_GROUP,
+		types.POSTGRES_FLEXIBLE_SERVER:              domainTypes.POSTGRES_SQL_SERVER,
 		types.POSTGRES_SQL_SERVER:                   domainTypes.POSTGRES_SQL_SERVER,
 		types.PRIVATE_DNS_ZONE:                      domainTypes.PRIVATE_DNS_ZONE,
 		types.PRIVATE_ENDPOINT:                      domainTypes.PRIVATE_ENDPOINT,
