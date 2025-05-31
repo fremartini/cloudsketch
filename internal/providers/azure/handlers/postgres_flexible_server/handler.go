@@ -1,12 +1,5 @@
 package postgres_flexible_server
 
-/*
-TODO:
-Postgres flexible
-	- Connect to dns zone
-	- Connect to subnet
-*/
-
 import (
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/models"
