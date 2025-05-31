@@ -34,11 +34,11 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 }
 
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
-	return nil
+	return node.HandlePrivateEndpoint(resource, resource_map)
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	arrows := node.DrawDependencyArrowsToTarget(source, targets, resource_map, []string{types.SUBNET})
+	arrows := node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{types.SUBNET})
 
 	arrows = append(arrows, addDependencyToOutboundSubnet(source, resource_map)...)
 

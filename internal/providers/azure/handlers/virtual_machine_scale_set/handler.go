@@ -37,9 +37,19 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		dependsOn = append(dependsOn, t)
 	}
 
-	subnet := strings.ToLower(*vmss.Properties.VirtualMachineProfile.NetworkProfile.NetworkInterfaceConfigurations[0].Properties.IPConfigurations[0].Properties.Subnet.ID)
+	for _, nic := range vmss.Properties.VirtualMachineProfile.NetworkProfile.NetworkInterfaceConfigurations {
+		for _, ipConfiguration := range nic.Properties.IPConfigurations {
+			subnet := strings.ToLower(*ipConfiguration.Properties.Subnet.ID)
 
-	dependsOn = append(dependsOn, subnet)
+			dependsOn = append(dependsOn, subnet)
+
+			for _, loadBalancerBackendAddressPool := range ipConfiguration.Properties.LoadBalancerBackendAddressPools {
+				poolId := strings.ToLower(*loadBalancerBackendAddressPool.ID)
+
+				dependsOn = append(dependsOn, poolId)
+			}
+		}
+	}
 
 	resources := []*models.Resource{
 		{

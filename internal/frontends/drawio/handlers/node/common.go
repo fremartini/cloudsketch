@@ -1,6 +1,7 @@
 package node
 
 import (
+	"cloudsketch/internal/frontends/drawio/handlers/diagram"
 	"cloudsketch/internal/frontends/models"
 	"cloudsketch/internal/frontends/types"
 	"cloudsketch/internal/list"
@@ -14,6 +15,10 @@ const (
 	TOP_RIGHT    = 1
 	BOTTOM_LEFT  = 2
 	BOTTOM_RIGHT = 3
+)
+
+var (
+	STYLE = "rounded=0;whiteSpace=wrap;html=1;dashed=1;opacity=50;"
 )
 
 func GroupIconsAndSetPosition(centerIcon, cornerIcon *Node, position int) *Node {
@@ -204,37 +209,169 @@ func maxInt32(x, y int) int {
 	return int(math.Max(float64(x), float64(y)))
 }
 
-func DrawDependencyArrowsToTarget(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
+func GetChildResourcesOfType(resources []*models.Resource, parentId, childType string, resource_map *map[string]*ResourceAndNode) []*ResourceAndNode {
+	return getChildResources(resources, parentId, &childType, resource_map)
+}
+
+func GetChildResources(resources []*models.Resource, parentId string, resource_map *map[string]*ResourceAndNode) []*ResourceAndNode {
+	return getChildResources(resources, parentId, nil, resource_map)
+}
+
+func getChildResources(resources []*models.Resource, parentId string, childType *string, resource_map *map[string]*ResourceAndNode) []*ResourceAndNode {
+	azResources := list.Filter(resources, func(resource *models.Resource) bool {
+		return list.Contains(resource.DependsOn, func(dependency *models.Resource) bool {
+			return dependency.Id == parentId
+		})
+	})
+
+	if childType != nil {
+		azResources = list.Filter(azResources, func(r *models.Resource) bool {
+			return r.Type == *childType
+		})
+	}
+
+	childResources := list.Map(azResources, func(resource *models.Resource) *ResourceAndNode {
+		return (*resource_map)[resource.Id]
+	})
+
+	return childResources
+}
+
+func BoxResources(parent *Node, children []*ResourceAndNode) *Node {
+	parentGeometry := parent.GetGeometry()
+
+	box := NewBox(&Geometry{
+		X:      parentGeometry.X,
+		Y:      parentGeometry.Y,
+		Width:  0,
+		Height: 0,
+	}, &STYLE)
+
+	parent.SetProperty("parent", box.Id())
+	parent.ContainedIn = box
+	parent.SetPosition(0, 0)
+
+	nodesToMove := list.Map(children, func(r *ResourceAndNode) *Node {
+		return r.Node.GetParentOrThis()
+	})
+
+	// move all children into the box
+	FillResourcesInBox(box, nodesToMove, diagram.Padding, true)
+
+	parent.SetDimensions(parentGeometry.Width/2, parentGeometry.Height/2)
+	SetIconRelativeTo(parent, box, BOTTOM_LEFT)
+
+	return box
+}
+
+func DrawDependencyArrowsToTargets(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
 	// don't draw arrows to subscriptions
-	typeBlacklist = append(typeBlacklist, types.SUBSCRIPTION)
+	typeBlacklist = append(typeBlacklist, types.SUBSCRIPTION, types.VIRTUAL_NETWORK, types.SUBNET)
+
+	// remove entries from the blacklist
+	targets = list.Filter(targets, func(target *models.Resource) bool {
+		return !list.Contains(typeBlacklist, func(t string) bool {
+			return target.Type == t
+		})
+	})
 
 	targetResources := list.Map(targets, func(target *models.Resource) *ResourceAndNode {
 		return (*resource_map)[target.Id]
 	})
 
-	// remove entries from the blacklist
-	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
-		return !list.Contains(typeBlacklist, func(t string) bool {
-			return target.Resource.Type == t
-		})
-	})
-
 	sourceNode := (*resource_map)[source.Id].Node
-
-	// remove entries that are in the same group
-	targetResources = list.Filter(targetResources, func(target *ResourceAndNode) bool {
-		if sourceNode.ContainedIn == nil || target.Node.ContainedIn == nil {
-			return true
-		}
-
-		hasSameGroup := sourceNode.GetParentOrThis() == target.Node.GetParentOrThis()
-
-		return !hasSameGroup
-	})
 
 	arrows := list.Fold(targetResources, []*Arrow{}, func(target *ResourceAndNode, acc []*Arrow) []*Arrow {
 		return append(acc, NewArrow(sourceNode.Id(), target.Node.Id(), nil))
 	})
 
 	return arrows
+}
+
+func HandlePrivateEndpoint(resource *ResourceAndNode, resource_map *map[string]*ResourceAndNode) *Node {
+	privateEndpoints := getPrivateEndpointPointingToResource(resource_map, resource.Resource)
+
+	if len(privateEndpoints) == 0 {
+		return nil
+	}
+
+	if len(privateEndpoints) > 1 {
+		// multiple private endpoints point to this resource. If they all
+		// belong to the same subnet they can be merged
+		resources := []*models.Resource{}
+		for _, e := range *resource_map {
+			resources = append(resources, e.Resource)
+		}
+
+		firstSubnet := getPrivateEndpointSubnet(privateEndpoints[0].Resource, resources)
+
+		allPrivateEndpointsInSameSubnet := list.Fold(privateEndpoints, true, func(resource *ResourceAndNode, matches bool) bool {
+			privateEndpointSubnet := getPrivateEndpointSubnet(resource.Resource, resources)
+
+			return matches && privateEndpointSubnet == firstSubnet
+		})
+
+		if !allPrivateEndpointsInSameSubnet {
+			return nil
+		}
+
+		// delete unneeded private endpoint icons
+		for _, pe := range privateEndpoints {
+			if pe.Resource.Id == privateEndpoints[0].Resource.Id {
+				continue
+			}
+
+			delete(*resource_map, pe.Resource.Id)
+		}
+	}
+
+	// one private endpoint exists, "merge" the two icons
+	return GroupIconsAndSetPosition(resource.Node, privateEndpoints[0].Node, TOP_RIGHT)
+}
+
+func getPrivateEndpointSubnet(resource *models.Resource, resources []*models.Resource) *string {
+	for _, dependency := range resource.DependsOn {
+		resource := list.FirstOrDefault(resources, nil, func(resource *models.Resource) bool {
+			return resource.Id == dependency.Id
+		})
+
+		if resource == nil {
+			continue
+		}
+
+		if resource.Type == types.SUBNET {
+			return &resource.Id
+		}
+	}
+
+	return nil
+}
+
+func getPrivateEndpointPointingToResource(resource_map *map[string]*ResourceAndNode, attachedResource *models.Resource) []*ResourceAndNode {
+	privateEndpoints := []*ResourceAndNode{}
+
+	// figure out how many private endpoints are pointing to the storage account
+	for _, v := range *resource_map {
+		// filter out the private endpoints
+		if v.Resource.Type != types.PRIVATE_ENDPOINT {
+			continue
+		}
+
+		attachedToIds, ok := v.Resource.Properties["attachedTo"]
+
+		if !ok {
+			continue
+		}
+
+		if attachedToIds[0] != attachedResource.Id {
+			continue
+		}
+
+		// another private endpoints point to the same resource
+		if (*resource_map)[v.Resource.Id].Node != nil {
+			privateEndpoints = append(privateEndpoints, v)
+		}
+	}
+
+	return privateEndpoints
 }

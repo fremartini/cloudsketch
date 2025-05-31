@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"cloudsketch/internal/config"
 	"cloudsketch/internal/datastructures/build_graph"
 	"cloudsketch/internal/frontends"
 	"cloudsketch/internal/frontends/dot"
@@ -89,6 +90,8 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 		return err
 	}
 
+	frontendResources = removeBlacklistedResources(frontendResources)
+
 	if err := frontend.WriteDiagram(frontendResources, filename); err != nil {
 		return err
 	}
@@ -97,6 +100,30 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 	log.Print(filename)
 
 	return nil
+}
+
+func removeBlacklistedResources(frontendResources []*frontendModels.Resource) []*frontendModels.Resource {
+	config, ok := config.Read()
+
+	if !ok {
+		// no config exists. Return all resources
+		return frontendResources
+	}
+
+	// config is present. Remove all blacklisted resources
+	toReturn := list.Filter(frontendResources, func(r *frontendModels.Resource) bool {
+		return !list.Contains(config.Blacklist, func(entry string) bool { return entry == r.Type })
+	})
+
+	toReturn = list.Map(toReturn, func(r *frontendModels.Resource) *frontendModels.Resource {
+		r.DependsOn = list.Filter(r.DependsOn, func(r *frontendModels.Resource) bool {
+			return !list.Contains(config.Blacklist, func(entry string) bool { return entry == r.Type })
+		})
+
+		return r
+	})
+
+	return toReturn
 }
 
 func useExistingFile(file, frontendString string) ([]*providers.Resource, string, error) {

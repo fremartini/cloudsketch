@@ -64,9 +64,11 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	dependsOn = append(dependsOn, resourceDependenciesInTags...)
 
-	for identity := range app.Identity.UserAssignedIdentities {
-		t := strings.ToLower(identity)
-		dependsOn = append(dependsOn, t)
+	if app.Identity != nil {
+		for identity := range app.Identity.UserAssignedIdentities {
+			t := strings.ToLower(identity)
+			dependsOn = append(dependsOn, t)
+		}
 	}
 
 	properties := map[string][]string{}
@@ -81,7 +83,10 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 	subType := WEBSITES_KIND_MAP[*app.Kind]
 
 	outboundSubnetId := app.Properties.VirtualNetworkSubnetID
-	properties["outboundSubnet"] = []string{strings.ToLower(*outboundSubnetId)}
+
+	if outboundSubnetId != nil {
+		properties["outboundSubnet"] = []string{strings.ToLower(*outboundSubnetId)}
+	}
 
 	planId := app.Properties.ServerFarmID
 	dependsOn = append(dependsOn, *planId)

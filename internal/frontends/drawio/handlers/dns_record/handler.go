@@ -4,7 +4,6 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/node"
 	"cloudsketch/internal/frontends/models"
 	"cloudsketch/internal/frontends/types"
-	"cloudsketch/internal/list"
 )
 
 type handler struct{}
@@ -38,31 +37,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	typeBlacklist := []string{types.SUBSCRIPTION, types.PRIVATE_DNS_ZONE}
-
-	targetResources := list.Map(targets, func(target *models.Resource) *node.ResourceAndNode {
-		return (*resource_map)[target.Id]
-	})
-
-	targetResources = list.Filter(targetResources, func(target *node.ResourceAndNode) bool {
-		return !list.Contains(typeBlacklist, func(t string) bool {
-			return target.Resource.Type == t
-		})
-	})
-
-	sourceNode := (*resource_map)[source.Id].Node
-
-	arrows := list.Fold(targetResources, []*node.Arrow{}, func(target *node.ResourceAndNode, acc []*node.Arrow) []*node.Arrow {
-		targetNode := target.Node
-
-		if target.Resource.Type == types.PRIVATE_ENDPOINT {
-			targetNode = targetNode.ContainedIn
-		}
-
-		return append(acc, node.NewArrow(sourceNode.Id(), targetNode.Id(), nil))
-	})
-
-	return arrows
+	return node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{types.PRIVATE_DNS_ZONE})
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
