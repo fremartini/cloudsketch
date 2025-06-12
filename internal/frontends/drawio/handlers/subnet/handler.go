@@ -113,7 +113,7 @@ func resourcesWithReferencesTo(resource_map *map[string]*node.ResourceAndNode, r
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
 	// if the subnet has a NSG attached that only points to this subnet, don't draw an arrow
 	targets = list.Filter(targets, func(target *models.Resource) bool {
-		if target.Type != types.NETWORK_SECURITY_GROUP {
+		if target.Type != types.NETWORK_SECURITY_GROUP && target.Type != types.ROUTE_TABLE {
 			return true
 		}
 

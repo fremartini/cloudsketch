@@ -38,9 +38,11 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		dependsOn = append(dependsOn, *publicIp)
 	}
 
-	for identity := range agw.Identity.UserAssignedIdentities {
-		t := strings.ToLower(identity)
-		dependsOn = append(dependsOn, t)
+	if agw.Identity != nil {
+		for identity := range agw.Identity.UserAssignedIdentities {
+			t := strings.ToLower(identity)
+			dependsOn = append(dependsOn, t)
+		}
 	}
 
 	resource := &models.Resource{
