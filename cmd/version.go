@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/urfave/cli/v3"
 )
@@ -15,7 +15,7 @@ func newVersion() *cli.Command {
 		Aliases:     []string{"v"},
 		Description: "Show version",
 		Action: func(_ context.Context, command *cli.Command) error {
-			log.Println(version)
+			fmt.Println(version)
 
 			return nil
 		},
