@@ -138,8 +138,6 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 	// the number of rows and columns is the square root of the number elements in the group
 	numRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(nodes)))))
 
-	padding = 0
-
 	startX := padding
 
 	nextX := startX
@@ -167,10 +165,10 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 
 			node.SetPosition(nextX, nextY)
 
-			nextX += nodeToPlaceGeometry.Width
+			nextX += nodeToPlaceGeometry.Width + padding
 			boxGeometry.Width = maxInt32(nextX, boxGeometry.Width)
 
-			columnHeight = maxInt32(nodeToPlaceGeometry.Height, columnHeight)
+			columnHeight = maxInt32(nodeToPlaceGeometry.Height+padding, columnHeight)
 
 			nextIdx++
 		}
@@ -180,6 +178,8 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 		nextY += columnHeight
 		boxGeometry.Height += columnHeight
 	}
+
+	boxGeometry.Height += padding
 }
 
 func tallestNode(resourcesInGrouping []*Node) int {
