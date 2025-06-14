@@ -135,10 +135,10 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 		return volumeA < volumeB
 	})
 
-	padding = 0
-
-	// number of rows and columns is the square root of the elements in the group
+	// the number of rows and columns is the square root of the number elements in the group
 	numRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(nodes)))))
+
+	padding = 0
 
 	startX := padding
 
@@ -147,49 +147,38 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 
 	boxGeometry := box.GetGeometry()
 
-	currentResourceIndex := -1
-	for row := 0; row < numRowsAndColumns; row++ {
-		tallestNodeThisRow := 0
+	nextIdx := 0
+	for range numRowsAndColumns {
+		columnHeight := 0
 
-		for column := 0; column < numRowsAndColumns; column++ {
-			currentResourceIndex++
-
-			if currentResourceIndex > len(nodes)-1 {
-				nextY += tallestNodeThisRow + padding
-				boxGeometry.Height += nextY
-
-				// no more elements
-				return
+		for range numRowsAndColumns {
+			if nextIdx >= len(nodes) {
+				break
 			}
 
-			nodeToPlace := nodes[currentResourceIndex]
-			nodeToPlaceGeometry := nodeToPlace.GetGeometry()
+			node := nodes[nextIdx]
 
-			if nodeToPlace.ContainedIn != nil {
-				nodeToPlaceGeometry = nodeToPlace.ContainedIn.geometry
-			}
+			nodeToPlaceGeometry := node.GetGeometry()
 
 			if setResourceParent {
-				nodeToPlace.SetProperty("parent", box.Id())
-				nodeToPlace.ContainedIn = box
+				node.SetProperty("parent", box.Id())
+				node.ContainedIn = box
 			}
 
-			nodeToPlace.SetPosition(nextX, nextY)
+			node.SetPosition(nextX, nextY)
 
-			nextX += nodeToPlaceGeometry.Width + padding
+			nextX += nodeToPlaceGeometry.Width
+			boxGeometry.Width = maxInt32(nextX, boxGeometry.Width)
 
-			boxGeometry.Width = maxInt32(boxGeometry.Width, nextX)
+			columnHeight = maxInt32(nodeToPlaceGeometry.Height, columnHeight)
 
-			// last element, skip to new row
-			if column == numRowsAndColumns-1 {
-				nextX = startX
-			}
-
-			tallestNodeThisRow = maxInt32(tallestNodeThisRow, nodeToPlaceGeometry.Height)
+			nextIdx++
 		}
 
-		nextY += tallestNodeThisRow + padding
-		boxGeometry.Height += nextY
+		nextX = startX
+
+		nextY += columnHeight
+		boxGeometry.Height += columnHeight
 	}
 }
 
