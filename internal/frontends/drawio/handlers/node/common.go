@@ -90,40 +90,7 @@ func SetIconRelativeTo(iconToMove *Node, relativeTo *Node, position int) {
 }
 
 func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int, setResourceParent bool) {
-	/*	if len(resourcesInGrouping) < 3 {
-			fillResourcesInBoxLine(box, resourcesInGrouping, padding, setResourceParent)
-
-			return
-		}
-	*/
 	fillResourcesInBoxSquare(box, resourcesInGrouping, padding, setResourceParent)
-}
-
-func fillResourcesInBoxLine(box *Node, nodes []*Node, padding int, setResourceParent bool) {
-	tallestNode := tallestNode(nodes)
-
-	nextX := padding
-	boxGeometry := box.GetGeometry()
-	boxGeometry.Height += padding*2 + tallestNode
-
-	for _, node := range nodes {
-		nodeToPlaceGeometry := node.GetGeometry()
-
-		offsetY := boxGeometry.Height/2 - nodeToPlaceGeometry.Height/2
-
-		if setResourceParent {
-			node.SetProperty("parent", box.Id())
-			node.ContainedIn = box
-		}
-
-		node.SetPosition(nextX, offsetY)
-
-		nextX += nodeToPlaceGeometry.Width + padding
-
-		boxGeometry.Width += nodeToPlaceGeometry.Width + padding
-	}
-
-	boxGeometry.Width += padding
 }
 
 func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResourceParent bool) {
@@ -180,18 +147,6 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 	}
 
 	boxGeometry.Height += padding
-}
-
-func tallestNode(resourcesInGrouping []*Node) int {
-	heightValues := list.Map(resourcesInGrouping, func(r *Node) int {
-		return r.GetGeometry().Height
-	})
-
-	tallest := list.Fold(heightValues, 0, func(acc, height int) int {
-		return maxInt32(acc, height)
-	})
-
-	return tallest
 }
 
 func maxInt32(x, y int) int {
