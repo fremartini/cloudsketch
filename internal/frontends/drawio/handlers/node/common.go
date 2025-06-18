@@ -90,20 +90,16 @@ func SetIconRelativeTo(iconToMove *Node, relativeTo *Node, position int) {
 }
 
 func FillResourcesInBox(box *Node, resourcesInGrouping []*Node, padding int, setResourceParent bool) {
-	fillResourcesInBoxSquare(box, resourcesInGrouping, padding, setResourceParent)
-}
-
-func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResourceParent bool) {
 	// sort by volume
-	sort.Slice(nodes, func(i, j int) bool {
-		volumeA := nodes[i].GetGeometry().Height + nodes[i].GetGeometry().Width
-		volumeB := nodes[j].GetGeometry().Height + nodes[j].GetGeometry().Width
+	sort.Slice(resourcesInGrouping, func(i, j int) bool {
+		volumeA := resourcesInGrouping[i].GetGeometry().Height + resourcesInGrouping[i].GetGeometry().Width
+		volumeB := resourcesInGrouping[j].GetGeometry().Height + resourcesInGrouping[j].GetGeometry().Width
 
-		return volumeA < volumeB
+		return volumeA > volumeB
 	})
 
 	// the number of rows and columns is the square root of the number elements in the group
-	numRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(nodes)))))
+	numRowsAndColumns := int(math.Ceil(math.Sqrt(float64(len(resourcesInGrouping)))))
 
 	startX := padding
 
@@ -113,15 +109,17 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 	boxGeometry := box.GetGeometry()
 
 	nextIdx := 0
-	for range numRowsAndColumns {
+	for column := range numRowsAndColumns {
 		columnHeight := 0
 
-		for range numRowsAndColumns {
-			if nextIdx >= len(nodes) {
+		canContinueOnCurrentRow := false
+
+		for row := 0; row < numRowsAndColumns || canContinueOnCurrentRow; row++ {
+			if nextIdx >= len(resourcesInGrouping) {
 				break
 			}
 
-			node := nodes[nextIdx]
+			node := resourcesInGrouping[nextIdx]
 
 			nodeToPlaceGeometry := node.GetGeometry()
 
@@ -136,6 +134,11 @@ func fillResourcesInBoxSquare(box *Node, nodes []*Node, padding int, setResource
 			boxGeometry.Width = maxInt32(nextX, boxGeometry.Width)
 
 			columnHeight = maxInt32(nodeToPlaceGeometry.Height+padding, columnHeight)
+
+			// on the second pass the container has been filled with the widest boxes.
+			// it is now possible to arrange nodes up to the max length instead of
+			// automatically moving on to a new row
+			canContinueOnCurrentRow = column > 0 && nextX < boxGeometry.Width
 
 			nextIdx++
 		}
