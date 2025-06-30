@@ -3,6 +3,7 @@ package azure
 import (
 	"cloudsketch/internal/concurrency"
 	"cloudsketch/internal/datastructures/set"
+	"cloudsketch/internal/guid"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers"
@@ -20,6 +21,7 @@ import (
 	"cloudsketch/internal/providers/azure/handlers/host_pool"
 	"cloudsketch/internal/providers/azure/handlers/key_vault"
 	"cloudsketch/internal/providers/azure/handlers/load_balancer"
+	"cloudsketch/internal/providers/azure/handlers/management_group"
 	"cloudsketch/internal/providers/azure/handlers/nat_gateway"
 	"cloudsketch/internal/providers/azure/handlers/network_interface"
 	"cloudsketch/internal/providers/azure/handlers/postgres_flexible_server"
@@ -38,6 +40,7 @@ import (
 	"cloudsketch/internal/providers/azure/handlers/web_sites"
 	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -90,16 +93,37 @@ func NewProvider() *azureProvider {
 	return &azureProvider{}
 }
 
-//https://github.com/Azure/azure-sdk-for-go/tree/main/sdk/resourcemanager/managementgroups/armmanagementgroups
+func (h *azureProvider) FetchResources(input string) ([]*providers.Resource, string, error) {
+	filenameWithSuffix := fmt.Sprintf("%s.json", input)
 
-func (h *azureProvider) FetchResources(subscriptionId string) ([]*providers.Resource, string, error) {
+	cachedResources, ok := marshall.UnmarshalIfExists[[]*models.Resource](filenameWithSuffix)
+
+	if ok {
+		log.Printf("using existing file %s\n", filenameWithSuffix)
+
+		return mapToProviderModel(*cachedResources), input, nil
+	}
+
 	credentials, err := azidentity.NewDefaultAzureCredential(nil)
 
 	if err != nil {
 		return nil, "", fmt.Errorf("authentication failure: %+v", err)
 	}
 
-	subscription, err := subscription.New().Handle(subscriptionId, credentials)
+	if guid.IsGuid(input) {
+		// subscription id
+	} else {
+		// management group
+		_, err := management_group.New().Handle(input, credentials)
+
+		if err != nil {
+			return nil, "", err
+		}
+
+		return []*providers.Resource{}, "", errors.New("not implemented")
+	}
+
+	subscription, err := subscription.New().Handle(input, credentials)
 
 	if err != nil {
 		return nil, "", err
@@ -111,33 +135,22 @@ func (h *azureProvider) FetchResources(subscriptionId string) ([]*providers.Reso
 		TenantId:       subscription.TenantId,
 	}
 
-	filename := fmt.Sprintf("%s_%s", subscription.Name, subscription.Id)
-	filenameWithSuffix := fmt.Sprintf("%s.json", filename)
-
-	cachedResources, ok := marshall.UnmarshalIfExists[[]*models.Resource](filenameWithSuffix)
-
-	if ok {
-		log.Printf("using existing file %s\n", filenameWithSuffix)
-
-		return mapToProviderModel(*cachedResources), filename, nil
-	}
-
 	resources, err := fetchResources(subscription, ctx)
 
 	if err != nil {
 		return nil, "", err
 	}
 
-	postProcess(resources)
+	postProcessResources(resources)
 
-	addDependencyToSubscriptions(resources, subscription)
+	addDependencyToSubscriptions(resources, subscription.ResourceId)
 
 	resources = normalize(resources, ctx.TenantId, set.New[string]())
 
 	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
 	resources = filterUnknownDependencies(resources)
 
-	return mapToProviderModel(resources), filename, nil
+	return mapToProviderModel(resources), input, nil
 }
 
 func mapToProviderModel(resources []*models.Resource) []*providers.Resource {
@@ -177,14 +190,14 @@ func linkOrDefault(resource *models.Resource, tenantId string) map[string][]stri
 	return properties
 }
 
-func addDependencyToSubscriptions(resources []*models.Resource, subscription *azContext.SubscriptionContext) {
+func addDependencyToSubscriptions(resources []*models.Resource, subscriptionId string) {
 	// all resources should have a dependency on the subscription. Except the subscription itself
 	for _, resource := range resources {
-		if resource.Id == subscription.ResourceId {
+		if resource.Id == subscriptionId {
 			continue
 		}
 
-		resource.DependsOn = append(resource.DependsOn, subscription.ResourceId)
+		resource.DependsOn = append(resource.DependsOn, subscriptionId)
 	}
 }
 
@@ -237,7 +250,7 @@ func fetchResources(subscription *azContext.SubscriptionContext, ctx *azContext.
 	return resources, nil
 }
 
-func postProcess(resources []*models.Resource) {
+func postProcessResources(resources []*models.Resource) {
 	for _, resource := range resources {
 		handler, ok := handlers[resource.Type]
 

@@ -7,7 +7,6 @@ import (
 	"cloudsketch/internal/frontends/dot"
 	"cloudsketch/internal/frontends/drawio"
 	frontendModels "cloudsketch/internal/frontends/models"
-	"cloudsketch/internal/guid"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers"
@@ -38,8 +37,6 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 		return errors.New("command expects one argument")
 	}
 
-	fileOrSubscriptionId := args[0]
-
 	frontendString := command.String("frontend")
 
 	frontend, ok := frontendmap[frontendString]
@@ -62,20 +59,11 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 	var resources []*providers.Resource
 	var filename string
 
-	// command can either be a subscription id or a file name
-	if strings.HasSuffix(fileOrSubscriptionId, ".json") {
-		// if the file ends in .json, assume its a valid json file that contains previously populated Azure resources
-		existingResources, existingFilename, err := useExistingFile(fileOrSubscriptionId, frontendString)
+	input := args[0]
 
-		if err != nil {
-			return err
-		}
-
-		resources = existingResources
-		filename = existingFilename
-	} else if guid.IsGuid(fileOrSubscriptionId) {
-		// if it is a guid treat is as a subscription id
-		existingResources, existingFilename, err := createNewFile(fileOrSubscriptionId, frontendString, provider)
+	if strings.HasSuffix(input, ".json") {
+		// if the file ends in .json, assume its a valid json file that contains previously populated resources
+		existingResources, existingFilename, err := useExistingResourceFromFile(input, frontendString)
 
 		if err != nil {
 			return err
@@ -84,8 +72,15 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 		resources = existingResources
 		filename = existingFilename
 	} else {
-		// otherwise treat is as a management group
-		return errors.New("not implemented")
+		// otherwise delegate to the appropriate provider
+		newResources, newFilename, err := fetchResourcesAndCreateNewFile(input, frontendString, provider)
+
+		if err != nil {
+			return err
+		}
+
+		resources = newResources
+		filename = newFilename
 	}
 
 	frontendResources, err := mapToDomainModels(resources)
@@ -130,7 +125,7 @@ func removeBlacklistedResources(frontendResources []*frontendModels.Resource) []
 	return toReturn
 }
 
-func useExistingFile(file, frontendString string) ([]*providers.Resource, string, error) {
+func useExistingResourceFromFile(file, frontendString string) ([]*providers.Resource, string, error) {
 	log.Printf("using existing file %s\n", file)
 
 	resources, err := marshall.UnmarshallResources[[]*providers.Resource](file)
@@ -144,8 +139,8 @@ func useExistingFile(file, frontendString string) ([]*providers.Resource, string
 	return *resources, outFile, nil
 }
 
-func createNewFile(subscriptionId, frontendString string, provider providers.Provider) ([]*providers.Resource, string, error) {
-	resources, filename, err := provider.FetchResources(subscriptionId)
+func fetchResourcesAndCreateNewFile(input, frontendString string, provider providers.Provider) ([]*providers.Resource, string, error) {
+	resources, filename, err := provider.FetchResources(input)
 
 	if err != nil {
 		return nil, "", err

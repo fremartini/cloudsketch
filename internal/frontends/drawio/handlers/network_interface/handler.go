@@ -56,7 +56,6 @@ func (*handler) PostProcessIcon(nic *node.ResourceAndNode, resource_map *map[str
 		return nil
 	}
 
-	// set icon top right
 	return node.GroupIconsAndSetPosition(attachedTo.Node, nic.Node, node.TOP_RIGHT)
 }
 
@@ -71,9 +70,8 @@ func isBlacklistedResource(resourceType string) bool {
 func getNICsPointingToResource(resource_map *map[string]*node.ResourceAndNode, attachedResource *models.Resource) []*models.Resource {
 	nics := []*models.Resource{}
 
-	// figure out how many private endpoints are pointing to the storage account
+	// figure out how many private endpoints are pointing to this resource
 	for _, v := range *resource_map {
-		// filter out the private endpoints
 		if v.Resource.Type != types.NETWORK_INTERFACE {
 			continue
 		}
@@ -97,8 +95,33 @@ func getNICsPointingToResource(resource_map *map[string]*node.ResourceAndNode, a
 	return nics
 }
 
-func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{types.SUBNET})
+func (*handler) DrawDependencies(nic *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+	arrows := node.DrawDependencyArrowsToTargets(nic, targets, resource_map, []string{})
+
+	attachedToIds, ok := nic.Properties["attachedTo"]
+
+	if !ok {
+		return arrows
+	}
+
+	attachedTo, ok := (*resource_map)[attachedToIds[0]]
+
+	if !ok {
+		return arrows
+	}
+
+	existingNics := getNICsPointingToResource(resource_map, attachedTo.Resource)
+
+	// multiple NICs point to the same resource
+	if len(existingNics) > 1 {
+		thisResource := (*resource_map)[nic.Id].Node
+
+		arrowToAttachedResource := node.NewArrow(thisResource.Id(), attachedTo.Node.Id(), nil)
+
+		arrows = append(arrows, arrowToAttachedResource)
+	}
+
+	return arrows
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
