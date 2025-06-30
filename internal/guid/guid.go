@@ -11,3 +11,9 @@ func NewGuidAlphanumeric() string {
 
 	return strings.ReplaceAll(id.String(), "-", "")
 }
+
+func IsGuid(maybeGuid string) bool {
+	err := uuid.Validate(maybeGuid)
+
+	return err == nil
+}

@@ -54,7 +54,25 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 
 	arrows = append(arrows, addDependencyToAssociatedStorageAccount(source, resource_map)...)
 
+	arrows = append(arrows, addDependencyToOutboundSubnet(source, resource_map)...)
+
 	return arrows
+}
+
+func addDependencyToOutboundSubnet(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+	dashed := "dashed=1"
+
+	outboundSubnet, ok := source.Properties["outboundSubnet"]
+
+	if !ok {
+		return []*node.Arrow{}
+	}
+
+	outboundSubnetNode := (*resource_map)[outboundSubnet[0]].Node
+
+	sourceNode := (*resource_map)[source.Id].Node
+
+	return []*node.Arrow{node.NewArrow(sourceNode.Id(), outboundSubnetNode.Id(), &dashed)}
 }
 
 func addDependencyToAssociatedStorageAccount(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {

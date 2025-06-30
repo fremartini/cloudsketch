@@ -28,6 +28,7 @@ import (
 	"cloudsketch/internal/providers/azure/handlers/private_endpoint"
 	"cloudsketch/internal/providers/azure/handlers/private_link_service"
 	"cloudsketch/internal/providers/azure/handlers/resource_group"
+	"cloudsketch/internal/providers/azure/handlers/sql_server"
 	"cloudsketch/internal/providers/azure/handlers/subscription"
 	"cloudsketch/internal/providers/azure/handlers/virtual_hub"
 	"cloudsketch/internal/providers/azure/handlers/virtual_machine"
@@ -73,6 +74,7 @@ var (
 		types.PRIVATE_DNS_ZONE:           private_dns_zone.New(),
 		types.PRIVATE_ENDPOINT:           private_endpoint.New(),
 		types.PRIVATE_LINK_SERVICE:       private_link_service.New(),
+		types.SQL_SERVER:                 sql_server.New(),
 		types.VIRTUAL_HUB:                virtual_hub.New(),
 		types.VIRTUAL_MACHINE:            virtual_machine.New(),
 		types.VIRTUAL_MACHINE_SCALE_SET:  virtual_machine_scale_set.New(),
@@ -87,6 +89,8 @@ type azureProvider struct{}
 func NewProvider() *azureProvider {
 	return &azureProvider{}
 }
+
+//https://github.com/Azure/azure-sdk-for-go/tree/main/sdk/resourcemanager/managementgroups/armmanagementgroups
 
 func (h *azureProvider) FetchResources(subscriptionId string) ([]*providers.Resource, string, error) {
 	credentials, err := azidentity.NewDefaultAzureCredential(nil)

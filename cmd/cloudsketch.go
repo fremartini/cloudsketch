@@ -7,6 +7,7 @@ import (
 	"cloudsketch/internal/frontends/dot"
 	"cloudsketch/internal/frontends/drawio"
 	frontendModels "cloudsketch/internal/frontends/models"
+	"cloudsketch/internal/guid"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers"
@@ -72,8 +73,8 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 
 		resources = existingResources
 		filename = existingFilename
-	} else {
-		// otherwise treat it as a subscription id
+	} else if guid.IsGuid(fileOrSubscriptionId) {
+		// if it is a guid treat is as a subscription id
 		existingResources, existingFilename, err := createNewFile(fileOrSubscriptionId, frontendString, provider)
 
 		if err != nil {
@@ -82,6 +83,9 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 
 		resources = existingResources
 		filename = existingFilename
+	} else {
+		// otherwise treat is as a management group
+		return errors.New("not implemented")
 	}
 
 	frontendResources, err := mapToDomainModels(resources)
@@ -169,7 +173,7 @@ func mapToDomainModels(resources []*providers.Resource) ([]*frontendModels.Resou
 	}
 
 	for _, task := range tasks {
-		bg.Resolve(task)
+		bg.ResolveChildren(task)
 	}
 
 	domainResources := []*frontendModels.Resource{}

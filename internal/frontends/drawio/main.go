@@ -220,7 +220,7 @@ func populateResourceMap(resources []*models.Resource) (*map[string]*node.Resour
 
 	// ensure all resources that depend on this have been draw
 	for _, task := range tasks {
-		bg.ResolveInverse(task)
+		bg.ResolveParents(task)
 	}
 
 	return resource_map, nil

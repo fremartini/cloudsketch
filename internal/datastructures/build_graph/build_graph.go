@@ -88,24 +88,24 @@ func buildGraph(tasks []*Task) (map[string][]*Task, map[string][]*Task, error) {
 	return graph, inverse_graph, nil
 }
 
-func (g *Build_graph) ResolveInverse(t *Task) {
+func (g *Build_graph) ResolveParents(t *Task) {
 	e := g.Inverse_graph[t.Label]
 
 	for _, ref := range e {
 		// recursively resolve the tasks dependencies
-		g.ResolveInverse(ref)
+		g.ResolveParents(ref)
 	}
 
 	// when the task has no dependencies it can be resolved
 	t.Action()
 }
 
-func (g *Build_graph) Resolve(t *Task) {
+func (g *Build_graph) ResolveChildren(t *Task) {
 	e := g.Graph[t.Label]
 
 	for _, ref := range e {
 		// recursively resolve the tasks dependencies
-		g.Resolve(ref)
+		g.ResolveChildren(ref)
 	}
 
 	// when the task has no dependencies it can be resolved
