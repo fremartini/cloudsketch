@@ -36,6 +36,7 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/log_analytics"
 	"cloudsketch/internal/frontends/drawio/handlers/logic_app"
 	"cloudsketch/internal/frontends/drawio/handlers/machine_learning_workspace"
+	"cloudsketch/internal/frontends/drawio/handlers/management_group"
 	"cloudsketch/internal/frontends/drawio/handlers/nat_gateway"
 	"cloudsketch/internal/frontends/drawio/handlers/network_interface"
 	"cloudsketch/internal/frontends/drawio/handlers/network_security_group"
@@ -48,6 +49,7 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/public_ip_address"
 	"cloudsketch/internal/frontends/drawio/handlers/recovery_service_vault"
 	"cloudsketch/internal/frontends/drawio/handlers/redis"
+	"cloudsketch/internal/frontends/drawio/handlers/resource_group"
 	"cloudsketch/internal/frontends/drawio/handlers/route_table"
 	"cloudsketch/internal/frontends/drawio/handlers/search_service"
 	"cloudsketch/internal/frontends/drawio/handlers/signalr"
@@ -115,6 +117,7 @@ var (
 		log_analytics.TYPE:                         log_analytics.New(),
 		logic_app.TYPE:                             logic_app.New(),
 		machine_learning_workspace.TYPE:            machine_learning_workspace.New(),
+		management_group.TYPE:                      management_group.New(),
 		nat_gateway.TYPE:                           nat_gateway.New(),
 		network_interface.TYPE:                     network_interface.New(),
 		network_security_group.TYPE:                network_security_group.New(),
@@ -126,6 +129,7 @@ var (
 		public_ip_address.TYPE:                     public_ip_address.New(),
 		recovery_service_vault.TYPE:                recovery_service_vault.New(),
 		redis.TYPE:                                 redis.New(),
+		resource_group.TYPE:                        resource_group.New(),
 		route_table.TYPE:                           route_table.New(),
 		search_service.TYPE:                        search_service.New(),
 		signalr.TYPE:                               signalr.New(),

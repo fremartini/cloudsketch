@@ -45,6 +45,7 @@ const (
 	PUBLIC_IP_ADDRESS                     = "PUBLIC_IP_ADDRESS"
 	RECOVERY_SERVICE_VAULT                = "RECOVERY_SERVICE_VAULT"
 	REDIS                                 = "REDIS"
+	RESOURCE_GROUP                        = "RESOURCE_GROUP"
 	SIGNALR                               = "SIGNALR"
 	ROUTE_TABLE                           = "ROUTE_TABLE"
 	SEARCH_SERVICE                        = "SEARCH_SERVICE"

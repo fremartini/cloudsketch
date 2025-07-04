@@ -86,10 +86,15 @@ func mapSubnetResources(subnets []*armnetwork.Subnet, vnetId string) ([]*models.
 			dependsOn = append(dependsOn, strings.ToLower(*nsg.ID))
 		}
 
-		addressPrefix := strings.Split(*subnet.Properties.AddressPrefix, "/")[1]
+		properties := map[string][]string{}
+		if subnet.Properties.AddressPrefix != nil {
+			addressPrefix := strings.Split(*subnet.Properties.AddressPrefix, "/")[1]
 
-		properties := map[string][]string{
-			"size": {addressPrefix},
+			properties["size"] = []string{addressPrefix}
+		} else if len(subnet.Properties.AddressPrefixes) > 0 {
+			addressPrefix := strings.Split(*subnet.Properties.AddressPrefixes[0], "/")[1]
+
+			properties["size"] = []string{addressPrefix}
 		}
 
 		snet := &models.Resource{

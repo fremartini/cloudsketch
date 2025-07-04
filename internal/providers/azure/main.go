@@ -1,46 +1,16 @@
 package azure
 
 import (
-	"cloudsketch/internal/concurrency"
 	"cloudsketch/internal/datastructures/set"
 	"cloudsketch/internal/guid"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers"
 	azContext "cloudsketch/internal/providers/azure/context"
-	"cloudsketch/internal/providers/azure/handlers/api_management_service"
-	"cloudsketch/internal/providers/azure/handlers/application_gateway"
-	"cloudsketch/internal/providers/azure/handlers/application_group"
-	"cloudsketch/internal/providers/azure/handlers/application_insights"
-	"cloudsketch/internal/providers/azure/handlers/bastion"
-	"cloudsketch/internal/providers/azure/handlers/container_app"
-	"cloudsketch/internal/providers/azure/handlers/container_apps_environment"
-	"cloudsketch/internal/providers/azure/handlers/data_factory"
-	"cloudsketch/internal/providers/azure/handlers/express_route_circuit"
-	"cloudsketch/internal/providers/azure/handlers/express_route_gateway"
-	"cloudsketch/internal/providers/azure/handlers/host_pool"
-	"cloudsketch/internal/providers/azure/handlers/key_vault"
-	"cloudsketch/internal/providers/azure/handlers/load_balancer"
 	"cloudsketch/internal/providers/azure/handlers/management_group"
-	"cloudsketch/internal/providers/azure/handlers/nat_gateway"
-	"cloudsketch/internal/providers/azure/handlers/network_interface"
-	"cloudsketch/internal/providers/azure/handlers/postgres_flexible_server"
-	"cloudsketch/internal/providers/azure/handlers/private_dns_resolver"
-	"cloudsketch/internal/providers/azure/handlers/private_dns_zone"
-	"cloudsketch/internal/providers/azure/handlers/private_endpoint"
-	"cloudsketch/internal/providers/azure/handlers/private_link_service"
-	"cloudsketch/internal/providers/azure/handlers/resource_group"
-	"cloudsketch/internal/providers/azure/handlers/sql_server"
 	"cloudsketch/internal/providers/azure/handlers/subscription"
-	"cloudsketch/internal/providers/azure/handlers/virtual_hub"
-	"cloudsketch/internal/providers/azure/handlers/virtual_machine"
-	"cloudsketch/internal/providers/azure/handlers/virtual_machine_scale_set"
-	"cloudsketch/internal/providers/azure/handlers/virtual_network"
-	"cloudsketch/internal/providers/azure/handlers/virtual_network_gateway"
-	"cloudsketch/internal/providers/azure/handlers/web_sites"
 	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -48,43 +18,6 @@ import (
 	domainTypes "cloudsketch/internal/frontends/types"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-)
-
-type handler interface {
-	GetResource(ctx *azContext.Context) ([]*models.Resource, error)
-	PostProcess(*models.Resource, []*models.Resource)
-}
-
-var (
-	handlers map[string]handler = map[string]handler{
-		types.API_MANAGEMENT_SERVICE:     api_management_service.New(),
-		types.APPLICATION_GATEWAY:        application_gateway.New(),
-		types.APPLICATION_GROUP:          application_group.New(),
-		types.APPLICATION_INSIGHTS:       application_insights.New(),
-		types.DATA_FACTORY:               data_factory.New(),
-		types.EXPRESS_ROUTE_CIRCUIT:      express_route_circuit.New(),
-		types.EXPRESS_ROUTE_GATEWAY:      express_route_gateway.New(),
-		types.HOST_POOL:                  host_pool.New(),
-		types.BASTION:                    bastion.New(),
-		types.CONTAINER_APP:              container_app.New(),
-		types.CONTAINER_APPS_ENVIRONMENT: container_apps_environment.New(),
-		types.KEY_VAULT:                  key_vault.New(),
-		types.LOAD_BALANCER:              load_balancer.New(),
-		types.NAT_GATEWAY:                nat_gateway.New(),
-		types.NETWORK_INTERFACE:          network_interface.New(),
-		types.POSTGRES_FLEXIBLE_SERVER:   postgres_flexible_server.New(),
-		types.PRIVATE_DNS_RESOLVER:       private_dns_resolver.New(),
-		types.PRIVATE_DNS_ZONE:           private_dns_zone.New(),
-		types.PRIVATE_ENDPOINT:           private_endpoint.New(),
-		types.PRIVATE_LINK_SERVICE:       private_link_service.New(),
-		types.SQL_SERVER:                 sql_server.New(),
-		types.VIRTUAL_HUB:                virtual_hub.New(),
-		types.VIRTUAL_MACHINE:            virtual_machine.New(),
-		types.VIRTUAL_MACHINE_SCALE_SET:  virtual_machine_scale_set.New(),
-		types.VIRTUAL_NETWORK:            virtual_network.New(),
-		types.VIRTUAL_NETWORK_GATEWAY:    virtual_network_gateway.New(),
-		types.WEB_SITES:                  web_sites.New(),
-	}
 )
 
 type azureProvider struct{}
@@ -110,42 +43,36 @@ func (h *azureProvider) FetchResources(input string) ([]*providers.Resource, str
 		return nil, "", fmt.Errorf("authentication failure: %+v", err)
 	}
 
+	ctx := &azContext.Context{
+		ResourceId:  input,
+		Credentials: credentials,
+	}
+
+	var resources = []*models.Resource{}
+
 	if guid.IsGuid(input) {
 		// subscription id
-	} else {
-		// management group
-		_, err := management_group.New().Handle(input, credentials)
+		subscriptionResources, err := subscription.New().GetResource(ctx)
 
 		if err != nil {
 			return nil, "", err
 		}
 
-		return []*providers.Resource{}, "", errors.New("not implemented")
+		resources = subscriptionResources
+
+	} else {
+		// management group
+		managementGroupResources, err := management_group.New().GetResource(ctx)
+
+		if err != nil {
+			return nil, "", err
+		}
+
+		resources = managementGroupResources
 	}
 
-	subscription, err := subscription.New().Handle(input, credentials)
-
-	if err != nil {
-		return nil, "", err
-	}
-
-	ctx := &azContext.Context{
-		SubscriptionId: subscription.Id,
-		Credentials:    credentials,
-		TenantId:       subscription.TenantId,
-	}
-
-	resources, err := fetchResources(subscription, ctx)
-
-	if err != nil {
-		return nil, "", err
-	}
-
-	postProcessResources(resources)
-
-	addDependencyToSubscriptions(resources, subscription.ResourceId)
-
-	resources = normalize(resources, ctx.TenantId, set.New[string]())
+	//TODO: figure out how to get tenant ID
+	resources = normalize(resources, ctx.TenantId)
 
 	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
 	resources = filterUnknownDependencies(resources)
@@ -165,11 +92,13 @@ func mapToProviderModel(resources []*models.Resource) []*providers.Resource {
 	})
 }
 
-func normalize(resources []*models.Resource, tenantId string, unhandled_types *set.Set[string]) []*models.Resource {
+func normalize(resources []*models.Resource, tenantId string) []*models.Resource {
+	unhandledTypes := set.New[string]()
+
 	return list.Map(resources, func(resource *models.Resource) *models.Resource {
 		return &models.Resource{
 			Id:         strings.ToLower(resource.Id), // Azure is not consistent regarding casing. Ensure all id's are lowercase
-			Type:       mapTypeToDomainType(resource.Type, unhandled_types),
+			Type:       mapTypeToDomainType(resource.Type, unhandledTypes),
 			Name:       resource.Name,
 			DependsOn:  list.Map(resource.DependsOn, strings.ToLower),
 			Properties: linkOrDefault(resource, tenantId),
@@ -188,78 +117,6 @@ func linkOrDefault(resource *models.Resource, tenantId string) map[string][]stri
 	properties["link"] = []string{link}
 
 	return properties
-}
-
-func addDependencyToSubscriptions(resources []*models.Resource, subscriptionId string) {
-	// all resources should have a dependency on the subscription. Except the subscription itself
-	for _, resource := range resources {
-		if resource.Id == subscriptionId {
-			continue
-		}
-
-		resource.DependsOn = append(resource.DependsOn, subscriptionId)
-	}
-}
-
-func fetchResources(subscription *azContext.SubscriptionContext, ctx *azContext.Context) ([]*models.Resource, error) {
-	resources, err := resource_group.New().Handle(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	resourcesWithHandlers, resourcesWithoutHandlers := list.Split(resources, func(resource *models.Resource) bool {
-		_, ok := handlers[resource.Type]
-
-		return ok
-	})
-
-	functionsToApply := list.Map(resourcesWithHandlers, func(resource *models.Resource) func() ([]*models.Resource, error) {
-		return func() ([]*models.Resource, error) {
-			log.Print(resource.Name)
-
-			handler := handlers[resource.Type]
-
-			return handler.GetResource(&azContext.Context{
-				SubscriptionId:    ctx.SubscriptionId,
-				TenantId:          ctx.TenantId,
-				Credentials:       ctx.Credentials,
-				ResourceGroupName: resource.ResourceGroup,
-				ResourceName:      resource.Name,
-				ResourceId:        resource.Id,
-			})
-		}
-	})
-
-	resources, err = concurrency.FanOut(functionsToApply)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// add the resources that don't have any handlers as-is
-	resources = append(resources, resourcesWithoutHandlers...)
-
-	// add the subscription entry
-	resources = append(resources, &models.Resource{
-		Id:   subscription.ResourceId,
-		Name: subscription.Name,
-		Type: types.SUBSCRIPTION,
-	})
-
-	return resources, nil
-}
-
-func postProcessResources(resources []*models.Resource) {
-	for _, resource := range resources {
-		handler, ok := handlers[resource.Type]
-
-		if !ok {
-			continue
-		}
-
-		handler.PostProcess(resource, resources)
-	}
 }
 
 func generateAzurePortalLink(resource *models.Resource, tenant string) string {
@@ -302,6 +159,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.LOG_ANALYTICS:                         domainTypes.LOG_ANALYTICS,
 		types.LOGIC_APP:                             domainTypes.LOGIC_APP,
 		types.MACHINE_LEARNING_WORKSPACE:            domainTypes.MACHINE_LEARNING_WORKSPACE,
+		types.MANAGEMENT_GROUP:                      domainTypes.MANAGEMENT_GROUP,
 		types.NAT_GATEWAY:                           domainTypes.NAT_GATEWAY,
 		types.NETWORK_INTERFACE:                     domainTypes.NETWORK_INTERFACE,
 		types.NETWORK_SECURITY_GROUP:                domainTypes.NETWORK_SECURITY_GROUP,
@@ -313,6 +171,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.PUBLIC_IP_ADDRESS:                     domainTypes.PUBLIC_IP_ADDRESS,
 		types.RECOVERY_SERVICE_VAULT:                domainTypes.RECOVERY_SERVICE_VAULT,
 		types.REDIS:                                 domainTypes.REDIS,
+		types.RESOURCE_GROUP:                        domainTypes.RESOURCE_GROUP,
 		types.ROUTE_TABLE:                           domainTypes.ROUTE_TABLE,
 		types.SEARCH_SERVICE:                        domainTypes.SEARCH_SERVICE,
 		types.SIGNALR:                               domainTypes.SIGNALR,
