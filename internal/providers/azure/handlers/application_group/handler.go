@@ -14,15 +14,15 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
 
-	client, err := armdesktopvirtualization.NewApplicationGroupsClient(ctx.SubscriptionId, ctx.Credentials, nil)
+	client, err := armdesktopvirtualization.NewApplicationGroupsClient(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	applicationGroup, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	applicationGroup, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -33,14 +33,9 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		*applicationGroup.Properties.WorkspaceArmPath,
 	}
 
-	resource := &models.Resource{
-		Id:        ctx.ResourceId,
-		Name:      ctx.ResourceName,
-		Type:      *applicationGroup.Type,
-		DependsOn: dependsOn,
-	}
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
-	return []*models.Resource{resource}, nil
+	return []*models.Resource{}, nil
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {

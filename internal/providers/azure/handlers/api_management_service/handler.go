@@ -16,8 +16,8 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armapimanagement.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armapimanagement.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
@@ -25,39 +25,26 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	client := clientFactory.NewServiceClient()
 
-	apim, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	apim, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	dependsOn := []string{}
-
-	dependsOn = append(dependsOn, strings.ToLower(*apim.Properties.PublicIPAddressID))
-	dependsOn = append(dependsOn, strings.ToLower(*apim.Properties.VirtualNetworkConfiguration.SubnetResourceID))
-
-	resources := []*models.Resource{&models.Resource{
-		Id:        ctx.ResourceId,
-		Name:      ctx.ResourceName,
-		Type:      *apim.Type,
-		DependsOn: dependsOn,
-	}}
-
-	apis, err := getAPIs(clientFactory, ctx)
-
-	if err != nil {
-		return nil, err
+	dependsOn := []string{
+		strings.ToLower(*apim.Properties.PublicIPAddressID),
+		strings.ToLower(*apim.Properties.VirtualNetworkConfiguration.SubnetResourceID),
 	}
 
-	resources = append(resources, apis...)
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
-	return resources, nil
+	return getAPIs(clientFactory, ctx)
 }
 
 func getAPIs(clientFactory *armapimanagement.ClientFactory, ctx *azContext.Context) ([]*models.Resource, error) {
 	client := clientFactory.NewAPIClient()
 
-	pager := client.NewListByServicePager(ctx.ResourceGroupName, ctx.ResourceName, nil)
+	pager := client.NewListByServicePager(ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	var apis []*armapimanagement.APIContract
 	for pager.More() {
@@ -72,7 +59,7 @@ func getAPIs(clientFactory *armapimanagement.ClientFactory, ctx *azContext.Conte
 	}
 
 	return list.Map(apis, func(api *armapimanagement.APIContract) *models.Resource {
-		dependsOn := []string{ctx.ResourceId}
+		dependsOn := []string{ctx.Resource.Id}
 
 		return &models.Resource{
 			Id:        *api.ID,

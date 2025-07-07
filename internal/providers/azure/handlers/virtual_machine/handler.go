@@ -15,8 +15,8 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armcompute.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armcompute.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	client := clientFactory.NewVirtualMachinesClient()
 
-	vm, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	vm, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -42,16 +42,9 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		dependsOn = append(dependsOn, t)
 	}
 
-	resources := []*models.Resource{
-		{
-			Id:        *vm.ID,
-			Name:      *vm.Name,
-			Type:      *vm.Type,
-			DependsOn: dependsOn,
-		},
-	}
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
-	return resources, nil
+	return []*models.Resource{}, nil
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {

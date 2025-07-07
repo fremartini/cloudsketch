@@ -44,7 +44,6 @@ const (
 	PUBLIC_IP_ADDRESS                     = "img/lib/azure2/networking/Public_IP_Addresses.svg"
 	RECOVERY_SERVICE_VAULT                = "img/lib/azure2/storage/Recovery_Services_Vaults.svg"
 	REDIS                                 = "img/lib/azure2/databases/Cache_Redis.svg"
-	RESOURCE_GROUP                        = "img/lib/azure2/general/Resource_Groups.svg"
 	ROUTE_TABLE                           = "img/lib/azure2/networking/Route_Tables.svg"
 	SEARCH_SERVICE                        = "img/lib/azure2/app_services/Search_Services.svg"
 	SIGNALR                               = "img/lib/azure2/web/SignalR.svg"

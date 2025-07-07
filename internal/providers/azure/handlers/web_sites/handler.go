@@ -35,20 +35,20 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	client, err := armappservice.NewWebAppsClient(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	client, err := armappservice.NewWebAppsClient(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	app, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	app, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	config, err := client.GetConfiguration(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	config, err := client.GetConfiguration(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	properties := map[string][]string{}
 
-	configValues := config.Properties.AzureStorageAccounts[ctx.ResourceName]
+	configValues := config.Properties.AzureStorageAccounts[ctx.Resource.Name]
 
 	if configValues != nil {
 		properties["storageAccountName"] = []string{strings.ToLower(*configValues.AccountName)}
@@ -91,19 +91,15 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 	planId := app.Properties.ServerFarmID
 	dependsOn = append(dependsOn, *planId)
 
-	resource := &models.Resource{
-		Id:         *app.ID,
-		Name:       *app.Name,
-		Type:       subType,
-		DependsOn:  dependsOn,
-		Properties: properties,
-	}
+	resource.Type = subType
+	resource.Properties = properties
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
-	return []*models.Resource{resource}, nil
+	return []*models.Resource{}, nil
 }
 
 func getResourceReferencesInTags(ctx *azContext.Context) ([]string, error) {
-	clientFactory, err := armresources.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+	clientFactory, err := armresources.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
@@ -111,7 +107,7 @@ func getResourceReferencesInTags(ctx *azContext.Context) ([]string, error) {
 
 	client := clientFactory.NewTagsClient()
 
-	tags, err := client.GetAtScope(context.Background(), ctx.ResourceId, nil)
+	tags, err := client.GetAtScope(context.Background(), ctx.Resource.Id, nil)
 
 	if err != nil {
 		return nil, err

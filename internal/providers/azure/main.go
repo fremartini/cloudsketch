@@ -6,9 +6,8 @@ import (
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/marshall"
 	"cloudsketch/internal/providers"
-	azContext "cloudsketch/internal/providers/azure/context"
-	"cloudsketch/internal/providers/azure/handlers/management_group"
-	"cloudsketch/internal/providers/azure/handlers/subscription"
+	"cloudsketch/internal/providers/azure/containers/management_group"
+	"cloudsketch/internal/providers/azure/containers/subscription"
 	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
 	"fmt"
@@ -16,6 +15,7 @@ import (
 	"strings"
 
 	domainTypes "cloudsketch/internal/frontends/types"
+	azContext "cloudsketch/internal/providers/azure/context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 )
@@ -43,41 +43,37 @@ func (h *azureProvider) FetchResources(input string) ([]*providers.Resource, str
 		return nil, "", fmt.Errorf("authentication failure: %+v", err)
 	}
 
-	ctx := &azContext.Context{
-		ResourceId:  input,
-		Credentials: credentials,
-	}
+	resources, err := getResources(credentials, input)
 
-	var resources = []*models.Resource{}
-
-	if guid.IsGuid(input) {
-		// subscription id
-		subscriptionResources, err := subscription.New().GetResource(ctx)
-
-		if err != nil {
-			return nil, "", err
-		}
-
-		resources = subscriptionResources
-
-	} else {
-		// management group
-		managementGroupResources, err := management_group.New().GetResource(ctx)
-
-		if err != nil {
-			return nil, "", err
-		}
-
-		resources = managementGroupResources
+	if err != nil {
+		return nil, "", err
 	}
 
 	//TODO: figure out how to get tenant ID
-	resources = normalize(resources, ctx.TenantId)
+	tenantId := ""
+	resources = normalize(resources, tenantId)
 
 	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
 	resources = filterUnknownDependencies(resources)
 
 	return mapToProviderModel(resources), input, nil
+}
+
+func getResources(credentials *azidentity.DefaultAzureCredential, input string) ([]*models.Resource, error) {
+	ctx := &azContext.Context{
+		Resource: &azContext.ResourceIdentifier{
+			Id: input,
+		},
+		Credentials: credentials,
+	}
+
+	if guid.IsGuid(input) {
+		// subscription id
+		return subscription.New().GetResource(ctx)
+	}
+
+	// management group
+	return management_group.New().GetResource(ctx)
 }
 
 func mapToProviderModel(resources []*models.Resource) []*providers.Resource {
@@ -171,7 +167,6 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 		types.PUBLIC_IP_ADDRESS:                     domainTypes.PUBLIC_IP_ADDRESS,
 		types.RECOVERY_SERVICE_VAULT:                domainTypes.RECOVERY_SERVICE_VAULT,
 		types.REDIS:                                 domainTypes.REDIS,
-		types.RESOURCE_GROUP:                        domainTypes.RESOURCE_GROUP,
 		types.ROUTE_TABLE:                           domainTypes.ROUTE_TABLE,
 		types.SEARCH_SERVICE:                        domainTypes.SEARCH_SERVICE,
 		types.SIGNALR:                               domainTypes.SIGNALR,
@@ -211,7 +206,7 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 
 func filterUnknownDependencies(resources []*models.Resource) []*models.Resource {
 	for _, resource := range resources {
-		resource.DependsOn = list.Filter(resource.DependsOn, func(d string) bool {
+		filteredDependencies := list.Filter(resource.DependsOn, func(d string) bool {
 			dependency := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
 				return r.Id == d
 			})
@@ -223,6 +218,8 @@ func filterUnknownDependencies(resources []*models.Resource) []*models.Resource 
 
 			return true
 		})
+
+		resource.DependsOn = filteredDependencies
 	}
 
 	return resources

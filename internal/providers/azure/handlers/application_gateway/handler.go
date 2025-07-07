@@ -15,14 +15,14 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	client, err := armnetwork.NewApplicationGatewaysClient(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	client, err := armnetwork.NewApplicationGatewaysClient(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	agw, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	agw, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -45,14 +45,9 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		}
 	}
 
-	resource := &models.Resource{
-		Id:        *agw.ID,
-		Name:      *agw.Name,
-		Type:      *agw.Type,
-		DependsOn: dependsOn,
-	}
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
-	return []*models.Resource{resource}, nil
+	return []*models.Resource{}, nil
 }
 
 func getSubnet(agw *armnetwork.ApplicationGatewaysClientGetResponse) *string {

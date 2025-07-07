@@ -8,7 +8,7 @@ import (
 	"log"
 	"strings"
 
-	"cloudsketch/internal/providers/azure/handlers/subscription"
+	"cloudsketch/internal/providers/azure/containers/subscription"
 
 	"context"
 
@@ -22,7 +22,7 @@ func New() *handler {
 }
 
 func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	log.Printf("fetching resources in management group %s", ctx.ResourceId)
+	log.Printf("fetching resources in management group %s", ctx.Resource.Id)
 
 	clientFactory, err := armmanagementgroups.NewClientFactory(ctx.Credentials, nil)
 
@@ -30,13 +30,13 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	managementGroup, err := clientFactory.NewClient().Get(context.Background(), ctx.ResourceId, nil)
+	managementGroup, err := clientFactory.NewClient().Get(context.Background(), ctx.Resource.Id, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	resources, err := getChildManagementGroupsAndSubscriptions(ctx.ResourceId, clientFactory)
+	resources, err := getChildManagementGroupsAndSubscriptions(ctx.Resource.Id, clientFactory)
 
 	if err != nil {
 		return nil, err
@@ -50,11 +50,19 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		managementGroupResourceId := strings.Split(childManagementGroup.Id, "/")
 		managementGroupId := managementGroupResourceId[len(managementGroupResourceId)-1]
 
-		childResources, err := h.GetResource(&azContext.Context{
-			Credentials:       ctx.Credentials,
-			ResourceId:        managementGroupId,
-			ManagementGroupId: *managementGroup.ID,
-		})
+		childManagementGroupCtx := &azContext.Context{
+			Credentials: ctx.Credentials,
+			Resource: &azContext.ResourceIdentifier{
+				Id:   managementGroupId,
+				Name: childManagementGroup.Name,
+			},
+			ManagementGroup: &azContext.ResourceIdentifier{
+				Id:   *managementGroup.ID,
+				Name: childManagementGroup.Name,
+			},
+		}
+
+		childResources, err := h.GetResource(childManagementGroupCtx)
 
 		if err != nil {
 			return nil, err
@@ -67,11 +75,19 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		childSubscriptionResourceId := strings.Split(childSubscription.Id, "/")
 		childSubscriptionId := childSubscriptionResourceId[len(childSubscriptionResourceId)-1]
 
-		childResources, err := subscription.New().GetResource(&azContext.Context{
-			Credentials:       ctx.Credentials,
-			ResourceId:        childSubscriptionId,
-			ManagementGroupId: *managementGroup.ID,
-		})
+		childSubscriptionCtx := &azContext.Context{
+			Credentials: ctx.Credentials,
+			Resource: &azContext.ResourceIdentifier{
+				Id:   childSubscriptionId,
+				Name: childSubscription.Name,
+			},
+			ManagementGroup: &azContext.ResourceIdentifier{
+				Id:   *managementGroup.ID,
+				Name: *managementGroup.Name,
+			},
+		}
+
+		childResources, err := subscription.New().GetResource(childSubscriptionCtx)
 
 		if err != nil {
 			return nil, err

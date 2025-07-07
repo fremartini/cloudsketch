@@ -15,16 +15,8 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armsql.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
-
-	if err != nil {
-		return nil, err
-	}
-
-	client := clientFactory.NewServersClient()
-
-	sqlServer, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armsql.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
@@ -36,24 +28,13 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	resource := &models.Resource{
-		Id:        ctx.ResourceId,
-		Name:      ctx.ResourceName,
-		Type:      *sqlServer.Type,
-		DependsOn: []string{},
-	}
-
-	resources := []*models.Resource{resource}
-
-	resources = append(resources, databases...)
-
-	return resources, nil
+	return databases, nil
 }
 
 func getDatabases(clientFactory *armsql.ClientFactory, ctx *azContext.Context) ([]*models.Resource, error) {
 	client := clientFactory.NewDatabasesClient()
 
-	pager := client.NewListByServerPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
+	pager := client.NewListByServerPager(ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	var databases []*armsql.Database
 	for pager.More() {
@@ -67,7 +48,7 @@ func getDatabases(clientFactory *armsql.ClientFactory, ctx *azContext.Context) (
 		}
 	}
 
-	dependsOn := []string{ctx.ResourceId}
+	dependsOn := []string{ctx.Resource.Id}
 
 	models := list.Map(databases, func(database *armsql.Database) *models.Resource {
 		return &models.Resource{

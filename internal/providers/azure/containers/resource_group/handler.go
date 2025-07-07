@@ -47,7 +47,7 @@ func New() *handler {
 }
 
 type resourceHandler interface {
-	GetResource(ctx *azContext.Context) ([]*models.Resource, error)
+	GetResource(*models.Resource, *azContext.Context) ([]*models.Resource, error)
 	PostProcess(*models.Resource, []*models.Resource)
 }
 
@@ -84,33 +84,13 @@ var (
 )
 
 func (*handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
-	log.Printf("fetching resources in resource group %s", ctx.ResourceId)
-
-	client, err := armresources.NewResourceGroupsClient(ctx.SubscriptionId, ctx.Credentials, nil)
-
-	if err != nil {
-		return nil, err
-	}
-
-	resourceGroup, err := client.Get(context.Background(), ctx.ResourceName, nil)
-
-	if err != nil {
-		return nil, err
-	}
+	log.Printf("fetching resources in resource group %s", ctx.Resource.Name)
 
 	resources, err := getResourcesInResourceGroup(ctx)
 
 	if err != nil {
 		return nil, err
 	}
-
-	resources = append(resources, &models.Resource{
-		Id:            *resourceGroup.ID,
-		Name:          *resourceGroup.Name,
-		Type:          types.RESOURCE_GROUP,
-		ResourceGroup: ctx.ResourceName,
-		DependsOn:     []string{ctx.SubscriptionId},
-	})
 
 	enrichedResources, err := enrichResources(resources, ctx)
 
@@ -124,13 +104,13 @@ func (*handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 }
 
 func getResourcesInResourceGroup(ctx *azContext.Context) ([]*models.Resource, error) {
-	client, err := armresources.NewClient(ctx.SubscriptionId, ctx.Credentials, nil)
+	client, err := armresources.NewClient(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	pager := client.NewListByResourceGroupPager(ctx.ResourceName, nil)
+	pager := client.NewListByResourceGroupPager(ctx.Resource.Name, nil)
 
 	var resources []*armresources.GenericResourceExpanded
 	for pager.More() {
@@ -145,12 +125,18 @@ func getResourcesInResourceGroup(ctx *azContext.Context) ([]*models.Resource, er
 	}
 
 	models := list.Map(resources, func(resource *armresources.GenericResourceExpanded) *models.Resource {
+		dependsOn := []string{ctx.Resource.Id, ctx.Subscription.ResourceId}
+
+		if ctx.ManagementGroup != nil {
+			dependsOn = append(dependsOn, ctx.ManagementGroup.ResourceId)
+		}
+
 		return &models.Resource{
 			Id:            *resource.ID,
 			Name:          *resource.Name,
 			Type:          *resource.Type,
-			ResourceGroup: ctx.ResourceName,
-			DependsOn:     []string{ctx.ResourceId},
+			ResourceGroup: ctx.Resource.Name,
+			DependsOn:     dependsOn,
 		}
 	})
 
@@ -170,14 +156,24 @@ func enrichResources(resources []*models.Resource, ctx *azContext.Context) ([]*m
 
 			handler := handlers[resource.Type]
 
-			return handler.GetResource(&azContext.Context{
-				SubscriptionId:    ctx.SubscriptionId,
-				TenantId:          ctx.TenantId,
-				Credentials:       ctx.Credentials,
-				ResourceGroupName: resource.ResourceGroup,
-				ResourceName:      resource.Name,
-				ResourceId:        resource.Id,
-			})
+			resourceCtx := &azContext.Context{
+				Subscription:  ctx.Subscription,
+				TenantId:      ctx.TenantId,
+				Credentials:   ctx.Credentials,
+				ResourceGroup: resource.ResourceGroup,
+				Resource: &azContext.ResourceIdentifier{
+					Id:   resource.Id,
+					Name: resource.Name,
+				},
+			}
+
+			subresources, err := handler.GetResource(resource, resourceCtx)
+
+			if err != nil {
+				return nil, err
+			}
+
+			return append([]*models.Resource{resource}, subresources...), nil
 		}
 	})
 

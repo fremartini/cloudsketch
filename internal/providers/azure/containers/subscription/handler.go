@@ -2,8 +2,8 @@ package subscription
 
 import (
 	"cloudsketch/internal/list"
+	"cloudsketch/internal/providers/azure/containers/resource_group"
 	azContext "cloudsketch/internal/providers/azure/context"
-	"cloudsketch/internal/providers/azure/handlers/resource_group"
 	"cloudsketch/internal/providers/azure/models"
 	"cloudsketch/internal/providers/azure/types"
 	"context"
@@ -20,7 +20,7 @@ func New() *handler {
 }
 
 func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	log.Printf("fetching resources in subscription %s", ctx.ResourceId)
+	log.Printf("fetching resources in subscription %s", ctx.Resource.Id)
 
 	clientFactory, err := armsubscriptions.NewClientFactory(ctx.Credentials, nil)
 
@@ -28,11 +28,16 @@ func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) 
 		return nil, err
 	}
 
-	subscription, err := clientFactory.NewClient().Get(context.Background(), ctx.ResourceId, nil)
+	subscription, err := clientFactory.NewClient().Get(context.Background(), ctx.Resource.Id, nil)
 
 	if err != nil {
 		return nil, err
 	}
+
+	subscriptionResourceId := *subscription.Subscription.ID
+
+	ctx.Resource.Name = *subscription.DisplayName
+	ctx.Resource.ResourceId = subscriptionResourceId
 
 	resourceGroups, err := getResourceGroupsInSubscription(ctx)
 
@@ -40,22 +45,38 @@ func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) 
 		return nil, err
 	}
 
+	dependsOn := []string{}
+
+	if ctx.ManagementGroup != nil {
+		dependsOn = append(dependsOn, ctx.ManagementGroup.Id)
+	}
+
 	resources := []*models.Resource{
 		{
 			Id:        *subscription.ID,
 			Name:      *subscription.DisplayName,
 			Type:      types.SUBSCRIPTION,
-			DependsOn: []string{ctx.ManagementGroupId},
+			DependsOn: dependsOn,
 		},
 	}
 
 	for _, resourceGroup := range resourceGroups {
-		resourceGroupResources, err := resource_group.New().Handle(&azContext.Context{
-			Credentials:       ctx.Credentials,
-			ResourceName:      resourceGroup.Name,
-			SubscriptionId:    ctx.ResourceId,
-			ManagementGroupId: ctx.ManagementGroupId,
-		})
+		rgCtx := &azContext.Context{
+			Credentials: ctx.Credentials,
+			Resource: &azContext.ResourceIdentifier{
+				Id:         resourceGroup.Id,
+				Name:       resourceGroup.Name,
+				ResourceId: resourceGroup.Id,
+			},
+			Subscription: &azContext.ResourceIdentifier{
+				Id:         *subscription.SubscriptionID,
+				Name:       *subscription.DisplayName,
+				ResourceId: subscriptionResourceId,
+			},
+			ManagementGroup: ctx.ManagementGroup,
+		}
+
+		resourceGroupResources, err := resource_group.New().Handle(rgCtx)
 
 		if err != nil {
 			return nil, err
@@ -68,7 +89,7 @@ func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) 
 }
 
 func getResourceGroupsInSubscription(ctx *azContext.Context) ([]*models.Resource, error) {
-	client, err := armresources.NewResourceGroupsClient(ctx.ResourceId, ctx.Credentials, nil)
+	client, err := armresources.NewResourceGroupsClient(ctx.Resource.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
@@ -93,7 +114,7 @@ func getResourceGroupsInSubscription(ctx *azContext.Context) ([]*models.Resource
 			Name:          *resourceGroup.Name,
 			Type:          *resourceGroup.Type,
 			ResourceGroup: *resourceGroup.Name,
-			DependsOn:     []string{ctx.ResourceId},
+			DependsOn:     []string{ctx.Resource.ResourceId},
 		}
 	})
 

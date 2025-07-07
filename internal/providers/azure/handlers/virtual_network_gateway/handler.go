@@ -15,8 +15,8 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armnetwork.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	client := clientFactory.NewVirtualNetworkGatewaysClient()
 
-	virtualNetworkGateway, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	virtualNetworkGateway, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -41,30 +41,21 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		}
 	}
 
-	resource := &models.Resource{
-		Id:        ctx.ResourceId,
-		Name:      ctx.ResourceName,
-		Type:      *virtualNetworkGateway.Type,
-		DependsOn: dependsOn,
-	}
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
-	resources := []*models.Resource{resource}
-
-	connections, err := getConnections(clientFactory, ctx, ctx.ResourceId)
+	connections, err := getConnections(clientFactory, ctx, ctx.Resource.Id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	resources = append(resources, connections...)
-
-	return resources, nil
+	return connections, nil
 }
 
 func getConnections(clientFactory *armnetwork.ClientFactory, ctx *azContext.Context, virtualNetworkGatewayId string) ([]*models.Resource, error) {
 	connectionsClient := clientFactory.NewVirtualNetworkGatewayConnectionsClient()
 
-	pager := connectionsClient.NewListPager(ctx.ResourceGroupName, nil)
+	pager := connectionsClient.NewListPager(ctx.ResourceGroup, nil)
 
 	var connections []*armnetwork.VirtualNetworkGatewayConnection
 	for pager.More() {

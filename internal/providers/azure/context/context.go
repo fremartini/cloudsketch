@@ -3,10 +3,11 @@ package context
 import "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 
 type Context struct {
-	Credentials                                                                              *azidentity.DefaultAzureCredential
-	ManagementGroupId, SubscriptionId, ResourceGroupName, ResourceName, ResourceId, TenantId string
+	Credentials                             *azidentity.DefaultAzureCredential
+	TenantId, ResourceGroup                 string
+	ManagementGroup, Subscription, Resource *ResourceIdentifier
 }
 
-type SubscriptionContext struct {
-	Id, ResourceId, Name, TenantId string
+type ResourceIdentifier struct {
+	Name, Id, ResourceId string
 }

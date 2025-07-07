@@ -15,8 +15,8 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armnetwork.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	client := clientFactory.NewExpressRouteGatewaysClient()
 
-	gateway, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	gateway, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -38,17 +38,10 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		}),
 	}
 
-	resource := &models.Resource{
-		Id:         ctx.ResourceId,
-		Name:       ctx.ResourceName,
-		Type:       *gateway.Type,
-		DependsOn:  []string{*vhub},
-		Properties: properties,
-	}
+	resource.DependsOn = append(resource.DependsOn, *vhub)
+	resource.Properties = properties
 
-	resources := []*models.Resource{resource}
-
-	return resources, nil
+	return []*models.Resource{}, nil
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {

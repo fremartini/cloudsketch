@@ -46,7 +46,6 @@ const (
 	PUBLIC_IP_ADDRESS                     = "Microsoft.Network/publicIPAddresses"
 	RECOVERY_SERVICE_VAULT                = "Microsoft.RecoveryServices/vaults"
 	REDIS                                 = "Microsoft.Cache/Redis"
-	RESOURCE_GROUP                        = "Microsoft.Resources/resourceGroups"
 	ROUTE_TABLE                           = "Microsoft.Network/routeTables"
 	SEARCH_SERVICE                        = "Microsoft.Search/searchServices"
 	SIGNALR                               = "Microsoft.SignalRService/SignalR"
