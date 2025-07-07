@@ -125,7 +125,7 @@ func getResourcesInResourceGroup(ctx *azContext.Context) ([]*models.Resource, er
 	}
 
 	models := list.Map(resources, func(resource *armresources.GenericResourceExpanded) *models.Resource {
-		dependsOn := []string{ctx.Resource.Id, ctx.Subscription.ResourceId}
+		dependsOn := []string{ctx.Subscription.ResourceId}
 
 		if ctx.ManagementGroup != nil {
 			dependsOn = append(dependsOn, ctx.ManagementGroup.ResourceId)

@@ -60,7 +60,7 @@ func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Contex
 	}
 
 	return list.Map(frontendConfiguration, func(nic *armnetwork.FrontendIPConfiguration) *models.Resource {
-		dependsOn := []string{ctx.Resource.Id}
+		dependsOn := []string{ctx.Resource.Id, ctx.Subscription.ResourceId}
 
 		if nic.Properties.Subnet != nil {
 			subnet := strings.ToLower(*nic.Properties.Subnet.ID)
@@ -97,7 +97,7 @@ func getBackendPools(clientFactory *armnetwork.ClientFactory, ctx *azContext.Con
 	resources := []*models.Resource{}
 
 	backendPoolsResources := list.Map(pools, func(pool *armnetwork.BackendAddressPool) *models.Resource {
-		dependsOn := []string{ctx.Resource.Id}
+		dependsOn := []string{ctx.Resource.Id, ctx.Subscription.ResourceId}
 
 		return &models.Resource{
 			Id:        *pool.ID,

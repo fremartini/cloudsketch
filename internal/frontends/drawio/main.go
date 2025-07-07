@@ -180,6 +180,7 @@ func (d *drawio) WriteDiagram(resources []*models.Resource, filename string) err
 
 	// private endpoints, NICs, PIPs and NSGs are typically used as icons attached to other icons and should therefore be rendered in front of them
 	overlayResources := []string{types.PRIVATE_ENDPOINT, types.NETWORK_INTERFACE, types.PUBLIC_IP_ADDRESS, types.NETWORK_SECURITY_GROUP, types.ROUTE_TABLE}
+
 	allResourcesThatShouldGoInFront, allResourcesThatShouldGoInBack := list.Split(allResources, func(n *node.ResourceAndNode) bool {
 		return list.Contains(overlayResources, func(typ string) bool {
 			return n.Resource.Type == typ
@@ -314,20 +315,21 @@ func groupResources(resource_map *map[string]*node.ResourceAndNode) []*node.Node
 	}
 
 	resourcesWithoutVnetsAndSubnets := list.Filter(resources, func(resource *models.Resource) bool {
-		return resource.Type != types.SUBNET && resource.Type != types.VIRTUAL_NETWORK && resource.Type != types.SUBSCRIPTION
+		return resource.Type != types.SUBNET && resource.Type != types.VIRTUAL_NETWORK && resource.Type != types.SUBSCRIPTION && resource.Type != types.MANAGEMENT_GROUP
 	})
 
 	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *models.Resource) []*node.Node {
 		return commands[resource.Type].GroupResources(resource, resources, resource_map)
 	})
 
-	// virtual netwoks, subnets and subscription needs to be handled last since they "depend" on all other resources
+	// virtual netwoks, subnets, management groups and subscription needs to be handled last since they "depend" on all other resources
 	subnets := drawGroupForResourceType(resources, types.SUBNET, resource_map)
 	vnets := drawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
 	subscriptions := drawGroupForResourceType(resources, types.SUBSCRIPTION, resource_map)
+	managementGroups := drawGroupForResourceType(resources, types.MANAGEMENT_GROUP, resource_map)
 
-	// return subscriptions first so they are rendered in the background
-	nodes := append(subscriptions, append(vnets, append(subnets, boxes...)...)...)
+	// return management groups first so they are rendered in the background
+	nodes := append(managementGroups, append(subscriptions, append(vnets, append(subnets, boxes...)...)...)...)
 
 	return nodes
 }

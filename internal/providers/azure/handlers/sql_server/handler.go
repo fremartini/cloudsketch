@@ -48,7 +48,7 @@ func getDatabases(clientFactory *armsql.ClientFactory, ctx *azContext.Context) (
 		}
 	}
 
-	dependsOn := []string{ctx.Resource.Id}
+	dependsOn := []string{ctx.Resource.Id, ctx.Subscription.ResourceId}
 
 	models := list.Map(databases, func(database *armsql.Database) *models.Resource {
 		return &models.Resource{

@@ -48,6 +48,10 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 func (*handler) GroupResources(resource *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	subscriptionResources := getAllResourcesInSubscription(resource.Id, resources, resource_map)
 
+	if len(subscriptionResources) == 0 {
+		return []*node.Node{}
+	}
+
 	// a subscription can contain resources that belong to the same group, these needs to be filtered to
 	// avoid moving the same group multiple times
 	seenGroups := set.New[string]()
@@ -71,7 +75,7 @@ func (*handler) GroupResources(resource *models.Resource, resources []*models.Re
 		Height: 0,
 	}, nil)
 
-	node.FillResourcesInBox(box, subscriptionResources, diagram.Padding, false)
+	node.FillResourcesInBox(box, subscriptionResources, diagram.Padding, true)
 
 	subscriptionNode.SetProperty("parent", box.Id())
 	subscriptionNode.ContainedIn = box

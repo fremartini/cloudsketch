@@ -36,13 +36,19 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	resources, err := getChildManagementGroupsAndSubscriptions(ctx.Resource.Id, clientFactory)
+	ctx.Resource.Id = *managementGroup.Name
+	ctx.Resource.ResourceId = *managementGroup.ID
+	ctx.Resource.Name = *managementGroup.Properties.DisplayName
+
+	itemsToProcess, err := getChildManagementGroupsAndSubscriptions(ctx, clientFactory)
 
 	if err != nil {
 		return nil, err
 	}
 
-	childManagementGroups, subscriptions := list.Split(resources, func(resource *models.Resource) bool {
+	resources := []*models.Resource{}
+
+	childManagementGroups, subscriptions := list.Split(itemsToProcess, func(resource *models.Resource) bool {
 		return resource.Type == types.MANAGEMENT_GROUP
 	})
 
@@ -53,13 +59,9 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		childManagementGroupCtx := &azContext.Context{
 			Credentials: ctx.Credentials,
 			Resource: &azContext.ResourceIdentifier{
-				Id:   managementGroupId,
-				Name: childManagementGroup.Name,
+				Id: managementGroupId,
 			},
-			ManagementGroup: &azContext.ResourceIdentifier{
-				Id:   *managementGroup.ID,
-				Name: childManagementGroup.Name,
-			},
+			ManagementGroup: ctx.Resource,
 		}
 
 		childResources, err := h.GetResource(childManagementGroupCtx)
@@ -78,13 +80,11 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		childSubscriptionCtx := &azContext.Context{
 			Credentials: ctx.Credentials,
 			Resource: &azContext.ResourceIdentifier{
-				Id:   childSubscriptionId,
-				Name: childSubscription.Name,
+				Id:         childSubscriptionId,
+				Name:       childSubscription.Name,
+				ResourceId: childSubscription.Id,
 			},
-			ManagementGroup: &azContext.ResourceIdentifier{
-				Id:   *managementGroup.ID,
-				Name: *managementGroup.Name,
-			},
+			ManagementGroup: ctx.Resource,
 		}
 
 		childResources, err := subscription.New().GetResource(childSubscriptionCtx)
@@ -96,18 +96,24 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		resources = append(resources, childResources...)
 	}
 
+	dependsOn := []string{}
+
+	if ctx.ManagementGroup != nil {
+		dependsOn = append(dependsOn, ctx.ManagementGroup.ResourceId)
+	}
+
 	resources = append(resources, &models.Resource{
 		Id:        *managementGroup.ID,
 		Name:      *managementGroup.Properties.DisplayName,
 		Type:      types.MANAGEMENT_GROUP,
-		DependsOn: []string{},
+		DependsOn: dependsOn,
 	})
 
 	return resources, nil
 }
 
-func getChildManagementGroupsAndSubscriptions(managementGroupId string, clientFactory *armmanagementgroups.ClientFactory) ([]*models.Resource, error) {
-	pager := clientFactory.NewClient().NewGetDescendantsPager(managementGroupId, nil)
+func getChildManagementGroupsAndSubscriptions(ctx *azContext.Context, clientFactory *armmanagementgroups.ClientFactory) ([]*models.Resource, error) {
+	pager := clientFactory.NewClient().NewGetDescendantsPager(ctx.Resource.Id, nil)
 
 	var descendants []*armmanagementgroups.DescendantInfo
 	for pager.More() {
@@ -126,7 +132,7 @@ func getChildManagementGroupsAndSubscriptions(managementGroupId string, clientFa
 			Id:        *descendant.ID,
 			Name:      *descendant.Properties.DisplayName,
 			Type:      *descendant.Type,
-			DependsOn: []string{managementGroupId},
+			DependsOn: []string{ctx.Resource.ResourceId},
 		}
 	})
 
