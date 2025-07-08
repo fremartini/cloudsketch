@@ -32,9 +32,11 @@ func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context)
 
 	dependsOn := []string{}
 
-	for identity := range vmss.Identity.UserAssignedIdentities {
-		t := strings.ToLower(identity)
-		dependsOn = append(dependsOn, t)
+	if vmss.Identity != nil {
+		for identity := range vmss.Identity.UserAssignedIdentities {
+			t := strings.ToLower(identity)
+			dependsOn = append(dependsOn, t)
+		}
 	}
 
 	for _, nic := range vmss.Properties.VirtualMachineProfile.NetworkProfile.NetworkInterfaceConfigurations {

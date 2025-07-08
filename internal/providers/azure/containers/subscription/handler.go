@@ -19,19 +19,19 @@ func New() *handler {
 	return &handler{}
 }
 
-func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
+func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, string, error) {
 	log.Printf("fetching resources in subscription %s", ctx.Resource.Id)
 
 	clientFactory, err := armsubscriptions.NewClientFactory(ctx.Credentials, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	subscription, err := clientFactory.NewClient().Get(context.Background(), ctx.Resource.Id, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	subscriptionResourceId := *subscription.Subscription.ID
@@ -42,7 +42,7 @@ func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) 
 	resourceGroups, err := getResourceGroupsInSubscription(ctx)
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	dependsOn := []string{}
@@ -79,13 +79,13 @@ func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) 
 		resourceGroupResources, err := resource_group.New().Handle(rgCtx)
 
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		resources = append(resources, resourceGroupResources...)
 	}
 
-	return resources, nil
+	return resources, *subscription.TenantID, nil
 }
 
 func getResourceGroupsInSubscription(ctx *azContext.Context) ([]*models.Resource, error) {

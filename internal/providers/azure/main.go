@@ -43,14 +43,12 @@ func (h *azureProvider) FetchResources(input string) ([]*providers.Resource, str
 		return nil, "", fmt.Errorf("authentication failure: %+v", err)
 	}
 
-	resources, err := getResources(credentials, input)
+	resources, tenantId, err := getResources(credentials, input)
 
 	if err != nil {
 		return nil, "", err
 	}
 
-	//TODO: figure out how to get tenant ID
-	tenantId := ""
 	resources = normalize(resources, tenantId)
 
 	// input resources can contain references to resources that do not exist (in other subscriptions for example). These need to be removed
@@ -59,7 +57,7 @@ func (h *azureProvider) FetchResources(input string) ([]*providers.Resource, str
 	return mapToProviderModel(resources), input, nil
 }
 
-func getResources(credentials *azidentity.DefaultAzureCredential, input string) ([]*models.Resource, error) {
+func getResources(credentials *azidentity.DefaultAzureCredential, input string) ([]*models.Resource, string, error) {
 	ctx := &azContext.Context{
 		Resource: &azContext.ResourceIdentifier{
 			Id: input,
@@ -120,7 +118,7 @@ func generateAzurePortalLink(resource *models.Resource, tenant string) string {
 	return fmt.Sprintf("https://portal.azure.com/#@%s/resource%s", tenant, resource.Id)
 }
 
-func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string {
+func mapTypeToDomainType(azType string, unhandledTypes *set.Set[string]) string {
 	domainTypes := map[string]string{
 		types.AI_SERVICES:                           domainTypes.AI_SERVICES,
 		types.API_MANAGEMENT_API:                    domainTypes.API_MANAGEMENT_API,
@@ -190,12 +188,12 @@ func mapTypeToDomainType(azType string, unhandled_types *set.Set[string]) string
 	domainType, ok := domainTypes[azType]
 
 	if !ok {
-		seenResourceType := unhandled_types.Contains(azType)
+		seenResourceType := unhandledTypes.Contains(azType)
 
 		// mechanism to prevent spamming the output with the same type
 		if !seenResourceType {
 			log.Printf("undefined mapping from Azure types %s to domain type", azType)
-			unhandled_types.Add(azType)
+			unhandledTypes.Add(azType)
 		}
 
 		return azType

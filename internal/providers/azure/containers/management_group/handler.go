@@ -21,19 +21,19 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
+func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, string, error) {
 	log.Printf("fetching resources in management group %s", ctx.Resource.Id)
 
 	clientFactory, err := armmanagementgroups.NewClientFactory(ctx.Credentials, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	managementGroup, err := clientFactory.NewClient().Get(context.Background(), ctx.Resource.Id, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	ctx.Resource.Id = *managementGroup.Name
@@ -43,7 +43,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 	itemsToProcess, err := getChildManagementGroupsAndSubscriptions(ctx, clientFactory)
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	resources := []*models.Resource{}
@@ -64,10 +64,10 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 			ManagementGroup: ctx.Resource,
 		}
 
-		childResources, err := h.GetResource(childManagementGroupCtx)
+		childResources, _, err := h.GetResource(childManagementGroupCtx)
 
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		resources = append(resources, childResources...)
@@ -87,10 +87,10 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 			ManagementGroup: ctx.Resource,
 		}
 
-		childResources, err := subscription.New().GetResource(childSubscriptionCtx)
+		childResources, _, err := subscription.New().GetResource(childSubscriptionCtx)
 
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		resources = append(resources, childResources...)
@@ -109,7 +109,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		DependsOn: dependsOn,
 	})
 
-	return resources, nil
+	return resources, *managementGroup.Properties.TenantID, nil
 }
 
 func getChildManagementGroupsAndSubscriptions(ctx *azContext.Context, clientFactory *armmanagementgroups.ClientFactory) ([]*models.Resource, error) {
