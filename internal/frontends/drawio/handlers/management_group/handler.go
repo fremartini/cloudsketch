@@ -61,7 +61,7 @@ func (*handler) GroupResources(resource *models.Resource, resources []*models.Re
 			return false
 		}
 
-		seenGroups.Add(n.Id())
+		seenGroups.Add(n.GetParentOrThis().Id())
 
 		return true
 	})

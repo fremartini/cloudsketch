@@ -40,13 +40,15 @@ func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context)
 		return nil, err
 	}
 
-	endpoints, err := getManagedPrivateEndpoints(clientFactory, ctx, adf.ID, networks[0].Name)
+	if len(networks) > 0 {
+		endpoints, err := getManagedPrivateEndpoints(clientFactory, ctx, adf.ID, networks[0].Name)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		resources = append(resources, endpoints...)
 	}
-
-	resources = append(resources, endpoints...)
 
 	return resources, nil
 }

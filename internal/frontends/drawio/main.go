@@ -168,7 +168,11 @@ func (d *drawio) WriteDiagram(resources []*models.Resource, filename string) err
 	groups := postProcessIcons(resource_map)
 
 	// some resources like vnets and subnets needs boxes draw around them, and their resources moved into them
-	boxes := groupResources(resource_map)
+	boxes, err := groupResources(resource_map)
+
+	if err != nil {
+		return err
+	}
 
 	// with every DrawIO icon present, add the dependency arrows
 	dependencyArrows := addDependencies(resource_map)
@@ -307,7 +311,7 @@ func addDependencies(resource_map *map[string]*node.ResourceAndNode) []*node.Arr
 	return arrows
 }
 
-func groupResources(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func groupResources(resource_map *map[string]*node.ResourceAndNode) ([]*node.Node, error) {
 	resources := []*models.Resource{}
 
 	for _, resourceAndNode := range *resource_map {
@@ -326,12 +330,53 @@ func groupResources(resource_map *map[string]*node.ResourceAndNode) []*node.Node
 	subnets := drawGroupForResourceType(resources, types.SUBNET, resource_map)
 	vnets := drawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
 	subscriptions := drawGroupForResourceType(resources, types.SUBSCRIPTION, resource_map)
-	managementGroups := drawGroupForResourceType(resources, types.MANAGEMENT_GROUP, resource_map)
+	managementGroups, err := handleRecursiveManagementGroups(resources, resource_map)
+
+	if err != nil {
+		return nil, err
+	}
 
 	// return management groups first so they are rendered in the background
 	nodes := append(managementGroups, append(subscriptions, append(vnets, append(subnets, boxes...)...)...)...)
 
-	return nodes
+	return nodes, nil
+}
+
+func handleRecursiveManagementGroups(resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) ([]*node.Node, error) {
+	managementGroups := list.Filter(resources, func(r *models.Resource) bool {
+		return r.Type == types.MANAGEMENT_GROUP
+	})
+
+	// management groups can be nested. Ensure the root node is first
+	managementGroupNodes := []*node.Node{}
+	resolvedManagementGroup := []string{}
+
+	managementGroupTasks := list.Map(managementGroups, func(managementGroup *models.Resource) *build_graph.Task {
+		return build_graph.NewTask(managementGroup.Id, list.Map(managementGroup.DependsOn, func(m *models.Resource) string { return m.Id }), []string{}, []string{}, func() {
+			r := management_group.New().GroupResources(managementGroup, resources, resource_map)
+
+			managementGroupNodes = append(managementGroupNodes, r...)
+			resolvedManagementGroup = append(resolvedManagementGroup, managementGroup.Id)
+		})
+	})
+
+	bg, err := build_graph.NewGraph(managementGroupTasks)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, task := range managementGroupTasks {
+		if list.Contains(resolvedManagementGroup, func(id string) bool {
+			return task.Label == id
+		}) {
+			continue
+		}
+
+		bg.ResolveParents(task)
+	}
+
+	return managementGroupNodes, nil
 }
 
 func drawGroupForResourceType(resources []*models.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

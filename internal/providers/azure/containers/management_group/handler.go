@@ -40,38 +40,21 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, strin
 	ctx.Resource.ResourceId = *managementGroup.ID
 	ctx.Resource.Name = *managementGroup.Properties.DisplayName
 
-	itemsToProcess, err := getChildManagementGroupsAndSubscriptions(ctx, clientFactory)
+	childManagementGroups, subscriptions, err := getChildManagementGroupsAndSubscriptions(ctx, clientFactory)
 
 	if err != nil {
 		return nil, "", err
 	}
 
-	resources := []*models.Resource{}
-
-	childManagementGroups, subscriptions := list.Split(itemsToProcess, func(resource *models.Resource) bool {
-		return resource.Type == types.MANAGEMENT_GROUP
-	})
-
-	for _, childManagementGroup := range childManagementGroups {
-		managementGroupResourceId := strings.Split(childManagementGroup.Id, "/")
-		managementGroupId := managementGroupResourceId[len(managementGroupResourceId)-1]
-
-		childManagementGroupCtx := &azContext.Context{
-			Credentials: ctx.Credentials,
-			Resource: &azContext.ResourceIdentifier{
-				Id: managementGroupId,
-			},
-			ManagementGroup: ctx.Resource,
-		}
-
-		childResources, _, err := h.GetResource(childManagementGroupCtx)
-
-		if err != nil {
-			return nil, "", err
-		}
-
-		resources = append(resources, childResources...)
+	resources := []*models.Resource{
+		{
+			Id:   *managementGroup.ID,
+			Name: *managementGroup.Properties.DisplayName,
+			Type: types.MANAGEMENT_GROUP,
+		},
 	}
+
+	resources = append(resources, childManagementGroups...)
 
 	for _, childSubscription := range subscriptions {
 		childSubscriptionResourceId := strings.Split(childSubscription.Id, "/")
@@ -96,30 +79,17 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, strin
 		resources = append(resources, childResources...)
 	}
 
-	dependsOn := []string{}
-
-	if ctx.ManagementGroup != nil {
-		dependsOn = append(dependsOn, ctx.ManagementGroup.ResourceId)
-	}
-
-	resources = append(resources, &models.Resource{
-		Id:        *managementGroup.ID,
-		Name:      *managementGroup.Properties.DisplayName,
-		Type:      types.MANAGEMENT_GROUP,
-		DependsOn: dependsOn,
-	})
-
 	return resources, *managementGroup.Properties.TenantID, nil
 }
 
-func getChildManagementGroupsAndSubscriptions(ctx *azContext.Context, clientFactory *armmanagementgroups.ClientFactory) ([]*models.Resource, error) {
+func getChildManagementGroupsAndSubscriptions(ctx *azContext.Context, clientFactory *armmanagementgroups.ClientFactory) ([]*models.Resource, []*models.Resource, error) {
 	pager := clientFactory.NewClient().NewGetDescendantsPager(ctx.Resource.Id, nil)
 
 	var descendants []*armmanagementgroups.DescendantInfo
 	for pager.More() {
 		resp, err := pager.NextPage(context.Background())
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if resp.DescendantListResult.Value != nil {
@@ -132,9 +102,13 @@ func getChildManagementGroupsAndSubscriptions(ctx *azContext.Context, clientFact
 			Id:        *descendant.ID,
 			Name:      *descendant.Properties.DisplayName,
 			Type:      *descendant.Type,
-			DependsOn: []string{ctx.Resource.ResourceId},
+			DependsOn: []string{*descendant.Properties.Parent.ID},
 		}
 	})
 
-	return resources, nil
+	managementGroups, subscriptions := list.Split(resources, func(resource *models.Resource) bool {
+		return resource.Type == types.MANAGEMENT_GROUP
+	})
+
+	return managementGroups, subscriptions, nil
 }
