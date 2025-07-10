@@ -48,7 +48,7 @@ func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, string,
 	dependsOn := []string{}
 
 	if ctx.ManagementGroup != nil {
-		dependsOn = append(dependsOn, ctx.ManagementGroup.Id)
+		dependsOn = append(dependsOn, ctx.ManagementGroup.ResourceId)
 	}
 
 	resources := []*models.Resource{
