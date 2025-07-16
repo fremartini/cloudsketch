@@ -191,7 +191,19 @@ func enrichResources(resources []*models.Resource, ctx *azContext.Context) ([]*m
 
 func postProcessResources(resources []*models.Resource) {
 	for _, resource := range resources {
-		handler, ok := handlers[resource.Type]
+
+		lookupType := resource.Type
+
+		// WEB_SITES changes type into one of its sub-types
+		subTypes := []string{types.APP_SERVICE, types.FUNCTION_APP, types.LOGIC_APP}
+
+		if list.Contains(subTypes, func(typ string) bool {
+			return resource.Type == typ
+		}) {
+			lookupType = types.WEB_SITES
+		}
+
+		handler, ok := handlers[lookupType]
 
 		if !ok {
 			continue

@@ -88,15 +88,12 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 		Microsoft.Network/privateDnsZones/A
 		Microsoft.Network/privateDnsZones/SOA
 		Microsoft.Network/privateDnsZones/CNAME
+		Microsoft.Network/privateDnsZones/TXT
 	*/
 
 	// only A record contains IP addresses
-	blacklist := []string{"Microsoft.Network/privateDnsZones/SOA", "Microsoft.Network/privateDnsZones/CNAME"}
-
 	records = list.Filter(records, func(record *armprivatedns.RecordSet) bool {
-		return !list.Contains(blacklist, func(blacklistItem string) bool {
-			return *record.Type == blacklistItem
-		})
+		return *record.Type == "Microsoft.Network/privateDnsZones/A"
 	})
 
 	resources := list.Map(records, func(record *armprivatedns.RecordSet) *models.Resource {

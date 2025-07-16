@@ -347,6 +347,10 @@ func handleRecursiveManagementGroups(resources []*models.Resource, resource_map 
 		return r.Type == types.MANAGEMENT_GROUP
 	})
 
+	if len(managementGroups) == 0 {
+		return []*node.Node{}, nil
+	}
+
 	// management groups can be nested. Ensure the root node is first
 	managementGroupNodes := []*node.Node{}
 	resolvedManagementGroup := []string{}

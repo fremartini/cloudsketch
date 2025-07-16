@@ -79,6 +79,10 @@ func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context)
 		properties["storageAccountName"] = []string{strings.ToLower(*configValues.AccountName)}
 	}
 
+	if acr, ok := getACR(&app); ok {
+		properties["containerRegistry"] = []string{acr}
+	}
+
 	// Microsoft.Web/sites has multiple subcategories. Use these instead
 	subType := WEBSITES_KIND_MAP[*app.Kind]
 
@@ -96,6 +100,25 @@ func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context)
 	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
 	return []*models.Resource{}, nil
+}
+
+func getACR(app *armappservice.WebAppsClientGetResponse) (string, bool) {
+	linuxFxVersion := *app.Properties.SiteConfig.LinuxFxVersion
+
+	if linuxFxVersion == "" {
+		return "", false
+	}
+
+	// DOCKER|<acr>.azurecr.io/<image>:<tag>
+	typeAndRegistry := strings.Split(linuxFxVersion, "|")
+
+	// <acr>.azurecr.io/<image>:<tag>
+	registryAndImage := strings.Split(typeAndRegistry[1], "/")
+
+	// <acr>.azurecr.io
+	acrName := strings.Split(registryAndImage[0], ".")[0]
+
+	return acrName, true
 }
 
 func getResourceReferencesInTags(ctx *azContext.Context) ([]string, error) {
@@ -132,5 +155,20 @@ func getResourceReferencesInTags(ctx *azContext.Context) ([]string, error) {
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {
+	acr, ok := resource.Properties["containerRegistry"]
 
+	if !ok {
+		return
+	}
+
+	// lookup ACR by name
+	acrResource := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
+		return r.Name == acr[0]
+	})
+
+	if acrResource == nil {
+		return
+	}
+
+	resource.DependsOn = append(resource.DependsOn, acrResource.Id)
 }

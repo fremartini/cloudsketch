@@ -67,7 +67,9 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, strin
 				Name:       childSubscription.Name,
 				ResourceId: childSubscription.Id,
 			},
-			ManagementGroup: ctx.Resource,
+			ManagementGroup: &azContext.ResourceIdentifier{
+				ResourceId: childSubscription.Properties["parentId"][0],
+			},
 		}
 
 		childResources, _, err := subscription.New().GetResource(childSubscriptionCtx)
@@ -79,7 +81,9 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, strin
 		resources = append(resources, childResources...)
 	}
 
-	return resources, *managementGroup.Properties.TenantID, nil
+	tenantId := *managementGroup.Properties.TenantID
+
+	return resources, tenantId, nil
 }
 
 func getChildManagementGroupsAndSubscriptions(ctx *azContext.Context, clientFactory *armmanagementgroups.ClientFactory) ([]*models.Resource, []*models.Resource, error) {
@@ -98,12 +102,20 @@ func getChildManagementGroupsAndSubscriptions(ctx *azContext.Context, clientFact
 	}
 
 	resources := list.Map(descendants, func(descendant *armmanagementgroups.DescendantInfo) *models.Resource {
-		return &models.Resource{
+		resource := &models.Resource{
 			Id:        *descendant.ID,
 			Name:      *descendant.Properties.DisplayName,
 			Type:      *descendant.Type,
 			DependsOn: []string{*descendant.Properties.Parent.ID},
 		}
+
+		if resource.Type == types.SUBSCRIPTION {
+			resource.Properties = map[string][]string{ // subscriptions are delegated to their appropriate handler. They need a reference to their parent
+				"parentId": {*descendant.Properties.Parent.ID},
+			}
+		}
+
+		return resource
 	})
 
 	managementGroups, subscriptions := list.Split(resources, func(resource *models.Resource) bool {
