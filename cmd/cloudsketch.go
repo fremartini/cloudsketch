@@ -114,9 +114,16 @@ func removeBlacklistedResources(frontendResources []*frontendModels.Resource) []
 		return !list.Contains(config.Blacklist, func(entry string) bool { return entry == r.Type })
 	})
 
+	// remove all resource dependencies that are on the blacklist
 	toReturn = list.Map(toReturn, func(r *frontendModels.Resource) *frontendModels.Resource {
-		r.DependsOn = list.Filter(r.DependsOn, func(r *frontendModels.Resource) bool {
-			return !list.Contains(config.Blacklist, func(entry string) bool { return entry == r.Type })
+		r.DependsOn = list.Filter(r.DependsOn, func(dependency *frontendModels.Resource) bool {
+
+			// dependency can be nil for some reason
+			if dependency == nil {
+				return false
+			}
+
+			return !list.Contains(config.Blacklist, func(entry string) bool { return entry == dependency.Type })
 		})
 
 		return r
@@ -168,7 +175,7 @@ func mapToDomainModels(resources []*providers.Resource) ([]*frontendModels.Resou
 	}
 
 	for _, task := range tasks {
-		bg.ResolveChildren(task)
+		bg.ResolveTasksThatDependOnThis(task)
 	}
 
 	domainResources := []*frontendModels.Resource{}

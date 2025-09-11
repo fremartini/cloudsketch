@@ -227,7 +227,7 @@ func populateResourceMap(resources []*models.Resource) (*map[string]*node.Resour
 
 	// ensure all resources that depend on this have been draw
 	for _, task := range tasks {
-		bg.ResolveParents(task)
+		bg.ResolveTasksThatDependOnThis(task)
 	}
 
 	return resource_map, nil
@@ -318,8 +318,10 @@ func groupResources(resource_map *map[string]*node.ResourceAndNode) ([]*node.Nod
 		resources = append(resources, resourceAndNode.Resource)
 	}
 
+	containerResources := []string{types.SUBNET, types.VIRTUAL_NETWORK, types.SUBSCRIPTION, types.MANAGEMENT_GROUP}
+
 	resourcesWithoutVnetsAndSubnets := list.Filter(resources, func(resource *models.Resource) bool {
-		return resource.Type != types.SUBNET && resource.Type != types.VIRTUAL_NETWORK && resource.Type != types.SUBSCRIPTION && resource.Type != types.MANAGEMENT_GROUP
+		return !list.Contains(containerResources, func(typ string) bool { return typ == resource.Type })
 	})
 
 	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *models.Resource) []*node.Node {
@@ -330,11 +332,7 @@ func groupResources(resource_map *map[string]*node.ResourceAndNode) ([]*node.Nod
 	subnets := drawGroupForResourceType(resources, types.SUBNET, resource_map)
 	vnets := drawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
 	subscriptions := drawGroupForResourceType(resources, types.SUBSCRIPTION, resource_map)
-	managementGroups, err := handleRecursiveManagementGroups(resources, resource_map)
-
-	if err != nil {
-		return nil, err
-	}
+	managementGroups := theThing(resources, resource_map)
 
 	// return management groups first so they are rendered in the background
 	nodes := append(managementGroups, append(subscriptions, append(vnets, append(subnets, boxes...)...)...)...)
@@ -342,45 +340,50 @@ func groupResources(resource_map *map[string]*node.ResourceAndNode) ([]*node.Nod
 	return nodes, nil
 }
 
-func handleRecursiveManagementGroups(resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) ([]*node.Node, error) {
+func theThing(resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	managementGroups := list.Filter(resources, func(r *models.Resource) bool {
-		return r.Type == types.MANAGEMENT_GROUP
+		return r.Type == management_group.TYPE
 	})
 
+	nodes := []*node.Node{}
+
 	if len(managementGroups) == 0 {
-		return []*node.Node{}, nil
+		return nodes
 	}
 
-	// management groups can be nested. Ensure the root node is first
-	managementGroupNodes := []*node.Node{}
-	resolvedManagementGroup := []string{}
+	// ensure leaf management groups are resolved first. Find root management group and recursively resolve the child management groups
+	rootManagementGroup := list.First(managementGroups, func(managementGroup *models.Resource) bool {
+		return len(managementGroup.DependsOn) == 0
+	})
 
-	managementGroupTasks := list.Map(managementGroups, func(managementGroup *models.Resource) *build_graph.Task {
-		return build_graph.NewTask(managementGroup.Id, list.Map(managementGroup.DependsOn, func(m *models.Resource) string { return m.Id }), []string{}, []string{}, func() {
-			r := management_group.New().GroupResources(managementGroup, resources, resource_map)
+	managementGroupsToDrawInOrder := traverseManagementGroupHierarchy(rootManagementGroup, managementGroups)
 
-			managementGroupNodes = append(managementGroupNodes, r...)
-			resolvedManagementGroup = append(resolvedManagementGroup, managementGroup.Id)
+	nodes = list.FlatMap(managementGroupsToDrawInOrder, func(r *models.Resource) []*node.Node {
+		return commands[management_group.TYPE].GroupResources(r, resources, resource_map)
+	})
+
+	return nodes
+}
+
+func traverseManagementGroupHierarchy(currentManagementGroup *models.Resource, allManagementGroups []*models.Resource) []*models.Resource {
+	childManagementGroups := list.Filter(allManagementGroups, func(managementGroup *models.Resource) bool {
+		return list.Contains(managementGroup.DependsOn, func(dependency *models.Resource) bool {
+			return dependency.Id == currentManagementGroup.Id
 		})
 	})
 
-	bg, err := build_graph.NewGraph(managementGroupTasks)
-
-	if err != nil {
-		return nil, err
+	if len(childManagementGroups) == 0 {
+		// leaf
+		return []*models.Resource{currentManagementGroup}
 	}
 
-	for _, task := range managementGroupTasks {
-		if list.Contains(resolvedManagementGroup, func(id string) bool {
-			return task.Label == id
-		}) {
-			continue
-		}
-
-		bg.ResolveParents(task)
+	tmp := []*models.Resource{}
+	for _, childManagementGroup := range childManagementGroups {
+		tmp = append(tmp, traverseManagementGroupHierarchy(childManagementGroup, allManagementGroups)...)
 	}
+	tmp = append(tmp, currentManagementGroup)
 
-	return managementGroupNodes, nil
+	return tmp
 }
 
 func drawGroupForResourceType(resources []*models.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

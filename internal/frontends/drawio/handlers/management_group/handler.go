@@ -8,6 +8,7 @@ import (
 	"cloudsketch/internal/frontends/models"
 	"cloudsketch/internal/frontends/types"
 	"cloudsketch/internal/list"
+	"fmt"
 )
 
 type handler struct{}
@@ -46,6 +47,8 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 }
 
 func (*handler) GroupResources(resource *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+	fmt.Println(resource.Name)
+
 	managementGroupResources := getAllResourcesInManagementGroup(resource.Id, resources, resource_map)
 
 	if len(managementGroupResources) == 0 {

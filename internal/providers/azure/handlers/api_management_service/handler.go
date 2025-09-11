@@ -31,9 +31,14 @@ func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context)
 		return nil, err
 	}
 
-	dependsOn := []string{
-		strings.ToLower(*apim.Properties.PublicIPAddressID),
-		strings.ToLower(*apim.Properties.VirtualNetworkConfiguration.SubnetResourceID),
+	dependsOn := []string{}
+
+	if apim.Properties.PublicIPAddressID != nil {
+		dependsOn = append(dependsOn, strings.ToLower(*apim.Properties.PublicIPAddressID))
+	}
+
+	if apim.Properties.VirtualNetworkConfiguration.SubnetResourceID != nil {
+		dependsOn = append(dependsOn, strings.ToLower(*apim.Properties.VirtualNetworkConfiguration.SubnetResourceID))
 	}
 
 	resource.DependsOn = append(resource.DependsOn, dependsOn...)

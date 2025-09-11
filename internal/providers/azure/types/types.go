@@ -54,7 +54,7 @@ const (
 	STATIC_WEB_APP                        = "Microsoft.Web/staticSites"
 	STORAGE_ACCOUNT                       = "Microsoft.Storage/storageAccounts"
 	SUBNET                                = "Microsoft.Network/virtualNetworks/subnets"
-	SUBSCRIPTION                          = "Microsoft.Subscription"
+	SUBSCRIPTION                          = "Microsoft.Management/managementGroups/subscriptions"
 	USER_ASSIGNED_IDENTITY                = "Microsoft.ManagedIdentity/userAssignedIdentities"
 	VIRTUAL_HUB                           = "Microsoft.Network/virtualHubs"
 	VIRTUAL_MACHINE                       = "Microsoft.Compute/virtualMachines"

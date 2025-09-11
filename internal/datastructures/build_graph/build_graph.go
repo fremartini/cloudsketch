@@ -9,8 +9,8 @@ import (
 
 type Build_graph struct {
 	Tasks         []*Task
-	Graph         map[string][]*Task
-	Inverse_graph map[string][]*Task
+	graph         map[string][]*Task
+	inverse_graph map[string][]*Task
 }
 
 func NewGraph(tasks []*Task) (*Build_graph, error) {
@@ -22,8 +22,8 @@ func NewGraph(tasks []*Task) (*Build_graph, error) {
 
 	return &Build_graph{
 		Tasks:         tasks,
-		Graph:         graph,
-		Inverse_graph: inverse_graph,
+		graph:         graph,
+		inverse_graph: inverse_graph,
 	}, nil
 }
 
@@ -88,24 +88,24 @@ func buildGraph(tasks []*Task) (map[string][]*Task, map[string][]*Task, error) {
 	return graph, inverse_graph, nil
 }
 
-func (g *Build_graph) ResolveParents(t *Task) {
-	e := g.Inverse_graph[t.Label]
+func (g *Build_graph) ResolveTasksThatDependOnThis(t *Task) {
+	e := g.graph[t.Label]
 
 	for _, ref := range e {
 		// recursively resolve the tasks dependencies
-		g.ResolveParents(ref)
+		g.ResolveTasksThatDependOnThis(ref)
 	}
 
 	// when the task has no dependencies it can be resolved
 	t.Action()
 }
 
-func (g *Build_graph) ResolveChildren(t *Task) {
-	e := g.Graph[t.Label]
+func (g *Build_graph) ResolveDependencies(t *Task) {
+	e := g.inverse_graph[t.Label]
 
 	for _, ref := range e {
 		// recursively resolve the tasks dependencies
-		g.ResolveChildren(ref)
+		g.ResolveDependencies(ref)
 	}
 
 	// when the task has no dependencies it can be resolved

@@ -48,9 +48,10 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, strin
 
 	resources := []*models.Resource{
 		{
-			Id:   *managementGroup.ID,
-			Name: *managementGroup.Properties.DisplayName,
-			Type: types.MANAGEMENT_GROUP,
+			Id:        *managementGroup.ID,
+			Name:      *managementGroup.Properties.DisplayName,
+			DependsOn: []string{},
+			Type:      types.MANAGEMENT_GROUP,
 		},
 	}
 

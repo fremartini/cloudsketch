@@ -19,7 +19,7 @@ func New() *dot {
 
 func removeChars(s string) string {
 	// dot format does not allow certain characters
-	r := []string{"-", "_", "/", "."}
+	r := []string{"-", "_", "/", ".", " "}
 
 	for _, c := range r {
 		s = strings.ReplaceAll(s, c, "")

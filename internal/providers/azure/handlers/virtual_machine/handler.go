@@ -37,9 +37,11 @@ func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context)
 		dependsOn = append(dependsOn, t)
 	}
 
-	for identity := range vm.Identity.UserAssignedIdentities {
-		t := strings.ToLower(identity)
-		dependsOn = append(dependsOn, t)
+	if vm.Identity != nil {
+		for identity := range vm.Identity.UserAssignedIdentities {
+			t := strings.ToLower(identity)
+			dependsOn = append(dependsOn, t)
+		}
 	}
 
 	resource.DependsOn = append(resource.DependsOn, dependsOn...)

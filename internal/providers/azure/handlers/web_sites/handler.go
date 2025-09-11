@@ -109,6 +109,11 @@ func getACR(app *armappservice.WebAppsClientGetResponse) (string, bool) {
 		return "", false
 	}
 
+	// sitecontainers
+	if !strings.Contains(linuxFxVersion, "|") {
+		return "", false
+	}
+
 	// DOCKER|<acr>.azurecr.io/<image>:<tag>
 	typeAndRegistry := strings.Split(linuxFxVersion, "|")
 
