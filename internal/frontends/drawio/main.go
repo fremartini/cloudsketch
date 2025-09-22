@@ -246,7 +246,7 @@ func drawResource(resource *models.Resource, unhandled_resources *set.Set[string
 
 		// mechanism to prevent spamming the output with the same type
 		if !seenResourceType {
-			log.Printf("unhandled type %s", resource.Type)
+			log.Printf("unhandled type %s (%s)", resource.Type, resource.Name)
 			unhandled_resources.Add(resource.Type)
 		}
 

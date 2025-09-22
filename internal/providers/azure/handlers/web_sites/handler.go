@@ -25,6 +25,7 @@ var (
 		"app,linux,container,kubernetes":         types.APP_SERVICE,
 		"functionapp":                            types.FUNCTION_APP,
 		"functionapp,linux":                      types.FUNCTION_APP,
+		"functionapp,linux,container":            types.FUNCTION_APP,
 		"functionapp,linux,container,kubernetes": types.FUNCTION_APP,
 		"functionapp,linux,kubernetes":           types.FUNCTION_APP,
 		"functionapp,workflowapp":                types.LOGIC_APP,

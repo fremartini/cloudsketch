@@ -55,7 +55,7 @@ func buildGraph(tasks []*Task) (map[string][]*Task, map[string][]*Task, error) {
 	})
 
 	// if the last entry has refernces the graph is cyclic
-	if len(tasks[len(tasks)-1].References) != 0 {
+	if len(tasks) > 0 && len(tasks[len(tasks)-1].References) != 0 {
 		return nil, nil, errors.New("cyclic graph detected")
 	}
 

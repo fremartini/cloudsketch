@@ -15,7 +15,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v3"
 )
@@ -60,6 +62,11 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 	var filename string
 
 	input := args[0]
+
+	start := time.Now()
+	defer func() {
+		log.Printf("execution finished after %v seconds", math.Round(time.Since(start).Seconds()))
+	}()
 
 	if strings.HasSuffix(input, ".json") {
 		// if the file ends in .json, assume its a valid json file that contains previously populated resources

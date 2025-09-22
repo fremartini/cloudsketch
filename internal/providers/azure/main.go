@@ -204,20 +204,21 @@ func mapTypeToDomainType(azType string, unhandledTypes *set.Set[string]) string 
 
 func filterUnknownDependencies(resources []*models.Resource) []*models.Resource {
 	for _, resource := range resources {
-		filteredDependencies := list.Filter(resource.DependsOn, func(d string) bool {
-			dependency := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
-				return r.Id == d
+		dependenciesWithUnknownResourcesRemoved := list.Filter(resource.DependsOn, func(resourceDependencyId string) bool {
+			targetDependency := list.FirstOrDefault(resources, nil, func(target *models.Resource) bool {
+				return target.Id == resourceDependencyId
 			})
 
-			if dependency == nil {
-				log.Printf("removed unknown resource %s\n", d)
+			// a resource has a depedency to another resource which is not known
+			if targetDependency == nil {
+				log.Printf("removed unknown resource %s\n", resourceDependencyId)
 				return false
 			}
 
 			return true
 		})
 
-		resource.DependsOn = filteredDependencies
+		resource.DependsOn = dependenciesWithUnknownResourcesRemoved
 	}
 
 	return resources

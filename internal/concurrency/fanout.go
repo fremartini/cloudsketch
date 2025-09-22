@@ -2,6 +2,7 @@ package concurrency
 
 import (
 	"log"
+	"math"
 	"sync"
 )
 
@@ -14,12 +15,12 @@ type result[T any] struct {
 	error error
 }
 
-func FanOut[T any](functions []func() ([]T, error)) ([]T, error) {
-	tasks := make(chan task[T], len(functions))
-	results := make(chan result[T], len(functions))
+func FanOut[T any](jobs []func() ([]T, error)) ([]T, error) {
+	tasks := make(chan task[T], len(jobs))
+	results := make(chan result[T], len(jobs))
 	var wg sync.WaitGroup
 
-	workers := 2
+	workers := int(math.Min(4, float64(len(jobs))))
 
 	log.Printf("fetching resources using %v workers", workers)
 
@@ -31,7 +32,7 @@ func FanOut[T any](functions []func() ([]T, error)) ([]T, error) {
 
 	// send tasks
 	go func() {
-		for _, t := range functions {
+		for _, t := range jobs {
 			tasks <- task[T]{f: t}
 		}
 

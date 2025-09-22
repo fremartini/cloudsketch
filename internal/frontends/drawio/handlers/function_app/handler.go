@@ -42,7 +42,11 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 		return nil
 	}
 
-	outboundSubnetResource := (*resource_map)[outboundSubnet[0]]
+	outboundSubnetResource, ok := (*resource_map)[outboundSubnet[0]]
+
+	if !ok {
+		return nil
+	}
 
 	resource.Resource.DependsOn = append(resource.Resource.DependsOn, outboundSubnetResource.Resource)
 
@@ -68,11 +72,19 @@ func addDependencyToOutboundSubnet(source *models.Resource, resource_map *map[st
 		return []*node.Arrow{}
 	}
 
-	outboundSubnetNode := (*resource_map)[outboundSubnet[0]].Node
+	outboundSubnetResource, ok := (*resource_map)[outboundSubnet[0]]
 
-	sourceNode := (*resource_map)[source.Id].Node
+	if !ok {
+		return []*node.Arrow{}
+	}
 
-	return []*node.Arrow{node.NewArrow(sourceNode.Id(), outboundSubnetNode.Id(), &dashed)}
+	sourceResource, ok := (*resource_map)[source.Id]
+
+	if !ok {
+		return []*node.Arrow{}
+	}
+
+	return []*node.Arrow{node.NewArrow(sourceResource.Node.Id(), outboundSubnetResource.Node.Id(), &dashed)}
 }
 
 func addDependencyToAssociatedStorageAccount(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
@@ -93,9 +105,17 @@ func addDependencyToAssociatedStorageAccount(source *models.Resource, resource_m
 		return ran.Resource.Type == types.STORAGE_ACCOUNT && strings.Contains(ran.Resource.Name, storageAccountName[0])
 	})
 
-	sourceNode := (*resource_map)[source.Id].Node
+	if len(resources) == 0 {
+		return []*node.Arrow{}
+	}
 
-	return []*node.Arrow{node.NewArrow(sourceNode.Id(), resources[0].Node.Id(), nil)}
+	sourceResource, ok := (*resource_map)[source.Id]
+
+	if !ok {
+		return []*node.Arrow{}
+	}
+
+	return []*node.Arrow{node.NewArrow(sourceResource.Node.Id(), resources[0].Node.Id(), nil)}
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

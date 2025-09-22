@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"cloudsketch/internal/concurrency"
 	"cloudsketch/internal/list"
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/handlers/api_management_service"
@@ -92,15 +91,15 @@ func (*handler) Handle(ctx *azContext.Context) ([]*models.Resource, error) {
 		return nil, err
 	}
 
-	enrichedResources, err := enrichResources(resources, ctx)
+	resourcesWithHandlerResources, err := invokeResourceHandlers(resources, ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
-	postProcessResources(enrichedResources)
+	postProcessResources(resourcesWithHandlerResources)
 
-	return enrichedResources, nil
+	return resourcesWithHandlerResources, nil
 }
 
 func getResourcesInResourceGroup(ctx *azContext.Context) ([]*models.Resource, error) {
@@ -143,55 +142,44 @@ func getResourcesInResourceGroup(ctx *azContext.Context) ([]*models.Resource, er
 	return models, nil
 }
 
-func enrichResources(resources []*models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+func invokeResourceHandlers(resources []*models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
 	resourcesWithHandlers, resourcesWithoutHandlers := list.Split(resources, func(resource *models.Resource) bool {
 		_, ok := handlers[resource.Type]
 
 		return ok
 	})
 
-	functionsToApply := list.Map(resourcesWithHandlers, func(resource *models.Resource) func() ([]*models.Resource, error) {
-		return func() ([]*models.Resource, error) {
-			log.Print(resource.Name)
+	for _, resource := range resourcesWithHandlers {
+		log.Print(resource.Name)
 
-			handler := handlers[resource.Type]
+		handler := handlers[resource.Type]
 
-			resourceCtx := &azContext.Context{
-				Subscription:  ctx.Subscription,
-				TenantId:      ctx.TenantId,
-				Credentials:   ctx.Credentials,
-				ResourceGroup: resource.ResourceGroup,
-				Resource: &azContext.ResourceIdentifier{
-					Id:   resource.Id,
-					Name: resource.Name,
-				},
-			}
-
-			subresources, err := handler.GetResource(resource, resourceCtx)
-
-			if err != nil {
-				return nil, err
-			}
-
-			return append([]*models.Resource{resource}, subresources...), nil
+		resourceCtx := &azContext.Context{
+			Subscription:  ctx.Subscription,
+			TenantId:      ctx.TenantId,
+			Credentials:   ctx.Credentials,
+			ResourceGroup: resource.ResourceGroup,
+			Resource: &azContext.ResourceIdentifier{
+				Id:   resource.Id,
+				Name: resource.Name,
+			},
 		}
-	})
 
-	resources, err := concurrency.FanOut(functionsToApply)
+		subresources, err := handler.GetResource(resource, resourceCtx)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		resourcesWithoutHandlers = append(resourcesWithoutHandlers, resource)
+		resourcesWithoutHandlers = append(resourcesWithoutHandlers, subresources...)
 	}
 
-	// add the resources that don't have any handlers as-is
-	resources = append(resources, resourcesWithoutHandlers...)
-
-	return resources, nil
+	return resourcesWithoutHandlers, nil
 }
 
 func postProcessResources(resources []*models.Resource) {
 	for _, resource := range resources {
-
 		lookupType := resource.Type
 
 		// WEB_SITES changes type into one of its sub-types

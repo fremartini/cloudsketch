@@ -54,11 +54,15 @@ func addDependencyToOutboundSubnet(source *models.Resource, resource_map *map[st
 		return []*node.Arrow{}
 	}
 
-	outboundSubnetNode := (*resource_map)[outboundSubnet[0]].Node
+	outboundSubnetResource, ok := (*resource_map)[outboundSubnet[0]]
+
+	if !ok {
+		return []*node.Arrow{}
+	}
 
 	sourceNode := (*resource_map)[source.Id].Node
 
-	return []*node.Arrow{node.NewArrow(sourceNode.Id(), outboundSubnetNode.Id(), &dashed)}
+	return []*node.Arrow{node.NewArrow(sourceNode.Id(), outboundSubnetResource.Node.Id(), &dashed)}
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
