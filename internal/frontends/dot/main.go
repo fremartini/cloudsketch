@@ -19,7 +19,7 @@ func New() *dot {
 
 func removeChars(s string) string {
 	// dot format does not allow certain characters
-	r := []string{"-", "_", "/", "."}
+	r := []string{"-", "_", "/", ".", " "}
 
 	for _, c := range r {
 		s = strings.ReplaceAll(s, c, "")
@@ -30,10 +30,8 @@ func removeChars(s string) string {
 
 func (d *dot) WriteDiagram(resources []*models.Resource, filename string) error {
 	tasks := list.Map(resources, func(r *models.Resource) *build_graph.Task {
-		return build_graph.NewTask(r.Name, list.Map(r.DependsOn, func(r *models.Resource) string { return r.Name }), []string{}, []string{}, func() {})
-	})
+		task := build_graph.NewTask(r.Name, list.Map(r.DependsOn, func(r *models.Resource) string { return r.Name }), []string{}, []string{}, func() {})
 
-	tasks = list.Map(tasks, func(task *build_graph.Task) *build_graph.Task {
 		return &build_graph.Task{
 			Label:      removeChars(task.Label),
 			References: list.Map(task.References, removeChars),
@@ -104,21 +102,21 @@ func ToDotFile(g *build_graph.Build_graph, name string) string {
 func writeInputNodes(buffer *bytes.Buffer, label string, inputs []string) {
 	for _, input := range inputs {
 		buffer.WriteString("\t")
-		buffer.WriteString(fmt.Sprintf(`%s [label="%s" shape=plaintext];`, input, input))
-		buffer.WriteString(fmt.Sprintf("\n\t%s -> %s;\n", input, label))
+		fmt.Fprintf(buffer, `%s [label="%s" shape=plaintext];`, input, input)
+		fmt.Fprintf(buffer, "\n\t%s -> %s;\n", input, label)
 	}
 }
 
 func writeReferences(buffer *bytes.Buffer, label string, references []string) {
 	for _, reference := range references {
-		buffer.WriteString(fmt.Sprintf("\t%s -> %s;\n", label, reference))
+		fmt.Fprintf(buffer, "\t%s -> %s;\n", label, reference)
 	}
 }
 
 func writeOutputNodes(buffer *bytes.Buffer, label string, outputs []string) {
 	for _, output := range outputs {
 		buffer.WriteString("\t")
-		buffer.WriteString(fmt.Sprintf(`%s [label="%s" shape=plaintext];`, output, output))
-		buffer.WriteString(fmt.Sprintf("\n\t%s -> %s;\n", label, output))
+		fmt.Fprintf(buffer, `%s [label="%s" shape=plaintext];`, output, output)
+		fmt.Fprintf(buffer, "\n\t%s -> %s;\n", label, output)
 	}
 }

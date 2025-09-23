@@ -25,6 +25,7 @@ var (
 		"app,linux,container,kubernetes":         types.APP_SERVICE,
 		"functionapp":                            types.FUNCTION_APP,
 		"functionapp,linux":                      types.FUNCTION_APP,
+		"functionapp,linux,container":            types.FUNCTION_APP,
 		"functionapp,linux,container,kubernetes": types.FUNCTION_APP,
 		"functionapp,linux,kubernetes":           types.FUNCTION_APP,
 		"functionapp,workflowapp":                types.LOGIC_APP,
@@ -35,20 +36,20 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	client, err := armappservice.NewWebAppsClient(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	client, err := armappservice.NewWebAppsClient(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	app, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	app, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	config, err := client.GetConfiguration(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	config, err := client.GetConfiguration(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -73,10 +74,14 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	properties := map[string][]string{}
 
-	configValues := config.Properties.AzureStorageAccounts[ctx.ResourceName]
+	configValues := config.Properties.AzureStorageAccounts[ctx.Resource.Name]
 
 	if configValues != nil {
 		properties["storageAccountName"] = []string{strings.ToLower(*configValues.AccountName)}
+	}
+
+	if acr, ok := getACR(&app); ok {
+		properties["containerRegistry"] = []string{acr}
 	}
 
 	// Microsoft.Web/sites has multiple subcategories. Use these instead
@@ -91,19 +96,39 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 	planId := app.Properties.ServerFarmID
 	dependsOn = append(dependsOn, *planId)
 
-	resource := &models.Resource{
-		Id:         *app.ID,
-		Name:       *app.Name,
-		Type:       subType,
-		DependsOn:  dependsOn,
-		Properties: properties,
+	resource.Type = subType
+	resource.Properties = properties
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
+
+	return []*models.Resource{}, nil
+}
+
+func getACR(app *armappservice.WebAppsClientGetResponse) (string, bool) {
+	linuxFxVersion := *app.Properties.SiteConfig.LinuxFxVersion
+
+	if linuxFxVersion == "" {
+		return "", false
 	}
 
-	return []*models.Resource{resource}, nil
+	// sitecontainers
+	if !strings.Contains(linuxFxVersion, "|") {
+		return "", false
+	}
+
+	// DOCKER|<acr>.azurecr.io/<image>:<tag>
+	typeAndRegistry := strings.Split(linuxFxVersion, "|")
+
+	// <acr>.azurecr.io/<image>:<tag>
+	registryAndImage := strings.Split(typeAndRegistry[1], "/")
+
+	// <acr>.azurecr.io
+	acrName := strings.Split(registryAndImage[0], ".")[0]
+
+	return acrName, true
 }
 
 func getResourceReferencesInTags(ctx *azContext.Context) ([]string, error) {
-	clientFactory, err := armresources.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+	clientFactory, err := armresources.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
@@ -111,7 +136,7 @@ func getResourceReferencesInTags(ctx *azContext.Context) ([]string, error) {
 
 	client := clientFactory.NewTagsClient()
 
-	tags, err := client.GetAtScope(context.Background(), ctx.ResourceId, nil)
+	tags, err := client.GetAtScope(context.Background(), ctx.Resource.Id, nil)
 
 	if err != nil {
 		return nil, err
@@ -136,5 +161,20 @@ func getResourceReferencesInTags(ctx *azContext.Context) ([]string, error) {
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {
+	acr, ok := resource.Properties["containerRegistry"]
 
+	if !ok {
+		return
+	}
+
+	// lookup ACR by name
+	acrResource := list.FirstOrDefault(resources, nil, func(r *models.Resource) bool {
+		return r.Name == acr[0]
+	})
+
+	if acrResource == nil {
+		return
+	}
+
+	resource.DependsOn = append(resource.DependsOn, acrResource.Id)
 }

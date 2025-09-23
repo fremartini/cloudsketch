@@ -16,29 +16,12 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armnetwork.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
-
-	client := clientFactory.NewLoadBalancersClient()
-
-	lb, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
-
-	if err != nil {
-		return nil, err
-	}
-
-	resource := &models.Resource{
-		Id:        *lb.ID,
-		Name:      *lb.Name,
-		Type:      *lb.Type,
-		DependsOn: []string{},
-	}
-
-	resources := []*models.Resource{resource}
 
 	backendPools, err := getBackendPools(clientFactory, ctx)
 
@@ -52,6 +35,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
+	resources := []*models.Resource{}
 	resources = append(resources, backendPools...)
 	resources = append(resources, frontends...)
 
@@ -61,7 +45,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Context) ([]*models.Resource, error) {
 	client := clientFactory.NewLoadBalancerFrontendIPConfigurationsClient()
 
-	pager := client.NewListPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
+	pager := client.NewListPager(ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	var frontendConfiguration []*armnetwork.FrontendIPConfiguration
 	for pager.More() {
@@ -76,7 +60,7 @@ func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Contex
 	}
 
 	return list.Map(frontendConfiguration, func(nic *armnetwork.FrontendIPConfiguration) *models.Resource {
-		dependsOn := []string{ctx.ResourceId}
+		dependsOn := []string{ctx.Resource.Id, ctx.Subscription.ResourceId}
 
 		if nic.Properties.Subnet != nil {
 			subnet := strings.ToLower(*nic.Properties.Subnet.ID)
@@ -96,7 +80,7 @@ func getFrontends(clientFactory *armnetwork.ClientFactory, ctx *azContext.Contex
 func getBackendPools(clientFactory *armnetwork.ClientFactory, ctx *azContext.Context) ([]*models.Resource, error) {
 	client := clientFactory.NewLoadBalancerBackendAddressPoolsClient()
 
-	pager := client.NewListPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
+	pager := client.NewListPager(ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	var pools []*armnetwork.BackendAddressPool
 	for pager.More() {
@@ -113,7 +97,7 @@ func getBackendPools(clientFactory *armnetwork.ClientFactory, ctx *azContext.Con
 	resources := []*models.Resource{}
 
 	backendPoolsResources := list.Map(pools, func(pool *armnetwork.BackendAddressPool) *models.Resource {
-		dependsOn := []string{ctx.ResourceId}
+		dependsOn := []string{ctx.Resource.Id, ctx.Subscription.ResourceId}
 
 		return &models.Resource{
 			Id:        *pool.ID,

@@ -15,36 +15,24 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armdatafactory.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armdatafactory.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	client := clientFactory.NewFactoriesClient()
-
-	adf, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	adf, err := clientFactory.NewFactoriesClient().Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	resource := &models.Resource{
-		Id:   *adf.ID,
-		Name: *adf.Name,
-		Type: *adf.Type,
-	}
-
-	resources := []*models.Resource{resource}
-
-	integration_runtimes, err := getIntegrationRuntimes(clientFactory, ctx, adf.ID)
+	resources, err := getIntegrationRuntimes(clientFactory, ctx, adf.ID)
 
 	if err != nil {
 		return nil, err
 	}
-
-	resources = append(resources, integration_runtimes...)
 
 	networks, err := getManagedVirtualNetworks(clientFactory, ctx, adf.Name)
 
@@ -52,13 +40,15 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		return nil, err
 	}
 
-	endpoints, err := getManagedPrivateEndpoints(clientFactory, ctx, adf.ID, networks[0].Name)
+	if len(networks) > 0 {
+		endpoints, err := getManagedPrivateEndpoints(clientFactory, ctx, adf.ID, networks[0].Name)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		resources = append(resources, endpoints...)
 	}
-
-	resources = append(resources, endpoints...)
 
 	return resources, nil
 }
@@ -66,7 +56,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 func getManagedVirtualNetworks(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfName *string) ([]*armdatafactory.ManagedVirtualNetworkResource, error) {
 	client := clientFactory.NewManagedVirtualNetworksClient()
 
-	pager := client.NewListByFactoryPager(ctx.ResourceGroupName, *adfName, nil)
+	pager := client.NewListByFactoryPager(ctx.ResourceGroup, *adfName, nil)
 
 	var networks []*armdatafactory.ManagedVirtualNetworkResource
 	for pager.More() {
@@ -86,7 +76,7 @@ func getManagedVirtualNetworks(clientFactory *armdatafactory.ClientFactory, ctx 
 func getManagedPrivateEndpoints(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfId, managedVirtualNetworkName *string) ([]*models.Resource, error) {
 	client := clientFactory.NewManagedPrivateEndpointsClient()
 
-	pager := client.NewListByFactoryPager(ctx.ResourceGroupName, ctx.ResourceName, *managedVirtualNetworkName, nil)
+	pager := client.NewListByFactoryPager(ctx.ResourceGroup, ctx.Resource.Name, *managedVirtualNetworkName, nil)
 
 	var endpoints []*armdatafactory.ManagedPrivateEndpointResource
 	for pager.More() {
@@ -115,7 +105,7 @@ func getManagedPrivateEndpoints(clientFactory *armdatafactory.ClientFactory, ctx
 func getIntegrationRuntimes(clientFactory *armdatafactory.ClientFactory, ctx *azContext.Context, adfId *string) ([]*models.Resource, error) {
 	client := clientFactory.NewIntegrationRuntimesClient()
 
-	pager := client.NewListByFactoryPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
+	pager := client.NewListByFactoryPager(ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	var integration_runtimes []*armdatafactory.IntegrationRuntimeResource
 	for pager.More() {

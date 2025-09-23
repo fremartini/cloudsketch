@@ -1,5 +1,5 @@
 package providers
 
 type Provider interface {
-	FetchResources(subscriptionId string) ([]*Resource, string, error)
+	FetchResources(input string) ([]*Resource, string, error)
 }

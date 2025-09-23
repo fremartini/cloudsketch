@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v3"
 )
@@ -36,8 +37,6 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 	if len(args) == 0 {
 		return errors.New("command expects one argument")
 	}
-
-	fileOrSubscriptionId := args[0]
 
 	frontendString := command.String("frontend")
 
@@ -61,10 +60,17 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 	var resources []*providers.Resource
 	var filename string
 
-	// command can either be a subscription id or a file name
-	if strings.HasSuffix(fileOrSubscriptionId, ".json") {
-		// if the file ends in .json, assume its a valid json file that contains previously populated Azure resources
-		existingResources, existingFilename, err := useExistingFile(fileOrSubscriptionId, frontendString)
+	input := args[0]
+
+	start := time.Now()
+	defer func() {
+		since := time.Since(start)
+		log.Printf("execution finished after %s", since)
+	}()
+
+	if strings.HasSuffix(input, ".json") {
+		// if the file ends in .json, assume its a valid json file that contains previously populated resources
+		existingResources, existingFilename, err := useExistingResourceFromFile(input, frontendString)
 
 		if err != nil {
 			return err
@@ -73,15 +79,15 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 		resources = existingResources
 		filename = existingFilename
 	} else {
-		// otherwise treat it as a subscription id
-		existingResources, existingFilename, err := createNewFile(fileOrSubscriptionId, frontendString, provider)
+		// otherwise delegate to the appropriate provider
+		newResources, newFilename, err := fetchResourcesAndCreateNewFile(input, frontendString, provider)
 
 		if err != nil {
 			return err
 		}
 
-		resources = existingResources
-		filename = existingFilename
+		resources = newResources
+		filename = newFilename
 	}
 
 	frontendResources, err := mapToDomainModels(resources)
@@ -115,9 +121,15 @@ func removeBlacklistedResources(frontendResources []*frontendModels.Resource) []
 		return !list.Contains(config.Blacklist, func(entry string) bool { return entry == r.Type })
 	})
 
+	// remove all resource dependencies that are on the blacklist
 	toReturn = list.Map(toReturn, func(r *frontendModels.Resource) *frontendModels.Resource {
-		r.DependsOn = list.Filter(r.DependsOn, func(r *frontendModels.Resource) bool {
-			return !list.Contains(config.Blacklist, func(entry string) bool { return entry == r.Type })
+		r.DependsOn = list.Filter(r.DependsOn, func(dependency *frontendModels.Resource) bool {
+			// dependency can be nil for some reason
+			if dependency == nil {
+				return false
+			}
+
+			return !list.Contains(config.Blacklist, func(entry string) bool { return entry == dependency.Type })
 		})
 
 		return r
@@ -126,7 +138,7 @@ func removeBlacklistedResources(frontendResources []*frontendModels.Resource) []
 	return toReturn
 }
 
-func useExistingFile(file, frontendString string) ([]*providers.Resource, string, error) {
+func useExistingResourceFromFile(file, frontendString string) ([]*providers.Resource, string, error) {
 	log.Printf("using existing file %s\n", file)
 
 	resources, err := marshall.UnmarshallResources[[]*providers.Resource](file)
@@ -140,8 +152,8 @@ func useExistingFile(file, frontendString string) ([]*providers.Resource, string
 	return *resources, outFile, nil
 }
 
-func createNewFile(subscriptionId, frontendString string, provider providers.Provider) ([]*providers.Resource, string, error) {
-	resources, filename, err := provider.FetchResources(subscriptionId)
+func fetchResourcesAndCreateNewFile(input, frontendString string, provider providers.Provider) ([]*providers.Resource, string, error) {
+	resources, filename, err := provider.FetchResources(input)
 
 	if err != nil {
 		return nil, "", err
@@ -169,7 +181,7 @@ func mapToDomainModels(resources []*providers.Resource) ([]*frontendModels.Resou
 	}
 
 	for _, task := range tasks {
-		bg.Resolve(task)
+		bg.ResolveTasksThatDependOnThis(task)
 	}
 
 	domainResources := []*frontendModels.Resource{}

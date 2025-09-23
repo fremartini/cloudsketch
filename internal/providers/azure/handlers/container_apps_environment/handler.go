@@ -16,14 +16,14 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	client, err := armappcontainers.NewManagedEnvironmentsClient(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	client, err := armappcontainers.NewManagedEnvironmentsClient(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	cae, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	cae, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -37,14 +37,9 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		dependsOn = append(dependsOn, strings.ToLower(*subnet))
 	}
 
-	resource := &models.Resource{
-		Id:        ctx.ResourceId,
-		Name:      ctx.ResourceName,
-		Type:      *cae.Type,
-		DependsOn: dependsOn,
-	}
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
-	return []*models.Resource{resource}, nil
+	return []*models.Resource{}, nil
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {

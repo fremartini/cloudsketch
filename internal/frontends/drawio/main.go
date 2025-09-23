@@ -36,6 +36,7 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/log_analytics"
 	"cloudsketch/internal/frontends/drawio/handlers/logic_app"
 	"cloudsketch/internal/frontends/drawio/handlers/machine_learning_workspace"
+	"cloudsketch/internal/frontends/drawio/handlers/management_group"
 	"cloudsketch/internal/frontends/drawio/handlers/nat_gateway"
 	"cloudsketch/internal/frontends/drawio/handlers/network_interface"
 	"cloudsketch/internal/frontends/drawio/handlers/network_security_group"
@@ -115,6 +116,7 @@ var (
 		log_analytics.TYPE:                         log_analytics.New(),
 		logic_app.TYPE:                             logic_app.New(),
 		machine_learning_workspace.TYPE:            machine_learning_workspace.New(),
+		management_group.TYPE:                      management_group.New(),
 		nat_gateway.TYPE:                           nat_gateway.New(),
 		network_interface.TYPE:                     network_interface.New(),
 		network_security_group.TYPE:                network_security_group.New(),
@@ -166,7 +168,11 @@ func (d *drawio) WriteDiagram(resources []*models.Resource, filename string) err
 	groups := postProcessIcons(resource_map)
 
 	// some resources like vnets and subnets needs boxes draw around them, and their resources moved into them
-	boxes := groupResources(resource_map)
+	boxes, err := groupResources(resource_map)
+
+	if err != nil {
+		return err
+	}
 
 	// with every DrawIO icon present, add the dependency arrows
 	dependencyArrows := addDependencies(resource_map)
@@ -178,6 +184,7 @@ func (d *drawio) WriteDiagram(resources []*models.Resource, filename string) err
 
 	// private endpoints, NICs, PIPs and NSGs are typically used as icons attached to other icons and should therefore be rendered in front of them
 	overlayResources := []string{types.PRIVATE_ENDPOINT, types.NETWORK_INTERFACE, types.PUBLIC_IP_ADDRESS, types.NETWORK_SECURITY_GROUP, types.ROUTE_TABLE}
+
 	allResourcesThatShouldGoInFront, allResourcesThatShouldGoInBack := list.Split(allResources, func(n *node.ResourceAndNode) bool {
 		return list.Contains(overlayResources, func(typ string) bool {
 			return n.Resource.Type == typ
@@ -220,7 +227,7 @@ func populateResourceMap(resources []*models.Resource) (*map[string]*node.Resour
 
 	// ensure all resources that depend on this have been draw
 	for _, task := range tasks {
-		bg.ResolveInverse(task)
+		bg.ResolveTasksThatDependOnThis(task)
 	}
 
 	return resource_map, nil
@@ -239,7 +246,7 @@ func drawResource(resource *models.Resource, unhandled_resources *set.Set[string
 
 		// mechanism to prevent spamming the output with the same type
 		if !seenResourceType {
-			log.Printf("unhandled type %s", resource.Type)
+			log.Printf("unhandled type %s (%s)", resource.Type, resource.Name)
 			unhandled_resources.Add(resource.Type)
 		}
 
@@ -304,30 +311,79 @@ func addDependencies(resource_map *map[string]*node.ResourceAndNode) []*node.Arr
 	return arrows
 }
 
-func groupResources(resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func groupResources(resource_map *map[string]*node.ResourceAndNode) ([]*node.Node, error) {
 	resources := []*models.Resource{}
 
 	for _, resourceAndNode := range *resource_map {
 		resources = append(resources, resourceAndNode.Resource)
 	}
 
+	containerResources := []string{types.SUBNET, types.VIRTUAL_NETWORK, types.SUBSCRIPTION, types.MANAGEMENT_GROUP}
+
 	resourcesWithoutVnetsAndSubnets := list.Filter(resources, func(resource *models.Resource) bool {
-		return resource.Type != types.SUBNET && resource.Type != types.VIRTUAL_NETWORK && resource.Type != types.SUBSCRIPTION
+		return !list.Contains(containerResources, func(typ string) bool { return typ == resource.Type })
 	})
 
 	boxes := list.FlatMap(resourcesWithoutVnetsAndSubnets, func(resource *models.Resource) []*node.Node {
 		return commands[resource.Type].GroupResources(resource, resources, resource_map)
 	})
 
-	// virtual netwoks, subnets and subscription needs to be handled last since they "depend" on all other resources
+	// virtual netwoks, subnets, management groups and subscription needs to be handled last since they "depend" on all other resources
 	subnets := drawGroupForResourceType(resources, types.SUBNET, resource_map)
 	vnets := drawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
 	subscriptions := drawGroupForResourceType(resources, types.SUBSCRIPTION, resource_map)
+	managementGroups := theThing(resources, resource_map)
 
-	// return subscriptions first so they are rendered in the background
-	nodes := append(subscriptions, append(vnets, append(subnets, boxes...)...)...)
+	// return management groups first so they are rendered in the background
+	nodes := append(managementGroups, append(subscriptions, append(vnets, append(subnets, boxes...)...)...)...)
+
+	return nodes, nil
+}
+
+func theThing(resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+	managementGroups := list.Filter(resources, func(r *models.Resource) bool {
+		return r.Type == management_group.TYPE
+	})
+
+	nodes := []*node.Node{}
+
+	if len(managementGroups) == 0 {
+		return nodes
+	}
+
+	// ensure leaf management groups are resolved first. Find root management group and recursively resolve the child management groups
+	rootManagementGroup := list.First(managementGroups, func(managementGroup *models.Resource) bool {
+		return len(managementGroup.DependsOn) == 0
+	})
+
+	managementGroupsToDrawInOrder := traverseManagementGroupHierarchy(rootManagementGroup, managementGroups)
+
+	nodes = list.FlatMap(managementGroupsToDrawInOrder, func(r *models.Resource) []*node.Node {
+		return commands[management_group.TYPE].GroupResources(r, resources, resource_map)
+	})
 
 	return nodes
+}
+
+func traverseManagementGroupHierarchy(currentManagementGroup *models.Resource, allManagementGroups []*models.Resource) []*models.Resource {
+	childManagementGroups := list.Filter(allManagementGroups, func(managementGroup *models.Resource) bool {
+		return list.Contains(managementGroup.DependsOn, func(dependency *models.Resource) bool {
+			return dependency.Id == currentManagementGroup.Id
+		})
+	})
+
+	if len(childManagementGroups) == 0 {
+		// leaf
+		return []*models.Resource{currentManagementGroup}
+	}
+
+	tmp := []*models.Resource{}
+	for _, childManagementGroup := range childManagementGroups {
+		tmp = append(tmp, traverseManagementGroupHierarchy(childManagementGroup, allManagementGroups)...)
+	}
+	tmp = append(tmp, currentManagementGroup)
+
+	return tmp
 }
 
 func drawGroupForResourceType(resources []*models.Resource, typ string, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

@@ -14,14 +14,14 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	client, err := armnetwork.NewBastionHostsClient(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	client, err := armnetwork.NewBastionHostsClient(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	bastion, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	bastion, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -34,12 +34,7 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		dependsOn = append(dependsOn, *config.Properties.Subnet.ID)
 	}
 
-	resource := &models.Resource{
-		Id:        ctx.ResourceId,
-		Name:      ctx.ResourceName,
-		Type:      *bastion.Type,
-		DependsOn: dependsOn,
-	}
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
 	return []*models.Resource{resource}, nil
 }

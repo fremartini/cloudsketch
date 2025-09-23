@@ -17,35 +17,24 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armprivatedns.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armprivatedns.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	dnsZone, err := clientFactory.NewPrivateZonesClient().Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	dnsZone, err := clientFactory.NewPrivateZonesClient().Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
 	}
-
-	resource := &models.Resource{
-		Id:        *dnsZone.ID,
-		Name:      *dnsZone.Name,
-		Type:      *dnsZone.Type,
-		DependsOn: []string{},
-	}
-
-	resources := []*models.Resource{resource}
 
 	records, err := getRecordSet(clientFactory, ctx, *dnsZone.ID)
 
 	if err != nil {
 		return nil, err
 	}
-
-	resources = append(resources, records...)
 
 	vnetLinks, err := getVnetLinks(clientFactory, ctx, *dnsZone.Name)
 
@@ -55,11 +44,11 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	resource.DependsOn = append(resource.DependsOn, vnetLinks...)
 
-	return resources, nil
+	return records, nil
 }
 
 func getVnetLinks(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Context, dnsZoneName string) ([]string, error) {
-	pager := clientFactory.NewVirtualNetworkLinksClient().NewListPager(ctx.ResourceGroupName, dnsZoneName, nil)
+	pager := clientFactory.NewVirtualNetworkLinksClient().NewListPager(ctx.ResourceGroup, dnsZoneName, nil)
 
 	var links []*armprivatedns.VirtualNetworkLink
 	for pager.More() {
@@ -81,7 +70,7 @@ func getVnetLinks(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Context, dnsZoneId string) ([]*models.Resource, error) {
 	client := clientFactory.NewRecordSetsClient()
 
-	pager := client.NewListPager(ctx.ResourceGroupName, ctx.ResourceName, nil)
+	pager := client.NewListPager(ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	var records []*armprivatedns.RecordSet
 	for pager.More() {
@@ -99,15 +88,12 @@ func getRecordSet(clientFactory *armprivatedns.ClientFactory, ctx *azContext.Con
 		Microsoft.Network/privateDnsZones/A
 		Microsoft.Network/privateDnsZones/SOA
 		Microsoft.Network/privateDnsZones/CNAME
+		Microsoft.Network/privateDnsZones/TXT
 	*/
 
 	// only A record contains IP addresses
-	blacklist := []string{"Microsoft.Network/privateDnsZones/SOA", "Microsoft.Network/privateDnsZones/CNAME"}
-
 	records = list.Filter(records, func(record *armprivatedns.RecordSet) bool {
-		return !list.Contains(blacklist, func(blacklistItem string) bool {
-			return *record.Type == blacklistItem
-		})
+		return *record.Type == "Microsoft.Network/privateDnsZones/A"
 	})
 
 	resources := list.Map(records, func(record *armprivatedns.RecordSet) *models.Resource {

@@ -1,4 +1,4 @@
-package subscription
+package management_group
 
 import (
 	"cloudsketch/internal/datastructures/set"
@@ -8,15 +8,16 @@ import (
 	"cloudsketch/internal/frontends/models"
 	"cloudsketch/internal/frontends/types"
 	"cloudsketch/internal/list"
+	"fmt"
 )
 
 type handler struct{}
 
 const (
-	TYPE   = types.SUBSCRIPTION
-	IMAGE  = images.SUBSCRIPTION
-	WIDTH  = 68
-	HEIGHT = 68
+	TYPE   = types.MANAGEMENT_GROUP
+	IMAGE  = images.MANAGEMENT_GROUP
+	WIDTH  = 66
+	HEIGHT = 64
 )
 
 func New() *handler {
@@ -46,27 +47,29 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 }
 
 func (*handler) GroupResources(resource *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	subscriptionResources := getAllResourcesInSubscription(resource.Id, resources, resource_map)
+	fmt.Println(resource.Name)
 
-	if len(subscriptionResources) == 0 {
+	managementGroupResources := getAllResourcesInManagementGroup(resource.Id, resources, resource_map)
+
+	if len(managementGroupResources) == 0 {
 		return []*node.Node{}
 	}
 
-	// a subscription can contain resources that belong to the same group, these needs to be filtered to
+	// a management group can contain resources that belong to the same group, these needs to be filtered to
 	// avoid moving the same group multiple times
 	seenGroups := set.New[string]()
 
-	subscriptionResources = list.Filter(subscriptionResources, func(n *node.Node) bool {
+	managementGroupResources = list.Filter(managementGroupResources, func(n *node.Node) bool {
 		if seenGroups.Contains(n.Id()) {
 			return false
 		}
 
-		seenGroups.Add(n.Id())
+		seenGroups.Add(n.GetParentOrThis().Id())
 
 		return true
 	})
 
-	subscriptionNode := (*resource_map)[resource.Id].Node
+	managementGroupNode := (*resource_map)[resource.Id].Node
 
 	box := node.NewBox(&node.Geometry{
 		X:      0,
@@ -75,23 +78,23 @@ func (*handler) GroupResources(resource *models.Resource, resources []*models.Re
 		Height: 0,
 	}, nil)
 
-	node.FillResourcesInBox(box, subscriptionResources, diagram.Padding, true)
+	node.FillResourcesInBox(box, managementGroupResources, diagram.Padding, true)
 
-	subscriptionNode.SetProperty("parent", box.Id())
-	subscriptionNode.ContainedIn = box
-	node.SetIconRelativeTo(subscriptionNode, box, node.TOP_LEFT)
+	managementGroupNode.SetProperty("parent", box.Id())
+	managementGroupNode.ContainedIn = box
+	node.SetIconRelativeTo(managementGroupNode, box, node.TOP_LEFT)
 
 	return []*node.Node{box}
 }
 
-func getAllResourcesInSubscription(resourceId string, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
-	subscriptionResources := list.Filter(resources, func(r *models.Resource) bool {
+func getAllResourcesInManagementGroup(resourceId string, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+	managementGroupResources := list.Filter(resources, func(r *models.Resource) bool {
 		return list.Contains(r.DependsOn, func(dependency *models.Resource) bool {
 			return dependency.Id == resourceId
 		})
 	})
 
-	nodes := list.Map(subscriptionResources, func(r *models.Resource) *node.Node {
+	nodes := list.Map(managementGroupResources, func(r *models.Resource) *node.Node {
 		return (*resource_map)[r.Id].Node.GetParentOrThis()
 	})
 

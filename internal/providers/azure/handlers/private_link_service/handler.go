@@ -14,14 +14,14 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armnetwork.NewPrivateLinkServicesClient(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armnetwork.NewPrivateLinkServicesClient(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	pls, err := clientFactory.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	pls, err := clientFactory.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
@@ -29,14 +29,11 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	pls_target := pls.Properties.LoadBalancerFrontendIPConfigurations[0].ID
 
-	resource := &models.Resource{
-		Id:        *pls.ID,
-		Name:      *pls.Name,
-		Type:      *pls.Type,
-		DependsOn: []string{*pls_target},
-	}
+	dependsOn := []string{*pls_target}
 
-	return []*models.Resource{resource}, nil
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
+
+	return []*models.Resource{}, nil
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {

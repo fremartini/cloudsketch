@@ -3,7 +3,6 @@ package key_vault
 import (
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/models"
-	"cloudsketch/internal/providers/azure/types"
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/monitor/armmonitor"
@@ -15,14 +14,14 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
 	diagnosticsClient, err := armmonitor.NewDiagnosticSettingsClient(ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	pager := diagnosticsClient.NewListPager(ctx.ResourceId, nil)
+	pager := diagnosticsClient.NewListPager(ctx.Resource.Id, nil)
 
 	var resources []*armmonitor.DiagnosticSettingsResource
 	for pager.More() {
@@ -47,14 +46,9 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 		}
 	}
 
-	resource := &models.Resource{
-		Id:        ctx.ResourceId,
-		Name:      ctx.ResourceName,
-		Type:      types.KEY_VAULT,
-		DependsOn: dependsOn,
-	}
+	resource.DependsOn = append(resource.DependsOn, dependsOn...)
 
-	return []*models.Resource{resource}, nil
+	return []*models.Resource{}, nil
 }
 
 func (h *handler) PostProcess(resource *models.Resource, resources []*models.Resource) {

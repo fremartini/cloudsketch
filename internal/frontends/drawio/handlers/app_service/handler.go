@@ -38,7 +38,31 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 }
 
 func (*handler) DrawDependencies(source *models.Resource, targets []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
-	return node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{types.SUBNET})
+	arrows := node.DrawDependencyArrowsToTargets(source, targets, resource_map, []string{})
+
+	arrows = append(arrows, addDependencyToOutboundSubnet(source, resource_map)...)
+
+	return arrows
+}
+
+func addDependencyToOutboundSubnet(source *models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Arrow {
+	dashed := "dashed=1"
+
+	outboundSubnet, ok := source.Properties["outboundSubnet"]
+
+	if !ok {
+		return []*node.Arrow{}
+	}
+
+	outboundSubnetResource, ok := (*resource_map)[outboundSubnet[0]]
+
+	if !ok {
+		return []*node.Arrow{}
+	}
+
+	sourceNode := (*resource_map)[source.Id].Node
+
+	return []*node.Arrow{node.NewArrow(sourceNode.Id(), outboundSubnetResource.Node.Id(), &dashed)}
 }
 
 func (*handler) GroupResources(_ *models.Resource, resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {

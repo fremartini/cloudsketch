@@ -4,7 +4,6 @@ import (
 	"cloudsketch/internal/list"
 	azContext "cloudsketch/internal/providers/azure/context"
 	"cloudsketch/internal/providers/azure/models"
-	"cloudsketch/internal/providers/azure/types"
 	"context"
 	"strings"
 
@@ -17,8 +16,8 @@ func New() *handler {
 	return &handler{}
 }
 
-func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error) {
-	clientFactory, err := armnetwork.NewClientFactory(ctx.SubscriptionId, ctx.Credentials, nil)
+func (h *handler) GetResource(resource *models.Resource, ctx *azContext.Context) ([]*models.Resource, error) {
+	clientFactory, err := armnetwork.NewClientFactory(ctx.Subscription.Id, ctx.Credentials, nil)
 
 	if err != nil {
 		return nil, err
@@ -26,48 +25,27 @@ func (h *handler) GetResource(ctx *azContext.Context) ([]*models.Resource, error
 
 	client := clientFactory.NewVirtualNetworksClient()
 
-	vnet, err := client.Get(context.Background(), ctx.ResourceGroupName, ctx.ResourceName, nil)
+	vnet, err := client.Get(context.Background(), ctx.ResourceGroup, ctx.Resource.Name, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	vnetResource, err := mapVirtualNetworkResource(&vnet, ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// subnets are a subresource of virtual networks so they must be fetched together
-	subnets, err := mapSubnetResources(vnet.Properties.Subnets, vnetResource.Id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return append(subnets, vnetResource), nil
-}
-
-func mapVirtualNetworkResource(vnet *armnetwork.VirtualNetworksClientGetResponse, ctx *azContext.Context) (*models.Resource, error) {
 	addressPrefixes := vnet.Properties.AddressSpace.AddressPrefixes
 
 	properties := map[string][]string{}
 
-	// virtual networks can have multiple address ranges. If this is the case hide the size
+	// virtual networks can have multiple address ranges. If this is the case, hide the size
 	if len(addressPrefixes) == 1 {
 		addressPrefix := strings.Split(*addressPrefixes[0], "/")[1]
 
 		properties["size"] = []string{addressPrefix}
 	}
 
-	resource := &models.Resource{
-		Id:         ctx.ResourceId,
-		Name:       ctx.ResourceName,
-		Type:       types.VIRTUAL_NETWORK,
-		Properties: properties,
-	}
+	resource.Properties = properties
 
-	return resource, nil
+	// subnets are a subresource of virtual networks so they must be fetched together
+	return mapSubnetResources(vnet.Properties.Subnets, resource.Id)
 }
 
 func mapSubnetResources(subnets []*armnetwork.Subnet, vnetId string) ([]*models.Resource, error) {
@@ -86,10 +64,15 @@ func mapSubnetResources(subnets []*armnetwork.Subnet, vnetId string) ([]*models.
 			dependsOn = append(dependsOn, strings.ToLower(*nsg.ID))
 		}
 
-		addressPrefix := strings.Split(*subnet.Properties.AddressPrefix, "/")[1]
+		properties := map[string][]string{}
+		if subnet.Properties.AddressPrefix != nil {
+			addressPrefix := strings.Split(*subnet.Properties.AddressPrefix, "/")[1]
 
-		properties := map[string][]string{
-			"size": {addressPrefix},
+			properties["size"] = []string{addressPrefix}
+		} else if len(subnet.Properties.AddressPrefixes) > 0 {
+			addressPrefix := strings.Split(*subnet.Properties.AddressPrefixes[0], "/")[1]
+
+			properties["size"] = []string{addressPrefix}
 		}
 
 		snet := &models.Resource{

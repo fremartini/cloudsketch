@@ -213,7 +213,7 @@ func BoxResources(parent *Node, children []*ResourceAndNode) *Node {
 
 func DrawDependencyArrowsToTargets(source *models.Resource, targets []*models.Resource, resource_map *map[string]*ResourceAndNode, typeBlacklist []string) []*Arrow {
 	// don't draw arrows to subscriptions
-	typeBlacklist = append(typeBlacklist, types.SUBSCRIPTION, types.VIRTUAL_NETWORK, types.SUBNET)
+	typeBlacklist = append(typeBlacklist, types.SUBSCRIPTION, types.VIRTUAL_NETWORK, types.SUBNET, types.MANAGEMENT_GROUP)
 
 	// remove entries from the blacklist
 	targets = list.Filter(targets, func(target *models.Resource) bool {
