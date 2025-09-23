@@ -33,6 +33,7 @@ const (
 	LOG_ANALYTICS                         = "LOG_ANALYTICS"
 	LOGIC_APP                             = "LOGIC_APP"
 	MACHINE_LEARNING_WORKSPACE            = "MACHINE_LEARNING_WORKSPACE"
+	MANAGED_CLUSTER                       = "MANAGED_CLUSTER"
 	MANAGEMENT_GROUP                      = "MANAGEMENT_GROUP"
 	NAT_GATEWAY                           = "NAT_GATEWAY"
 	NETWORK_INTERFACE                     = "NETWORK_INTERFACE"
