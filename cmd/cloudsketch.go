@@ -15,7 +15,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"strings"
 	"time"
 
@@ -65,7 +64,8 @@ func newCloudsketch(_ context.Context, command *cli.Command) error {
 
 	start := time.Now()
 	defer func() {
-		log.Printf("execution finished after %v seconds", math.Round(time.Since(start).Seconds()))
+		since := time.Since(start)
+		log.Printf("execution finished after %s", since)
 	}()
 
 	if strings.HasSuffix(input, ".json") {
@@ -124,7 +124,6 @@ func removeBlacklistedResources(frontendResources []*frontendModels.Resource) []
 	// remove all resource dependencies that are on the blacklist
 	toReturn = list.Map(toReturn, func(r *frontendModels.Resource) *frontendModels.Resource {
 		r.DependsOn = list.Filter(r.DependsOn, func(dependency *frontendModels.Resource) bool {
-
 			// dependency can be nil for some reason
 			if dependency == nil {
 				return false

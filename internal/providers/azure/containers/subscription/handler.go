@@ -1,7 +1,6 @@
 package subscription
 
 import (
-	"cloudsketch/internal/concurrency"
 	"cloudsketch/internal/list"
 	"cloudsketch/internal/providers/azure/containers/resource_group"
 	azContext "cloudsketch/internal/providers/azure/context"
@@ -64,37 +63,31 @@ func (*handler) GetResource(ctx *azContext.Context) ([]*models.Resource, string,
 		dependsOn = append(dependsOn, ctx.ManagementGroup.ResourceId)
 	}
 
-	functionsToApply := list.Map(resourceGroups, func(resourceGroup *models.Resource) func() ([]*models.Resource, error) {
-		return func() ([]*models.Resource, error) {
-			rgCtx := &azContext.Context{
-				Credentials: ctx.Credentials,
-				Resource: &azContext.ResourceIdentifier{
-					Id:         resourceGroup.Id,
-					Name:       resourceGroup.Name,
-					ResourceId: resourceGroup.Id,
-				},
-				Subscription: &azContext.ResourceIdentifier{
-					Id:         *subscription.SubscriptionID,
-					Name:       *subscription.DisplayName,
-					ResourceId: subscriptionResourceId,
-				},
-				ManagementGroup: ctx.ManagementGroup,
-			}
+	resources := []*models.Resource{}
 
-			resourceGroupResources, err := resource_group.New().Handle(rgCtx)
-
-			if err != nil {
-				return nil, err
-			}
-
-			return resourceGroupResources, nil
+	for _, resourceGroup := range resourceGroups {
+		rgCtx := &azContext.Context{
+			Credentials: ctx.Credentials,
+			Resource: &azContext.ResourceIdentifier{
+				Id:         resourceGroup.Id,
+				Name:       resourceGroup.Name,
+				ResourceId: resourceGroup.Id,
+			},
+			Subscription: &azContext.ResourceIdentifier{
+				Id:         *subscription.SubscriptionID,
+				Name:       *subscription.DisplayName,
+				ResourceId: subscriptionResourceId,
+			},
+			ManagementGroup: ctx.ManagementGroup,
 		}
-	})
 
-	resources, err := concurrency.FanOut(functionsToApply)
+		resourceGroupResources, err := resource_group.New().Handle(rgCtx)
 
-	if err != nil {
-		return nil, "", err
+		if err != nil {
+			return nil, "", err
+		}
+
+		resources = append(resources, resourceGroupResources...)
 	}
 
 	return append([]*models.Resource{
