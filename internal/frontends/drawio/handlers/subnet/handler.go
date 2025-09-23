@@ -45,7 +45,7 @@ func (*handler) MapResource(resource *models.Resource) *node.Node {
 	return node.NewIcon(IMAGE, name, &geometry, link)
 }
 
-func getResourcseOfType(resource *models.Resource, resource_map *map[string]*node.ResourceAndNode, typ string) []*models.Resource {
+func getResourceOfType(resource *models.Resource, resource_map *map[string]*node.ResourceAndNode, typ string) []*models.Resource {
 	return list.Filter(resource.DependsOn, func(dependency *models.Resource) bool {
 		r, ok := (*resource_map)[dependency.Id]
 
@@ -60,14 +60,16 @@ func getResourcseOfType(resource *models.Resource, resource_map *map[string]*nod
 func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *map[string]*node.ResourceAndNode) *node.Node {
 	var parentGroup *node.Node = nil
 
-	routeTables := getResourcseOfType(resource.Resource, resource_map, types.ROUTE_TABLE)
+	routeTables := getResourceOfType(resource.Resource, resource_map, types.ROUTE_TABLE)
 	if len(routeTables) == 1 {
 		routeTable := (*resource_map)[routeTables[0].Id]
 
-		parentGroup = node.GroupIconsAndSetPosition(resource.Node, routeTable.Node, node.TOP_LEFT)
+		if snets := resourcesWithReferencesTo(resource_map, routeTable.Resource.Id); snets == 1 {
+			parentGroup = node.GroupIconsAndSetPosition(resource.Node, routeTable.Node, node.TOP_LEFT)
+		}
 	}
 
-	networkSecurityGroups := getResourcseOfType(resource.Resource, resource_map, types.NETWORK_SECURITY_GROUP)
+	networkSecurityGroups := getResourceOfType(resource.Resource, resource_map, types.NETWORK_SECURITY_GROUP)
 
 	if len(networkSecurityGroups) == 1 {
 		networkSecurityGroup := (*resource_map)[networkSecurityGroups[0].Id]
