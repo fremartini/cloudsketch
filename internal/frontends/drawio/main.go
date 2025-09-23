@@ -332,7 +332,7 @@ func groupResources(resource_map *map[string]*node.ResourceAndNode) ([]*node.Nod
 	subnets := drawGroupForResourceType(resources, types.SUBNET, resource_map)
 	vnets := drawGroupForResourceType(resources, types.VIRTUAL_NETWORK, resource_map)
 	subscriptions := drawGroupForResourceType(resources, types.SUBSCRIPTION, resource_map)
-	managementGroups := theThing(resources, resource_map)
+	managementGroups := drawManagementGroups(resources, resource_map)
 
 	// return management groups first so they are rendered in the background
 	nodes := append(managementGroups, append(subscriptions, append(vnets, append(subnets, boxes...)...)...)...)
@@ -340,7 +340,7 @@ func groupResources(resource_map *map[string]*node.ResourceAndNode) ([]*node.Nod
 	return nodes, nil
 }
 
-func theThing(resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
+func drawManagementGroups(resources []*models.Resource, resource_map *map[string]*node.ResourceAndNode) []*node.Node {
 	managementGroups := list.Filter(resources, func(r *models.Resource) bool {
 		return r.Type == management_group.TYPE
 	})
