@@ -64,7 +64,8 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	if len(routeTables) == 1 {
 		routeTable := (*resource_map)[routeTables[0].Id]
 
-		if snets := resourcesWithReferencesTo(resource_map, routeTable.Resource.Id); snets == 1 {
+		// other route table might point to the same NSG. If they do, ignore the merging
+		if routeTables := countResourcesWithReferencesTo(resource_map, routeTable.Resource.Id); routeTables == 1 {
 			parentGroup = node.GroupIconsAndSetPosition(resource.Node, routeTable.Node, node.TOP_LEFT)
 		}
 	}
@@ -75,7 +76,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 		networkSecurityGroup := (*resource_map)[networkSecurityGroups[0].Id]
 
 		// other subnets might point to the same NSG. If they do, ignore the merging
-		if snets := resourcesWithReferencesTo(resource_map, networkSecurityGroup.Resource.Id); snets != 1 {
+		if snets := countResourcesWithReferencesTo(resource_map, networkSecurityGroup.Resource.Id); snets != 1 {
 			return parentGroup
 		}
 
@@ -98,7 +99,7 @@ func (*handler) PostProcessIcon(resource *node.ResourceAndNode, resource_map *ma
 	return parentGroup
 }
 
-func resourcesWithReferencesTo(resource_map *map[string]*node.ResourceAndNode, resourceId string) int {
+func countResourcesWithReferencesTo(resource_map *map[string]*node.ResourceAndNode, resourceId string) int {
 	count := 0
 
 	for _, v := range *resource_map {
@@ -119,7 +120,7 @@ func (*handler) DrawDependencies(source *models.Resource, targets []*models.Reso
 			return true
 		}
 
-		nsgSubnetReferences := resourcesWithReferencesTo(resource_map, target.Id)
+		nsgSubnetReferences := countResourcesWithReferencesTo(resource_map, target.Id)
 
 		return nsgSubnetReferences != 1
 	})

@@ -153,6 +153,7 @@ func mapTypeToDomainType(azType string, unhandledTypes *set.Set[string]) string 
 		types.LOG_ANALYTICS:                         domainTypes.LOG_ANALYTICS,
 		types.LOGIC_APP:                             domainTypes.LOGIC_APP,
 		types.MACHINE_LEARNING_WORKSPACE:            domainTypes.MACHINE_LEARNING_WORKSPACE,
+		types.MANAGED_CLUSTER:                       domainTypes.MANAGED_CLUSTER,
 		types.MANAGEMENT_GROUP:                      domainTypes.MANAGEMENT_GROUP,
 		types.NAT_GATEWAY:                           domainTypes.NAT_GATEWAY,
 		types.NETWORK_INTERFACE:                     domainTypes.NETWORK_INTERFACE,

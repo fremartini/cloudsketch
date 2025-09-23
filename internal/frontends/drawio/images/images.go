@@ -32,6 +32,7 @@ const (
 	LOG_ANALYTICS                         = "img/lib/azure2/management_governance/Log_Analytics_Workspaces.svg"
 	LOGIC_APP                             = "img/lib/azure2/integration/Logic_Apps.svg"
 	MACHINE_LEARNING_WORKSPACE            = "img/lib/azure2/ai_machine_learning/Machine_Learning.svg"
+	MANAGED_CLUSTER                       = "img/lib/azure2/compute/Kubernetes_Services.svg"
 	MANAGEMENT_GROUP                      = "img/lib/azure2/general/Management_Groups.svg"
 	NAT_GATEWAY                           = "img/lib/azure2/networking/NAT.svg"
 	NETWORK_INTERFACE                     = "img/lib/azure2/networking/Network_Interfaces.svg"

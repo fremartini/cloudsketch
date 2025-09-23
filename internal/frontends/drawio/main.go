@@ -36,6 +36,7 @@ import (
 	"cloudsketch/internal/frontends/drawio/handlers/log_analytics"
 	"cloudsketch/internal/frontends/drawio/handlers/logic_app"
 	"cloudsketch/internal/frontends/drawio/handlers/machine_learning_workspace"
+	"cloudsketch/internal/frontends/drawio/handlers/managed_cluster"
 	"cloudsketch/internal/frontends/drawio/handlers/management_group"
 	"cloudsketch/internal/frontends/drawio/handlers/nat_gateway"
 	"cloudsketch/internal/frontends/drawio/handlers/network_interface"
@@ -116,6 +117,7 @@ var (
 		log_analytics.TYPE:                         log_analytics.New(),
 		logic_app.TYPE:                             logic_app.New(),
 		machine_learning_workspace.TYPE:            machine_learning_workspace.New(),
+		managed_cluster.TYPE:                       managed_cluster.New(),
 		management_group.TYPE:                      management_group.New(),
 		nat_gateway.TYPE:                           nat_gateway.New(),
 		network_interface.TYPE:                     network_interface.New(),

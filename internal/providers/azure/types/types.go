@@ -33,6 +33,7 @@ const (
 	LOG_ANALYTICS                         = "Microsoft.OperationalInsights/workspaces"
 	LOGIC_APP                             = "Cloudsketch/logicapp"
 	MACHINE_LEARNING_WORKSPACE            = "Microsoft.MachineLearningServices/workspaces"
+	MANAGED_CLUSTER                       = "Microsoft.ContainerService/managedClusters"
 	MANAGEMENT_GROUP                      = "Microsoft.Management/managementGroups"
 	NAT_GATEWAY                           = "Microsoft.Network/natGateways"
 	NETWORK_INTERFACE                     = "Microsoft.Network/networkInterfaces"
